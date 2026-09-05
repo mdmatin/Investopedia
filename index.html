@@ -746,15 +746,21 @@ function applyParsed(p){
   $('#fAmount').closest('.f').classList.toggle('needs', p.amount==null);
 
   const bits = [];
-  if (p.amount==null) bits.push('Enter the amount yourself — it could not be read.');
   (p.warnings||[]).forEach(w=>bits.push(w.charAt(0).toUpperCase()+w.slice(1)+'.'));
+  // Always offer the raw text — when something reads oddly, this is the evidence.
+  const peek = p.ocrText
+    ? '<details style="margin-top:8px"><summary style="font-size:12px">See what was read</summary>'
+      + '<pre style="margin:6px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;'
+      + 'max-height:160px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35">'
+      + esc(p.ocrText) + '</pre></details>'
+    : '';
   if (bits.length){
     $('#scanNote').className = 'note';
-    $('#scanNote').innerHTML = '<b>Check before saving</b>' + bits.map(esc).join('<br>');
+    $('#scanNote').innerHTML = '<b>Check before saving</b>' + bits.map(esc).join('<br>') + peek;
     $('#scanNote').hidden = false;
   } else {
     $('#scanNote').className = 'note ok';
-    $('#scanNote').innerHTML = '<b>Read from the screenshot</b>Confirm the figures, pick a bucket, then Save.';
+    $('#scanNote').innerHTML = '<b>Read from the screenshot</b>Confirm the figures, pick a bucket, then Save.' + peek;
     $('#scanNote').hidden = false;
   }
 }
