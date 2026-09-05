@@ -677,7 +677,13 @@ $('#fileShot').onchange = async ev => {
     const parsed = await apiPost('parseImage', { image: shrunk.base64, mimeType: shrunk.mimeType });
     applyParsed(parsed);
   }catch(e){
-    $('#formErr').textContent = e.message;
+    // "Load failed" / "Failed to fetch" mean the request never came back —
+    // a different problem from the sheet reading the image and not understanding it.
+    const networkish = /load failed|failed to fetch|networkerror|timed out|cancelled/i.test(e.message||'');
+    $('#formErr').innerHTML = networkish
+      ? '<b>The sheet did not respond.</b><br>Usually the Drive service is not switched on in Apps Script, or the image was too large. '
+        + 'The share-sheet shortcut avoids both — it reads the text on your phone and sends only that.'
+      : esc(e.message);
     $('#formErr').hidden = false;
   }finally{ b.disabled=false; label.textContent='Scan a screenshot'; }
 };
@@ -689,12 +695,23 @@ function shrinkImage(file){
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = ()=>{
       URL.revokeObjectURL(url);
-      const MAX=1400, scale=Math.min(1, MAX/Math.max(img.width,img.height));
+      const MAX=1000, scale=Math.min(1, MAX/Math.max(img.width,img.height));
       const c=document.createElement('canvas');
       c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      const dataUrl=c.toDataURL('image/jpeg',0.92);
-      resolve({ base64: dataUrl.split(',')[1], mimeType:'image/jpeg' });
+      const cx=c.getContext('2d');
+      cx.drawImage(img,0,0,c.width,c.height);
+      // Greyscale + a hard contrast curve: OCR only needs the glyph shapes, and
+      // this cuts the upload to a fraction of the size, which is what was
+      // making the request fail.
+      const d=cx.getImageData(0,0,c.width,c.height), a=d.data;
+      for(let i=0;i<a.length;i+=4){
+        const y=0.299*a[i]+0.587*a[i+1]+0.114*a[i+2];
+        const v=y<70?0:y>150?255:Math.round((y-70)*255/80);
+        a[i]=a[i+1]=a[i+2]=v;
+      }
+      cx.putImageData(d,0,0);
+      const dataUrl=c.toDataURL('image/jpeg',0.7);
+      resolve({ base64: dataUrl.split(',')[1], mimeType:'image/jpeg', kb: Math.round(dataUrl.length*0.75/1024) });
     };
     img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("That file isn't an image the browser can open.")); };
     img.src = url;
@@ -703,6 +720,16 @@ function shrinkImage(file){
 
 // Fills the form from a parse result and shows what needs your attention.
 function applyParsed(p){
+  if (p && p.parseError){
+    $('#formErr').innerHTML = '<b>' + esc(p.parseError) + '</b>'
+      + '<div style="margin-top:8px;font-weight:400">This is what it managed to read. '
+      + 'Send it to me and I will fix the parser.</div>'
+      + '<pre style="margin:8px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;'
+      + 'max-height:180px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35">'
+      + esc(p.ocrText || '(nothing)') + '</pre>';
+    $('#formErr').hidden = false;
+    return;
+  }
   const set=(id,val,filled)=>{ const el=$('#'+id); el.value = (val==null?'':val);
     el.closest('.f').classList.toggle('filled', !!filled && val!=null && val!==''); };
   setOrder(p.order || 'Buy');
