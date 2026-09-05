@@ -179,6 +179,16 @@ th.r,td.r{text-align:right}
 .btn:disabled{opacity:.5}
 .hint{font-size:12.5px;color:var(--ink-3);margin:10px 6px 0;line-height:1.4}
 .err{background:var(--down-bg);color:var(--down);padding:10px 14px;border-radius:var(--r-sm);font-size:13.5px;margin-bottom:12px}
+.note{background:#fff8e6;color:#8a5a00;padding:10px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:12px;line-height:1.4}
+.note.ok{background:#eaf3fc;color:#0a4f9e}
+.note b{display:block;margin-bottom:2px}
+.scan{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;margin-bottom:14px;
+  border-radius:var(--r-mid);background:var(--canvas);border:1px solid var(--card-edge);color:var(--blue);font-weight:600;font-size:16px}
+.scan svg{width:19px;height:19px}
+.scan:disabled{opacity:.55}
+.f.filled input,.f.filled select{color:var(--blue)}
+.f.needs input{color:var(--down)}
+.f.needs label{color:var(--down)}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-pill);font-size:14px;font-weight:500;opacity:0;transition:.24s;z-index:30;pointer-events:none;max-width:88vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .blur .money{filter:blur(7px)}
@@ -289,6 +299,12 @@ th.r,td.r{text-align:right}
   <div class="grab"></div>
   <h3><span id="sheetTitle">New transaction</span><button id="btnClose">Cancel</button></h3>
   <div id="formErr" class="err" hidden></div>
+  <div id="scanNote" class="note" hidden></div>
+  <button class="scan" id="btnScan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a2 2 0 0 1 2-2h3M16 4h3a2 2 0 0 1 2 2v3M21 15v3a2 2 0 0 1-2 2h-3M8 20H5a2 2 0 0 1-2-2v-3"/><path d="M7 12h10"/></svg>
+    <span>Scan a screenshot</span>
+  </button>
+  <input type="file" id="fileShot" accept="image/*" hidden>
   <div class="seg" id="segOrder"><button data-v="Buy" class="on">Buy</button><button data-v="Sell">Sell</button></div>
   <div class="fields">
     <div class="f"><label>Ticker</label><input id="fTicker" list="tickers" placeholder="NVDA" autocapitalize="characters" autocorrect="off"><datalist id="tickers"></datalist></div>
@@ -623,6 +639,9 @@ function openSheet(t){
   const f = id=>$('#'+id);
   $('#sheetTitle').textContent = t ? 'Edit transaction' : 'New transaction';
   $('#formErr').hidden = true;
+  $('#scanNote').hidden = true;
+  $$('.f').forEach(f=>f.classList.remove('filled','needs'));
+  $('#btnScan').hidden = !!t;              // scanning only makes sense for a new row
   $('#btnDelete').hidden = !t; $('#btnDelete').textContent='Delete transaction'; $('#btnDelete').dataset.arm='';
   setOrder(t?.order || 'Buy');
   f('fTicker').value=t?.ticker||''; f('fCategory').value=t?.category||'US Stocks'; f('fPlatform').value=t?.platform||'INDMoney';
@@ -645,6 +664,73 @@ $('#fTicker').oninput = ()=>{ const t=(D?.data.lists?.tickers||[]).find(x=>x.tic
   if(t&&t.category){ $('#fCategory').value=t.category; onCategory(); } };
 $('#btnClose').onclick = $('#backdrop').onclick = closeSheet;
 $('#fab').onclick = ()=>openSheet(null);
+
+/* ---------- scan a screenshot ---------- */
+$('#btnScan').onclick = ()=>{ $('#fileShot').value=''; $('#fileShot').click(); };
+$('#fileShot').onchange = async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  const b=$('#btnScan'), label=b.querySelector('span');
+  b.disabled=true; label.textContent='Reading…'; $('#formErr').hidden=true; $('#scanNote').hidden=true;
+  try{
+    const shrunk = await shrinkImage(file);
+    const parsed = await apiPost('parseImage', { image: shrunk.base64, mimeType: shrunk.mimeType });
+    applyParsed(parsed);
+  }catch(e){
+    $('#formErr').textContent = e.message;
+    $('#formErr').hidden = false;
+  }finally{ b.disabled=false; label.textContent='Scan a screenshot'; }
+};
+
+// Screenshots are ~3MB; Apps Script chokes on large payloads and OCR doesn't
+// need the pixels. Downscale to 1400px on the long edge before sending.
+function shrinkImage(file){
+  return new Promise((resolve,reject)=>{
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      const MAX=1400, scale=Math.min(1, MAX/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const dataUrl=c.toDataURL('image/jpeg',0.92);
+      resolve({ base64: dataUrl.split(',')[1], mimeType:'image/jpeg' });
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("That file isn't an image the browser can open.")); };
+    img.src = url;
+  });
+}
+
+// Fills the form from a parse result and shows what needs your attention.
+function applyParsed(p){
+  const set=(id,val,filled)=>{ const el=$('#'+id); el.value = (val==null?'':val);
+    el.closest('.f').classList.toggle('filled', !!filled && val!=null && val!==''); };
+  setOrder(p.order || 'Buy');
+  $('#fCategory').value = p.category || 'US Stocks'; onCategory();
+  $('#fPlatform').value = p.platform || 'INDMoney';
+  set('fTicker', p.ticker, true);
+  set('fDate', p.date || new Date().toISOString().slice(0,10), !!p.date);
+  set('fVolume', p.volume, true);
+  set('fPrice', p.price, true);
+  set('fAmount', p.amount, p.amount!=null);
+  // Notional is left blank on purpose — the sheet fills it with =I*J,
+  // matching every row you have entered by hand.
+  set('fNotional', '', false);
+  $('#fAmount').closest('.f').classList.toggle('needs', p.amount==null);
+
+  const bits = [];
+  if (p.amount==null) bits.push('Enter the amount yourself — it could not be read.');
+  (p.warnings||[]).forEach(w=>bits.push(w.charAt(0).toUpperCase()+w.slice(1)+'.'));
+  if (bits.length){
+    $('#scanNote').className = 'note';
+    $('#scanNote').innerHTML = '<b>Check before saving</b>' + bits.map(esc).join('<br>');
+    $('#scanNote').hidden = false;
+  } else {
+    $('#scanNote').className = 'note ok';
+    $('#scanNote').innerHTML = '<b>Read from the screenshot</b>Confirm the figures, pick a bucket, then Save.';
+    $('#scanNote').hidden = false;
+  }
+}
 
 $('#btnSave').onclick = async ()=>{
   const v=id=>$('#'+id).value.trim();
