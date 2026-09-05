@@ -339,7 +339,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-05k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-05m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -382,14 +382,16 @@ async function api(params){
   const u = new URL(cfg.url);
   Object.entries({key:cfg.key,...params}).forEach(([k,v])=>u.searchParams.set(k,v));
   const r = await fetch(u,{redirect:'follow'});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error||'Request failed'); return j;
+  const j = await r.json(); noteScriptBuild(j);
+  if(!j.ok) throw new Error(j.error||'Request failed'); return j;
 }
 async function apiPost(action, data){
   // text/plain avoids a CORS preflight, which Apps Script cannot answer.
   const r = await fetch(cfg.url,{method:'POST',redirect:'follow',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({key:cfg.key, action, data})});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error||'Request failed'); return j.data;
+  const j = await r.json(); noteScriptBuild(j);
+  if(!j.ok) throw new Error(j.error||'Request failed'); return j.data;
 }
 async function refresh(manual){
   if(loading || !cfg) return; loading = true;
@@ -844,7 +846,16 @@ $('#btnConnect').onclick = async ()=>{
 };
 
 // Stamp the build everywhere it's shown, so a stale cached copy is obvious.
-['#buildStamp','#buildStamp2'].forEach(sel=>{ const el=$(sel); if(el) el.textContent = 'App build ' + BUILD; });
+// The script build comes back with every reply, so the footer always shows
+// which deployed version answered — a mismatch means the deployment wasn't
+// republished as a New version.
+var scriptBuild = null;
+function noteScriptBuild(j){ if(j && j.scriptBuild && j.scriptBuild!==scriptBuild){ scriptBuild=j.scriptBuild; stampBuild(); } }
+function stampBuild(){
+  const txt = 'App ' + BUILD + ' · Script ' + (scriptBuild || '—');
+  ['#buildStamp','#buildStamp2'].forEach(sel=>{ const el=$(sel); if(el) el.textContent = txt; });
+}
+stampBuild();
 
 function start(){
   $('#setup').hidden=true; $('#app').hidden=false;
