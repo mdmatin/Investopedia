@@ -196,6 +196,7 @@ th.r,td.r{text-align:right}
 .qall{width:100%;margin-top:8px;padding:10px;border:0;border-radius:var(--r-sm);
   background:var(--blue);color:#fff;font:inherit;font-size:14px;font-weight:590;cursor:pointer}
 .qall[disabled]{opacity:.5}
+#btnSave.warn{background:#8a5a00}
 .ocrcopy{margin:8px 0 0;padding:6px 12px;border:1px solid currentColor;border-radius:999px;
   background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:590;cursor:pointer}
 .ocrtext{margin:6px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;
@@ -356,7 +357,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06l';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -664,7 +665,7 @@ function openSheet(t){
   $('#sheetTitle').textContent = t ? 'Edit transaction' : 'New transaction';
   $('#formErr').hidden = true;
   $('#scanNote').hidden = true;
-  scanQueue = []; scanAt = -1;
+  scanQueue = []; scanAt = -1; dupRow = 0;
   $$('.f').forEach(f=>f.classList.remove('filled','needs'));
   $('#btnScan').hidden = !!t;              // scanning only makes sense for a new row
   $('#btnDelete').hidden = !t; $('#btnDelete').textContent='Delete transaction'; $('#btnDelete').dataset.arm='';
@@ -822,7 +823,22 @@ function applyParsed(p){
   }
   scanQueue = []; scanAt = -1;
   fillForm(p);
+  markDuplicate(p);
   noteFromParse(p);
+}
+
+// A trade the sheet already holds. Saving is still possible — two identical
+// trades in one day are unlikely but not impossible — it just takes a second tap.
+var dupRow = 0;
+function markDuplicate(p){
+  setDup((p && p.existing) ? (p.existingRow || -1) : 0);
+}
+function setDup(row){
+  dupRow = row || 0;
+  const b = $('#btnSave');
+  b.dataset.dup = '';
+  b.textContent = dupRow ? 'Already saved — tap twice to add again' : 'Save';
+  b.classList.toggle('warn', !!dupRow);
 }
 
 // One trade -> the form.
@@ -889,7 +905,7 @@ function wireQueue(){
   $$('#scanNote .qrow').forEach(b=>b.onclick=()=>{
     const i = Number(b.dataset.q);
     if (scanQueue[i].saved) return;
-    scanAt = i; fillForm(scanQueue[i]); redrawQueue();
+    scanAt = i; fillForm(scanQueue[i]); markDuplicate(scanQueue[i]); redrawQueue();
   });
   const all = $('#btnSaveAll');
   if (all) all.onclick = saveAll;
@@ -930,9 +946,18 @@ function tradeData(t){
 }
 
 $('#btnSave').onclick = async ()=>{
+  const b=$('#btnSave');
+  // Refuse a trade the sheet already has, unless it is confirmed.
+  if(dupRow && !b.dataset.dup){
+    b.dataset.dup='1';
+    b.textContent='Tap again to add a second copy';
+    setTimeout(()=>{ if(dupRow && b.dataset.dup){ b.dataset.dup=''; b.textContent='Already saved — tap twice to add again'; } }, 4000);
+    return;
+  }
   const data = formData();
   if(editing) data.row=editing.row;
-  const b=$('#btnSave'); b.disabled=true; b.textContent='Saving…'; $('#formErr').hidden=true;
+  if(dupRow) data.allowDuplicate = true;      // the second tap
+  b.disabled=true; b.textContent='Saving…'; $('#formErr').hidden=true;
   try{
     const res = await apiPost(editing?'editTxn':'addTxn', data);
     const where = res && res.row ? ' · row ' + res.row : '';
@@ -942,7 +967,7 @@ $('#btnSave').onclick = async ()=>{
       scanQueue[scanAt].saved = true;
       const next = scanQueue.findIndex(t=>!t.saved);
       if (next >= 0){
-        scanAt = next; fillForm(scanQueue[next]); redrawQueue();
+        scanAt = next; fillForm(scanQueue[next]); markDuplicate(scanQueue[next]); redrawQueue();
         toast(data.ticker + ' added' + where + ' · ' +
               scanQueue.filter(t=>!t.saved).length + ' left');
         refresh();
@@ -953,11 +978,23 @@ $('#btnSave').onclick = async ()=>{
     toast((editing ? 'Transaction updated' : 'Transaction added') + where);
     refresh();
   }catch(e){
+    // A trade that is already recorded is not really an error — arm the button
+    // so a deliberate second copy takes one more tap.
+    const m = /already in the sheet at row (\d+)/i.exec(e.message || '');
+    if (m && !editing){
+      setDup(Number(m[1]));
+      $('#formErr').innerHTML = '<b>Already in the sheet</b><br>' +
+        'This trade is at row ' + esc(m[1]) + '. Tap Save twice to add it a second time.';
+      $('#formErr').hidden = false;
+      $('#sheet').scrollTop = 0;
+      return;
+    }
     // Stay on the form so nothing typed is lost, and say plainly what failed.
     $('#formErr').innerHTML = '<b>Not saved.</b><br>' + esc(e.message);
     $('#formErr').hidden = false;
     $('#sheet').scrollTop = 0;
-  }finally{ b.disabled=false; b.textContent='Save'; }
+  }finally{ b.disabled=false; b.dataset.dup='';
+    b.textContent = dupRow ? 'Already saved — tap twice to add again' : 'Save'; }
 };
 
 // Saves every remaining trade on the note, stopping at the first failure so
@@ -966,16 +1003,26 @@ async function saveAll(){
   const btn = $('#btnSaveAll');
   if (btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
   $('#formErr').hidden = true;
-  let done = 0, lastRow = null;
+  let done = 0, skipped = 0, lastRow = null;
   try{
     for (let i = 0; i < scanQueue.length; i++){
       if (scanQueue[i].saved) continue;
-      const res = await apiPost('addTxn', tradeData(scanQueue[i]));
+      let res;
+      try {
+        res = await apiPost('addTxn', tradeData(scanQueue[i]));
+      } catch (err) {
+        // Already recorded? Tick it off and carry on with the rest.
+        if (/already in the sheet at row/i.test(err.message || '')) {
+          scanQueue[i].saved = true; scanQueue[i].existing = true; skipped++; continue;
+        }
+        throw err;
+      }
       scanQueue[i].saved = true; done++; lastRow = res && res.row;
     }
     closeSheet();
     toast(done + ' transaction' + (done===1?'':'s') + ' added' +
-          (lastRow ? ' · through row ' + lastRow : ''));
+          (lastRow ? ' · through row ' + lastRow : '') +
+          (skipped ? ' · ' + skipped + ' already there' : ''));
     refresh();
   }catch(e){
     redrawQueue();
