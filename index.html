@@ -187,17 +187,33 @@ th.r,td.r{text-align:right}
 
 /* The selection rides over the bar, taller than it, and travels between tabs
    with an overshoot rather than fading in and out. */
-.tabblob{position:absolute;top:50%;height:76px;border-radius:38px;pointer-events:none;z-index:0;
-  transform:translateY(-50%);
+/* At rest the selection is quiet: a plain neutral capsule sitting inside the
+   bar. The lens — taller than the bar, with its rim and chromatic fringe —
+   only appears while it is travelling, then settles back down. */
+.tabblob{position:absolute;top:50%;left:0;height:52px;border-radius:21px;pointer-events:none;z-index:0;
+  transform:translate(var(--bx,0px),-50%) scaleX(var(--sx,1)) scaleY(var(--sy,1));
+  background:rgba(120,120,128,.13);
+  box-shadow:none;
+  transition:transform .52s cubic-bezier(.5,1.42,.42,1), width .52s cubic-bezier(.5,1.42,.42,1),
+             height .34s cubic-bezier(.32,.72,0,1), border-radius .34s cubic-bezier(.32,.72,0,1),
+             background .34s ease, box-shadow .34s ease}
+/* in flight */
+.tabblob.moving{height:76px;border-radius:38px;
   background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.06) 55%,rgba(255,255,255,.14));
   box-shadow:
     inset 0 2px 1.5px rgba(255,255,255,.9),
     inset 0 -2px 2px rgba(255,255,255,.5),
     inset 0 0 0 1px rgba(255,255,255,.34),
-    0 8px 22px rgba(0,0,0,.14);
-  transition:left .52s cubic-bezier(.5,1.42,.42,1), width .52s cubic-bezier(.5,1.42,.42,1),
-             height .3s cubic-bezier(.32,.72,0,1), transform .22s cubic-bezier(.34,1.4,.5,1)}
-.tabs.pressing .tabblob{transform:translateY(-50%) scale(.93)}
+    0 8px 22px rgba(0,0,0,.14)}
+.tabs.pressing .tabblob{--sx:.93;--sy:.93}
+.tabs.dragging{touch-action:none}
+/* under the finger the position is driven frame by frame, so no easing on
+   transform — the rubber comes from the spring in JS, not from CSS */
+.tabs.dragging .tabblob{transition:width .18s cubic-bezier(.32,.72,0,1),
+  height .3s cubic-bezier(.32,.72,0,1), border-radius .3s cubic-bezier(.32,.72,0,1),
+  background .3s ease, box-shadow .3s ease}
+.tabblob.moving::before{opacity:.85}
+.tabblob.moving::after{opacity:.5}
 /* chromatic fringe — a real lens disperses light at its edge */
 .tabblob::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.6px;
   background:conic-gradient(from 205deg,
@@ -205,11 +221,11 @@ th.r,td.r{text-align:right}
     rgba(128,255,114,.75), rgba(255,95,109,.9));
   -webkit-mask:linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
   -webkit-mask-composite:xor; mask-composite:exclude;
-  filter:blur(1.6px);opacity:.85;mix-blend-mode:plus-lighter}
+  filter:blur(1.6px);opacity:0;mix-blend-mode:plus-lighter;transition:opacity .2s ease}
 /* catchlight inside the lens */
 .tabblob::after{content:"";position:absolute;left:14%;right:30%;top:10%;height:34%;
   border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.8),transparent);
-  filter:blur(3px);opacity:.5}
+  filter:blur(3px);opacity:0;transition:opacity .2s ease}
 
 .tabs button{flex:0 0 auto;min-width:72px;display:flex;flex-direction:column;align-items:center;
   gap:3px;padding:4px 0;font-size:10px;letter-spacing:-.08px;
@@ -226,7 +242,8 @@ th.r,td.r{text-align:right}
 .tabs.min{padding:8px 8px}
 .tabs.min button{min-width:50px}
 .tabs.min .tl{max-height:0;opacity:0}
-.tabs.min .tabblob{height:56px;border-radius:28px}
+.tabs.min .tabblob{height:42px;border-radius:21px}
+.tabs.min .tabblob.moving{height:56px;border-radius:28px}
 
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .tabs{background:rgba(255,255,255,.96)}
@@ -449,7 +466,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1147,11 +1164,23 @@ const TITLES={home:'Investments',break:'Breakdown',trend:'Trends',txn:'Activity'
 const tabBlob = document.createElement('span');
 tabBlob.className = 'tabblob';
 $('.tabs').prepend(tabBlob);
-function moveBlob(){
+let blobFlight = null;
+function slotOf(btn){
+  const b = btn.getBoundingClientRect(), bar = $('.tabs').getBoundingClientRect();
+  return { x: b.left - bar.left + 2, w: b.width - 4 };
+}
+function moveBlob(animate){
   const on = $('.tabs button.on'); if(!on) return;
-  const b = on.getBoundingClientRect(), bar = $('.tabs').getBoundingClientRect();
-  tabBlob.style.left  = (b.left - bar.left + 2) + 'px';
-  tabBlob.style.width = (b.width - 4) + 'px';
+  const s = slotOf(on);
+  const prev = parseFloat(tabBlob.style.getPropertyValue('--bx')) || 0;
+  if (animate && Math.abs(prev - s.x) > 1){
+    // becomes a lens for the length of the journey, then settles
+    tabBlob.classList.add('moving');
+    clearTimeout(blobFlight);
+    blobFlight = setTimeout(()=>tabBlob.classList.remove('moving'), 560);
+  }
+  tabBlob.style.setProperty('--bx', s.x + 'px');
+  tabBlob.style.width = s.w + 'px';
 }
 addEventListener('resize', moveBlob);
 
@@ -1163,10 +1192,85 @@ $$('.tabs button').forEach(b=>{
   t.replaceWith(sp);
 });
 
-// Interactive glass: it gives under the finger and settles back.
-$('.tabs').addEventListener('pointerdown', e=>{ if(e.target.closest('button')) $('.tabs').classList.add('pressing'); });
-['pointerup','pointercancel','pointerleave'].forEach(ev =>
-  $('.tabs').addEventListener(ev, ()=> $('.tabs').classList.remove('pressing')));
+// Interactive glass: it gives under the finger, and can be dragged from one
+// tab to the next — the lens follows the finger and the view changes on release.
+const navBar = $('.tabs');
+navBar.style.touchAction = 'none';
+let navDrag = null;
+
+function tabNearestX(x){
+  let best = null, bestD = Infinity;
+  $$('.tabs button').forEach(b=>{
+    const r = b.getBoundingClientRect(), d = Math.abs(x - (r.left + r.width/2));
+    if (d < bestD) { bestD = d; best = b; }
+  });
+  return best;
+}
+
+navBar.addEventListener('pointerdown', e=>{
+  if(!e.target.closest('button')) return;
+  navDrag = { x0:e.clientX, id:e.pointerId, moved:false, target:null };
+  navBar.classList.add('pressing');
+  // Capture is claimed only once a drag really starts — claiming it here would
+  // retarget the click away from the button and break plain taps.
+});
+
+navBar.addEventListener('pointermove', e=>{
+  if(!navDrag || e.pointerId !== navDrag.id) return;
+  if(!navDrag.moved){
+    if(Math.abs(e.clientX - navDrag.x0) < 8) return;     // still a tap
+    navDrag.moved = true;
+    try { navBar.setPointerCapture(navDrag.id); } catch(_){}
+    navBar.classList.remove('pressing');
+    navBar.classList.add('dragging');
+    tabBlob.classList.add('moving');                      // becomes the lens
+    clearTimeout(blobFlight);
+    navSpring.x = parseFloat(tabBlob.style.getPropertyValue('--bx')) || 0;
+    navSpring.v = 0;
+    cancelAnimationFrame(navSpring.raf); navTick();
+  }
+  const t = tabNearestX(e.clientX);
+  navDrag.target = t;
+  $$('.tabs button').forEach(b=>b.classList.toggle('on', b===t));   // live feedback
+  const br = navBar.getBoundingClientRect();
+  const s = slotOf(t);
+  tabBlob.style.width = s.w + 'px';
+  // the lens chases the finger rather than being pinned to it, and is kept
+  // inside the bar
+  const half = s.w / 2;
+  navSpring.target = Math.max(2, Math.min(br.width - s.w - 2, e.clientX - br.left - half));
+});
+
+// A light spring with velocity-driven stretch: the faster it travels the more
+// it elongates along the axis of motion and thins across it, the way a liquid
+// droplet does. Volume is roughly preserved so it never looks inflated.
+const navSpring = { x:0, v:0, target:0, raf:null };
+function navTick(){
+  navSpring.v += (navSpring.target - navSpring.x) * 0.26;
+  navSpring.v *= 0.74;
+  navSpring.x += navSpring.v;
+  const stretch = Math.min(Math.abs(navSpring.v) * 0.011, 0.20);
+  tabBlob.style.setProperty('--bx', navSpring.x.toFixed(2) + 'px');
+  tabBlob.style.setProperty('--sx', (1 + stretch).toFixed(3));
+  tabBlob.style.setProperty('--sy', (1 - stretch * 0.55).toFixed(3));
+  navSpring.raf = requestAnimationFrame(navTick);
+}
+
+function endNavDrag(e){
+  if(!navDrag) return;
+  const wasDrag = navDrag.moved, target = navDrag.target;
+  navDrag = null;
+  navBar.classList.remove('pressing');
+  if(!wasDrag) return;                                    // a tap; the click handles it
+  cancelAnimationFrame(navSpring.raf); navSpring.raf = null;
+  tabBlob.style.setProperty('--sx', 1); tabBlob.style.setProperty('--sy', 1);
+  navBar.classList.remove('dragging');
+  const v = (target || tabNearestX(e.clientX)).dataset.v;
+  if(v !== activeView) show(v); else moveBlob();
+  clearTimeout(blobFlight);
+  blobFlight = setTimeout(()=>tabBlob.classList.remove('moving'), 420);
+}
+['pointerup','pointercancel'].forEach(ev => navBar.addEventListener(ev, endNavDrag));
 
 // Minimise while reading down, restore on the first upward scroll.
 let navLastY = 0, navSettle = null;
@@ -1185,7 +1289,7 @@ $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 function show(v){
   activeView=v;
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  moveBlob();
+  moveBlob(true);
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; $('#fab').hidden = v!=='txn';
   window.scrollTo(0,0);
