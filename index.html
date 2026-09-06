@@ -356,7 +356,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -735,13 +735,18 @@ function shrinkImage(file){
       c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
       const cx=c.getContext('2d');
       cx.drawImage(img,0,0,c.width,c.height);
-      // Greyscale + a hard contrast curve: OCR only needs the glyph shapes, and
-      // this cuts the upload to a fraction of the size, which is what was
-      // making the request fail.
+      // Greyscale, to cut the upload size — that part was never the problem.
+      //
+      // What WAS the problem: this used to apply a hard contrast curve
+      // (below 70 to black, above 150 to white). Kite draws its labels in
+      // grey — "Qty.", "Avg.", "Brokerage", the timestamps, NSE/NFO — which
+      // sits around luminance 147 and was being pushed to 245, i.e. erased,
+      // before the image ever reached the OCR. A gentle gamma darkens the
+      // mid-greys instead of blowing them out, and keeps white white.
       const d=cx.getImageData(0,0,c.width,c.height), a=d.data;
       for(let i=0;i<a.length;i+=4){
-        const y=0.299*a[i]+0.587*a[i+1]+0.114*a[i+2];
-        const v=y<70?0:y>150?255:Math.round((y-70)*255/80);
+        const y=(0.299*a[i]+0.587*a[i+1]+0.114*a[i+2])/255;
+        const v=Math.round(255*Math.pow(y,1.4));
         a[i]=a[i+1]=a[i+2]=v;
       }
       cx.putImageData(d,0,0);
