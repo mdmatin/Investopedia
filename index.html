@@ -196,6 +196,11 @@ th.r,td.r{text-align:right}
 .qall{width:100%;margin-top:8px;padding:10px;border:0;border-radius:var(--r-sm);
   background:var(--blue);color:#fff;font:inherit;font-size:14px;font-weight:590;cursor:pointer}
 .qall[disabled]{opacity:.5}
+.ocrcopy{margin:8px 0 0;padding:6px 12px;border:1px solid currentColor;border-radius:999px;
+  background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:590;cursor:pointer}
+.ocrtext{margin:6px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;
+  max-height:320px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35;
+  -webkit-user-select:text;user-select:text}
 .scan{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;margin-bottom:14px;
   border-radius:var(--r-mid);background:var(--canvas);border:1px solid var(--card-edge);color:var(--blue);font-weight:600;font-size:16px}
 .scan svg{width:19px;height:19px}
@@ -351,7 +356,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -749,15 +754,38 @@ function shrinkImage(file){
 }
 
 // Fills the form from a parse result and shows what needs your attention.
+// The raw OCR text, with a one-tap copy — when a screenshot reads wrongly this
+// text is the only useful evidence, and retyping it off a phone screen is hopeless.
+function ocrBlock(text){
+  return '<button type="button" class="ocrcopy" id="btnCopyOcr">Copy this text</button>'
+    + '<pre class="ocrtext">' + esc(text || '(nothing)') + '</pre>';
+}
+function wireCopy(text){
+  const b = $('#btnCopyOcr');
+  if (!b) return;
+  b.onclick = async ()=>{
+    try{
+      await navigator.clipboard.writeText(text || '');
+      b.textContent = 'Copied';
+    }catch(e){
+      // Clipboard access can be refused; selecting it is the next best thing.
+      const pre = b.parentNode.querySelector('.ocrtext');
+      const r = document.createRange(); r.selectNodeContents(pre);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      b.textContent = 'Selected — long-press to copy';
+    }
+    setTimeout(()=>{ b.textContent = 'Copy this text'; }, 3000);
+  };
+}
+
 function applyParsed(p){
   if (p && p.parseError){
     $('#formErr').innerHTML = '<b>' + esc(p.parseError) + '</b>'
       + '<div style="margin-top:8px;font-weight:400">This is what it managed to read. '
-      + 'Send it to me and I will fix the parser.</div>'
-      + '<pre style="margin:8px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;'
-      + 'max-height:180px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35">'
-      + esc(p.ocrText || '(nothing)') + '</pre>';
+      + 'Copy it and send it to me and I will fix the parser.</div>'
+      + ocrBlock(p.ocrText);
     $('#formErr').hidden = false;
+    wireCopy(p.ocrText);
     return;
   }
   // A Kite contract note can carry several trades. They become a short queue:
@@ -820,9 +848,7 @@ function noteFromParse(p){
   // Always offer the raw text — when something reads oddly, this is the evidence.
   const peek = p.ocrText
     ? '<details style="margin-top:8px"><summary style="font-size:12px">See what was read</summary>'
-      + '<pre style="margin:6px 0 0;padding:8px;background:rgba(0,0,0,.05);border-radius:8px;'
-      + 'max-height:160px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35">'
-      + esc(p.ocrText) + '</pre></details>'
+      + ocrBlock(p.ocrText) + '</details>'
     : '';
   const queue = queueHtml();
   if (bits.length){
@@ -834,6 +860,7 @@ function noteFromParse(p){
   }
   $('#scanNote').hidden = false;
   wireQueue();
+  wireCopy(p.ocrText);
 }
 
 /* ---- the trade queue from one contract note ---- */
