@@ -151,31 +151,103 @@ th.r,td.r{text-align:right}
 /* ---------- fab + tabs ---------- */
 .fab{position:fixed;right:18px;bottom:calc(104px + env(safe-area-inset-bottom));width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;z-index:6;box-shadow:0 4px 16px rgba(0,102,204,.28)}
 .fab svg{width:23px;height:23px}
-/* Floating glass bar: detached from the edge, content passes underneath it.
-   Two stacked layers do the work — a heavy blur that samples the page behind,
-   and a white wash on top so labels stay legible over any content. Where
-   backdrop-filter is unavailable it degrades to a plain white pill. */
-.tabs{position:fixed;left:14px;right:14px;bottom:calc(10px + env(safe-area-inset-bottom));
-  display:flex;padding:9px 4px;border-radius:26px;z-index:6;
-  background:rgba(255,255,255,.74);
-  backdrop-filter:saturate(200%) blur(34px);-webkit-backdrop-filter:saturate(200%) blur(34px);
-  border:0.5px solid rgba(255,255,255,.7);
-  box-shadow:0 1px 1px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.05);
-  isolation:isolate}
-/* the specular top edge that gives the glass its thickness */
+/* ── Liquid Glass navigation bar ───────────────────────────────────────────
+   The bar is the only glass surface. Apple's rule is that glass never samples
+   other glass — nested backdrop filters read an already-blurred surface and go
+   muddy — so the selection is a shape WITHIN this glass, defined by its rim,
+   its chromatic fringe and a specular highlight, not by a blur of its own. */
+.tabs{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  display:flex;width:auto;padding:10px 10px;gap:2px;border-radius:30px;z-index:6;border:0;
+  background:rgba(255,255,255,.34);
+  backdrop-filter:blur(15px) saturate(200%) brightness(1.07);
+  -webkit-backdrop-filter:blur(15px) saturate(200%) brightness(1.07);
+  box-shadow:
+    inset 0 1.2px .5px rgba(255,255,255,.98),
+    inset 0 -1px .5px rgba(255,255,255,.55),
+    inset 0 0 0 .5px rgba(255,255,255,.55),
+    inset 0 9px 18px -11px rgba(255,255,255,.85),
+    inset 0 -12px 20px -14px rgba(0,0,0,.12),
+    0 14px 34px rgba(0,0,0,.16), 0 3px 10px rgba(0,0,0,.08);
+  isolation:isolate;
+  transition:padding .3s cubic-bezier(.32,.72,0,1)}
+/* lens rim — a ring that blurs harder than the centre, so the edge bends what
+   passes behind it the way a thick piece of glass does */
 .tabs::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 42%);
-  mix-blend-mode:overlay}
+  padding:16px;
+  backdrop-filter:blur(26px) saturate(150%) brightness(1.04);
+  -webkit-backdrop-filter:blur(26px) saturate(150%) brightness(1.04);
+  -webkit-mask:linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+  -webkit-mask-composite:xor; mask-composite:exclude}
+/* specular: a bright sweep off the top edge, fading fast */
+.tabs::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,0) 34%),
+    radial-gradient(130% 90% at 50% -40%, rgba(255,255,255,.45), transparent 62%)}
+
+/* The selection rides over the bar, taller than it, and travels between tabs
+   with an overshoot rather than fading in and out. */
+.tabblob{position:absolute;top:50%;height:76px;border-radius:38px;pointer-events:none;z-index:0;
+  transform:translateY(-50%);
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.06) 55%,rgba(255,255,255,.14));
+  box-shadow:
+    inset 0 2px 1.5px rgba(255,255,255,.9),
+    inset 0 -2px 2px rgba(255,255,255,.5),
+    inset 0 0 0 1px rgba(255,255,255,.34),
+    0 8px 22px rgba(0,0,0,.14);
+  transition:left .52s cubic-bezier(.5,1.42,.42,1), width .52s cubic-bezier(.5,1.42,.42,1),
+             height .3s cubic-bezier(.32,.72,0,1), transform .22s cubic-bezier(.34,1.4,.5,1)}
+.tabs.pressing .tabblob{transform:translateY(-50%) scale(.93)}
+/* chromatic fringe — a real lens disperses light at its edge */
+.tabblob::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.6px;
+  background:conic-gradient(from 205deg,
+    rgba(255,95,109,.9), rgba(255,195,113,.85), rgba(126,232,250,.9),
+    rgba(128,255,114,.75), rgba(255,95,109,.9));
+  -webkit-mask:linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  filter:blur(1.6px);opacity:.85;mix-blend-mode:plus-lighter}
+/* catchlight inside the lens */
+.tabblob::after{content:"";position:absolute;left:14%;right:30%;top:10%;height:34%;
+  border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.8),transparent);
+  filter:blur(3px);opacity:.5}
+
+.tabs button{flex:0 0 auto;min-width:72px;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:4px 0;font-size:10px;letter-spacing:-.08px;
+  position:relative;border-radius:18px;color:var(--ink-2);font-weight:560;z-index:1;
+  transition:min-width .3s cubic-bezier(.32,.72,0,1)}
+.tabs button.on{color:var(--blue)}
+.tabs button:active{transform:none}
+.tabs svg{width:23px;height:23px;opacity:.92}
+
+/* Minimised while reading down a list, restored on the first upward scroll.
+   All four tabs stay tappable — only the labels go. */
+.tabs .tl{display:block;overflow:hidden;max-height:16px;opacity:1;
+  transition:max-height .3s cubic-bezier(.32,.72,0,1), opacity .22s ease}
+.tabs.min{padding:8px 8px}
+.tabs.min button{min-width:50px}
+.tabs.min .tl{max-height:0;opacity:0}
+.tabs.min .tabblob{height:56px;border-radius:28px}
+
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .tabs{background:rgba(255,255,255,.96)}
 }
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;color:var(--ink-3);font-size:10px;font-weight:500;letter-spacing:-.08px}
-.tabs button{position:relative;border-radius:18px;transition:background .18s}
-.tabs button.on{color:var(--blue)}
-.tabs button.on::before{content:"";position:absolute;inset:0 10px;border-radius:15px;
-  background:rgba(0,102,204,.11);z-index:-1}
-.tabs button:active{transform:none}
-.tabs svg{width:23px;height:23px}
+/* The three settings a glass surface has to answer to. */
+@media (prefers-reduced-transparency: reduce){
+  .tabs{background:rgba(255,255,255,.98);backdrop-filter:none;-webkit-backdrop-filter:none;
+        box-shadow:0 8px 26px rgba(0,0,0,.14), inset 0 0 0 .5px rgba(0,0,0,.08)}
+  .tabs::before,.tabs::after{display:none}
+  .tabblob{background:rgba(0,102,204,.12);box-shadow:none;height:56px;border-radius:28px}
+  .tabblob::before,.tabblob::after{display:none}
+}
+@media (prefers-contrast: more){
+  .tabs{background:rgba(255,255,255,.92)}
+  .tabs button{color:var(--ink)}
+  .tabblob{box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.22)}
+  .tabblob::before{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .tabs,.tabs button,.tabs .tl,.tabblob{transition:none}
+}
 
 /* ---------- sheet ---------- */
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:20;opacity:0;transition:opacity .22s}
@@ -377,7 +449,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1068,11 +1140,52 @@ $('#btnDelete').onclick = async ()=>{
    NAV
    ========================================================================== */
 const TITLES={home:'Investments',break:'Breakdown',trend:'Trends',txn:'Activity'};
+
+/* ---------- the navigation lens ---------- */
+// Positioned rather than toggled, so moving between tabs animates as one
+// travelling blob instead of two pills fading in and out.
+const tabBlob = document.createElement('span');
+tabBlob.className = 'tabblob';
+$('.tabs').prepend(tabBlob);
+function moveBlob(){
+  const on = $('.tabs button.on'); if(!on) return;
+  const b = on.getBoundingClientRect(), bar = $('.tabs').getBoundingClientRect();
+  tabBlob.style.left  = (b.left - bar.left + 2) + 'px';
+  tabBlob.style.width = (b.width - 4) + 'px';
+}
+addEventListener('resize', moveBlob);
+
+// Labels are bare text nodes; wrap them so they can collapse when minimised.
+$$('.tabs button').forEach(b=>{
+  const t=[...b.childNodes].find(n=>n.nodeType===3 && n.textContent.trim());
+  if(!t) return;
+  const sp=document.createElement('span'); sp.className='tl'; sp.textContent=t.textContent.trim();
+  t.replaceWith(sp);
+});
+
+// Interactive glass: it gives under the finger and settles back.
+$('.tabs').addEventListener('pointerdown', e=>{ if(e.target.closest('button')) $('.tabs').classList.add('pressing'); });
+['pointerup','pointercancel','pointerleave'].forEach(ev =>
+  $('.tabs').addEventListener(ev, ()=> $('.tabs').classList.remove('pressing')));
+
+// Minimise while reading down, restore on the first upward scroll.
+let navLastY = 0, navSettle = null;
+addEventListener('scroll', ()=>{
+  const y = Math.max(0, window.scrollY);
+  if (Math.abs(y - navLastY) < 6) return;
+  const down = y > navLastY; navLastY = y;
+  const bar = $('.tabs'), want = down && y > 90;
+  if (want === bar.classList.contains('min')) return;
+  bar.classList.toggle('min', want);
+  clearTimeout(navSettle); navSettle = setTimeout(moveBlob, 320);
+}, {passive:true});
+
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 function show(v){
   activeView=v;
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  moveBlob();
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; $('#fab').hidden = v!=='txn';
   window.scrollTo(0,0);
