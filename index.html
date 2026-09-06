@@ -184,6 +184,18 @@ th.r,td.r{text-align:right}
 .note{background:#fff8e6;color:#8a5a00;padding:10px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:12px;line-height:1.4}
 .note.ok{background:#eaf3fc;color:#0a4f9e}
 .note b{display:block;margin-bottom:2px}
+/* A Kite contract note can hold several trades; they queue up here. */
+.qlist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.qrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;
+  padding:9px 12px;border:1px solid var(--card-edge);border-radius:var(--r-sm);
+  background:#fff;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.qrow.on{border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,102,204,.12)}
+.qrow.done{opacity:.55}
+.qrow .qs{color:var(--ink-3);font-size:12px;white-space:nowrap}
+.qrow.done .qs{color:var(--up)}
+.qall{width:100%;margin-top:8px;padding:10px;border:0;border-radius:var(--r-sm);
+  background:var(--blue);color:#fff;font:inherit;font-size:14px;font-weight:590;cursor:pointer}
+.qall[disabled]{opacity:.5}
 .scan{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;margin-bottom:14px;
   border-radius:var(--r-mid);background:var(--canvas);border:1px solid var(--card-edge);color:var(--blue);font-weight:600;font-size:16px}
 .scan svg{width:19px;height:19px}
@@ -307,7 +319,7 @@ th.r,td.r{text-align:right}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a2 2 0 0 1 2-2h3M16 4h3a2 2 0 0 1 2 2v3M21 15v3a2 2 0 0 1-2 2h-3M8 20H5a2 2 0 0 1-2-2v-3"/><path d="M7 12h10"/></svg>
     <span>Scan a screenshot</span>
   </button>
-  <input type="file" id="fileShot" accept="image/*" hidden>
+  <input type="file" id="fileShot" accept="image/*" multiple hidden>
   <div class="seg" id="segOrder"><button data-v="Buy" class="on">Buy</button><button data-v="Sell">Sell</button></div>
   <div class="fields">
     <div class="f"><label>Ticker</label><input id="fTicker" list="tickers" placeholder="NVDA" autocapitalize="characters" autocorrect="off"><datalist id="tickers"></datalist></div>
@@ -339,7 +351,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-05n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-06c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -647,6 +659,7 @@ function openSheet(t){
   $('#sheetTitle').textContent = t ? 'Edit transaction' : 'New transaction';
   $('#formErr').hidden = true;
   $('#scanNote').hidden = true;
+  scanQueue = []; scanAt = -1;
   $$('.f').forEach(f=>f.classList.remove('filled','needs'));
   $('#btnScan').hidden = !!t;              // scanning only makes sense for a new row
   $('#btnDelete').hidden = !t; $('#btnDelete').textContent='Delete transaction'; $('#btnDelete').dataset.arm='';
@@ -675,13 +688,23 @@ $('#fab').onclick = ()=>openSheet(null);
 /* ---------- scan a screenshot ---------- */
 $('#btnScan').onclick = ()=>{ $('#fileShot').value=''; $('#fileShot').click(); };
 $('#fileShot').onchange = async ev => {
-  const file = ev.target.files && ev.target.files[0];
-  if(!file) return;
+  // A Kite contract note often needs more than one screenshot: the charges sit
+  // at the top and scroll away. Pick them all and they are read as one note.
+  const files = [...(ev.target.files || [])].slice(0, 8);
+  if(!files.length) return;
   const b=$('#btnScan'), label=b.querySelector('span');
-  b.disabled=true; label.textContent='Reading…'; $('#formErr').hidden=true; $('#scanNote').hidden=true;
+  b.disabled=true; $('#formErr').hidden=true; $('#scanNote').hidden=true;
   try{
-    const shrunk = await shrinkImage(file);
-    const parsed = await apiPost('parseImage', { image: shrunk.base64, mimeType: shrunk.mimeType });
+    const images = [];
+    for (let i = 0; i < files.length; i++){
+      label.textContent = files.length > 1 ? `Reading ${i+1} of ${files.length}…` : 'Reading…';
+      const shrunk = await shrinkImage(files[i]);
+      images.push({ image: shrunk.base64, mimeType: shrunk.mimeType });
+    }
+    label.textContent = files.length > 1 ? 'Reading…' : label.textContent;
+    const parsed = await apiPost('parseImage', images.length > 1
+      ? { images }
+      : { image: images[0].image, mimeType: images[0].mimeType });
     applyParsed(parsed);
   }catch(e){
     // "Load failed" / "Failed to fetch" mean the request never came back —
@@ -737,6 +760,40 @@ function applyParsed(p){
     $('#formErr').hidden = false;
     return;
   }
+  // A Kite contract note can carry several trades. They become a short queue:
+  // one is in the form, the rest wait, and each is ticked off as it saves.
+  if (p.kind === 'kiteNote'){
+    // Trades the sheet already holds are shown but locked, so a second
+    // screenshot of the same note cannot double-enter them.
+    scanQueue = (p.trades||[]).map(t=>Object.assign({}, t, { saved: !!t.existing }));
+    scanAt = scanQueue.findIndex(t=>!t.saved);
+    if (scanAt < 0 && scanQueue.length){
+      // Everything on this note is already recorded.
+      $('#scanNote').className = 'note ok';
+      $('#scanNote').innerHTML = '<b>Already saved</b>Every trade on that screenshot is in the sheet.' + queueHtml();
+      $('#scanNote').hidden = false;
+      wireQueue();
+      return;
+    }
+    if (scanAt < 0){
+      scanQueue = [];
+      $('#scanNote').className = 'note';
+      $('#scanNote').innerHTML = '<b>Nothing to add</b>' +
+        ((p.warnings||[]).map(esc).join('<br>') || 'No equity trades on that note.');
+      $('#scanNote').hidden = false;
+      return;
+    }
+    fillForm(scanQueue[0]);
+    noteFromParse(p);
+    return;
+  }
+  scanQueue = []; scanAt = -1;
+  fillForm(p);
+  noteFromParse(p);
+}
+
+// One trade -> the form.
+function fillForm(p){
   const set=(id,val,filled)=>{ const el=$('#'+id); el.value = (val==null?'':val);
     el.closest('.f').classList.toggle('filled', !!filled && val!=null && val!==''); };
   setOrder(p.order || 'Buy');
@@ -747,11 +804,17 @@ function applyParsed(p){
   set('fVolume', p.volume, true);
   set('fPrice', p.price, true);
   set('fAmount', p.amount, p.amount!=null);
+  set('fDp',   p.dp   == null ? '' : p.dp,   p.dp   != null && p.dp   !== '');
+  set('fFees', p.fees == null ? '' : p.fees, p.fees != null && p.fees !== '');
   // Notional is left blank on purpose — the sheet fills it with =I*J,
   // matching every row you have entered by hand.
   set('fNotional', '', false);
   $('#fAmount').closest('.f').classList.toggle('needs', p.amount==null);
 
+}
+
+// The advisory panel under the form: warnings, the trade queue, the raw text.
+function noteFromParse(p){
   const bits = [];
   (p.warnings||[]).forEach(w=>bits.push(w.charAt(0).toUpperCase()+w.slice(1)+'.'));
   // Always offer the raw text — when something reads oddly, this is the evidence.
@@ -761,29 +824,100 @@ function applyParsed(p){
       + 'max-height:160px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.35">'
       + esc(p.ocrText) + '</pre></details>'
     : '';
+  const queue = queueHtml();
   if (bits.length){
     $('#scanNote').className = 'note';
-    $('#scanNote').innerHTML = '<b>Check before saving</b>' + bits.map(esc).join('<br>') + peek;
-    $('#scanNote').hidden = false;
+    $('#scanNote').innerHTML = '<b>Check before saving</b>' + bits.map(esc).join('<br>') + queue + peek;
   } else {
     $('#scanNote').className = 'note ok';
-    $('#scanNote').innerHTML = '<b>Read from the screenshot</b>Confirm the figures, pick a bucket, then Save.' + peek;
-    $('#scanNote').hidden = false;
+    $('#scanNote').innerHTML = '<b>Read from the screenshot</b>Confirm the figures, pick a bucket, then Save.' + queue + peek;
   }
+  $('#scanNote').hidden = false;
+  wireQueue();
+}
+
+/* ---- the trade queue from one contract note ---- */
+let scanQueue = [], scanAt = -1;
+
+function queueHtml(){
+  if (scanQueue.length < 2) return '';
+  const rows = scanQueue.map((t,i)=>{
+    const state = t.existing ? 'already in sheet' : t.saved ? 'saved' : (i===scanAt ? 'in the form' : 'waiting');
+    return '<button type="button" class="qrow' + (i===scanAt?' on':'') + (t.saved?' done':'') +
+      '" data-q="'+i+'"><span>'+esc(t.ticker)+' · '+esc(t.order)+'</span>' +
+      '<span class="qs">'+state+'</span></button>';
+  }).join('');
+  const left = scanQueue.filter(t=>!t.saved).length;
+  return '<div class="qlist">'+rows+'</div>' +
+    (left>1 ? '<button type="button" class="qall" id="btnSaveAll">Save all '+left+'</button>' : '');
+  // (trades already in the sheet count as saved, so they are never offered)
+}
+
+function wireQueue(){
+  $$('#scanNote .qrow').forEach(b=>b.onclick=()=>{
+    const i = Number(b.dataset.q);
+    if (scanQueue[i].saved) return;
+    scanAt = i; fillForm(scanQueue[i]); redrawQueue();
+  });
+  const all = $('#btnSaveAll');
+  if (all) all.onclick = saveAll;
+}
+
+function redrawQueue(){
+  const holder = $('#scanNote .qlist');
+  if (!holder) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = queueHtml();
+  holder.parentNode.replaceChild(wrap.firstChild, holder);
+  const old = $('#btnSaveAll'); if (old) old.remove();
+  const left = scanQueue.filter(t=>!t.saved).length;
+  if (left > 1){
+    const b = document.createElement('button');
+    b.type='button'; b.className='qall'; b.id='btnSaveAll';
+    b.textContent = 'Save all ' + left;
+    $('#scanNote').appendChild(b);
+  }
+  wireQueue();
+}
+
+function formData(){
+  const v=id=>$('#'+id).value.trim();
+  const order = $('#segOrder .on').dataset.v;
+  return { date:v('fDate'), ticker:v('fTicker'), category:v('fCategory'), order, platform:v('fPlatform'),
+    amount:v('fAmount'), notional:v('fNotional'), volume:v('fVolume'), price:v('fPrice'),
+    dp:v('fDp'), fees:v('fFees'), remark:v('fRemark'), bucket: order==='Buy' ? v('fBucket') : '' };
+}
+
+// A trade from the queue, ready to post. The bucket comes from the form, so
+// whatever is selected applies to the whole note — the same rule the Shortcut uses.
+function tradeData(t){
+  return { date:t.date, ticker:t.ticker, category:t.category||'Stocks', order:t.order,
+    platform:t.platform||'Kite', amount:t.amount, notional:'', volume:t.volume, price:t.price,
+    dp:(t.dp==null?'':t.dp), fees:(t.fees==null?'':t.fees), remark:'',
+    bucket: t.order==='Buy' ? $('#fBucket').value.trim() : '' };
 }
 
 $('#btnSave').onclick = async ()=>{
-  const v=id=>$('#'+id).value.trim();
-  const order = $('#segOrder .on').dataset.v;
-  const data={ date:v('fDate'), ticker:v('fTicker'), category:v('fCategory'), order, platform:v('fPlatform'),
-    amount:v('fAmount'), notional:v('fNotional'), volume:v('fVolume'), price:v('fPrice'),
-    dp:v('fDp'), fees:v('fFees'), remark:v('fRemark'), bucket: order==='Buy' ? v('fBucket') : '' };
+  const data = formData();
   if(editing) data.row=editing.row;
   const b=$('#btnSave'); b.disabled=true; b.textContent='Saving…'; $('#formErr').hidden=true;
   try{
     const res = await apiPost(editing?'editTxn':'addTxn', data);
-    closeSheet();
     const where = res && res.row ? ' · row ' + res.row : '';
+
+    // Part of a contract note? Tick it off and move to the next rather than closing.
+    if (!editing && scanAt >= 0 && scanQueue[scanAt]){
+      scanQueue[scanAt].saved = true;
+      const next = scanQueue.findIndex(t=>!t.saved);
+      if (next >= 0){
+        scanAt = next; fillForm(scanQueue[next]); redrawQueue();
+        toast(data.ticker + ' added' + where + ' · ' +
+              scanQueue.filter(t=>!t.saved).length + ' left');
+        refresh();
+        return;
+      }
+    }
+    closeSheet();
     toast((editing ? 'Transaction updated' : 'Transaction added') + where);
     refresh();
   }catch(e){
@@ -793,6 +927,35 @@ $('#btnSave').onclick = async ()=>{
     $('#sheet').scrollTop = 0;
   }finally{ b.disabled=false; b.textContent='Save'; }
 };
+
+// Saves every remaining trade on the note, stopping at the first failure so
+// the rest are still there to retry.
+async function saveAll(){
+  const btn = $('#btnSaveAll');
+  if (btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+  $('#formErr').hidden = true;
+  let done = 0, lastRow = null;
+  try{
+    for (let i = 0; i < scanQueue.length; i++){
+      if (scanQueue[i].saved) continue;
+      const res = await apiPost('addTxn', tradeData(scanQueue[i]));
+      scanQueue[i].saved = true; done++; lastRow = res && res.row;
+    }
+    closeSheet();
+    toast(done + ' transaction' + (done===1?'':'s') + ' added' +
+          (lastRow ? ' · through row ' + lastRow : ''));
+    refresh();
+  }catch(e){
+    redrawQueue();
+    $('#formErr').innerHTML = '<b>Stopped after ' + done + ' saved.</b><br>' + esc(e.message);
+    $('#formErr').hidden = false;
+    $('#sheet').scrollTop = 0;
+    refresh();
+  }finally{
+    const b2 = $('#btnSaveAll');
+    if (b2){ b2.disabled = false; b2.textContent = 'Save all ' + scanQueue.filter(t=>!t.saved).length; }
+  }
+}
 $('#btnDelete').onclick = async ()=>{
   const b=$('#btnDelete');
   if(!b.dataset.arm){ b.dataset.arm='1'; b.textContent='Tap again to confirm'; setTimeout(()=>{ b.dataset.arm=''; b.textContent='Delete transaction'; },4000); return; }
