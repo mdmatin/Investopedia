@@ -104,6 +104,31 @@ main{padding:0}
 /* ---------- rows ---------- */
 .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--hairline);width:100%;text-align:left}
 .row:first-child{border-top:0}
+/* ticker tile */
+.tile{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:11px;overflow:visible;
+  display:grid;place-items:center;background:var(--tile,#ececed)}
+.tile .mono{font-size:12px;font-weight:700;letter-spacing:-.3px;color:var(--tileink,#6e6e73)}
+.tile .mono.l3{font-size:10.5px;letter-spacing:-.4px}
+/* logos arrive with white or transparent backgrounds; a white tile with a
+   hairline keeps both kinds legible against the card, and contain stops any
+   of them being cropped */
+.tile img{position:absolute;inset:0;width:100%;height:100%;border-radius:11px;
+  object-fit:contain;padding:5px;background:#fff;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.08);
+  /* invisible until the file actually decodes, so a ticker with no logo never
+     flashes a white box over its monogram on the way past */
+  opacity:0;transition:opacity .12s ease}
+.tile img.ok{opacity:1}
+.tile.us{--tile:#e7f0fd;--tileink:#0b5fc1}
+.tile.in{--tile:#e8f5ec;--tileink:#177245}
+.tile.cr{--tile:#efe9fd;--tileink:#5b3bc4}
+.tile.mf{--tile:#fdf0e2;--tileink:#a35a07}
+.tile.gd{--tile:#fdf4dc;--tileink:#8a6a00}
+.tile.ch{--tile:#eeeef0;--tileink:#6e6e73}
+/* buy / sell as a corner mark, so the side survives the logo taking the tile */
+.tile::after{content:"";position:absolute;right:-3px;bottom:-3px;width:14px;height:14px;
+  border-radius:50%;border:2px solid var(--card);background:var(--up)}
+.tile.sell::after{background:var(--down)}
 .badge{width:38px;height:38px;border-radius:var(--r-sm);background:var(--sunken);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2);flex:none;letter-spacing:-.02em}
 .badge.buy{background:var(--up-bg);color:var(--up)}
 .badge.sell{background:var(--down-bg);color:var(--down)}
@@ -466,7 +491,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-06o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-14a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -600,12 +625,30 @@ function renderHome(d){
     || '<div class="empty">No balances</div>';
 }
 
+// Tickers with a file in /logos show it; everything else — gold, charges,
+// most ETFs and every mutual fund — gets a monogram tinted by category, so a
+// missing logo reads as a deliberate style rather than a hole in the row.
+const LOGO_CAT = { 'US Stocks':'us', 'Stocks':'in', 'Crypto':'cr',
+                   'Mutual Fund':'mf', 'Gold/Silver':'gd', 'Charges':'ch' };
+const logoSafe = t => String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function tickerTile(t){
+  const cls = LOGO_CAT[t.category] || 'in';
+  const file = logoSafe(t.ticker);
+  const mono = esc(initials(t.ticker));
+  // the <img> simply fails to appear when there is no file, revealing the monogram
+  return `<div class="tile ${cls} ${t.order==='Buy'?'buy':'sell'}">
+    <span class="mono${mono.length>2?' l3':''}">${mono}</span>
+    ${file ? `<img loading="lazy" decoding="async" src="logos/${file}.png" alt=""
+       onload="this.classList.add('ok')" onerror="this.remove()">` : ''}
+  </div>`;
+}
+
 function txnRow(t, showDate){
   const buy = t.order==='Buy';
   // dated groups already show the date, so that space goes to the bucket instead
   const meta = [esc(t.platform||'—'), showDate ? fDate(t.date) : (t.bucket?esc(t.bucket):null)].filter(Boolean).join(' · ');
   return `<button class="row" data-row="${t.row}">
-    <div class="badge ${buy?'buy':'sell'}">${buy?'BUY':'SELL'}</div>
+    ${tickerTile(t)}
     <div class="l"><div class="n">${esc(t.ticker)}</div>
       <div class="m">${meta}</div></div>
     <div class="r"><div class="v num money">${fAmt(t)}</div>
