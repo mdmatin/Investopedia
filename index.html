@@ -127,9 +127,12 @@ main{padding:0}
 .tile.ch{--tile:#eeeef0;--tileink:#6e6e73}
 /* buy / sell reads as a letter on the meta line instead of a corner dot, so the
    tile is left to the logo and the side is legible rather than colour-coded */
-/* inline-grid, not flex, so .m keeps its nowrap + ellipsis behaviour untouched */
-.bs{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:4.5px;
-  vertical-align:-2.5px;margin-right:1px;
+/* the chip is a flex child so it centres on the text's optical middle rather
+   than on a guessed baseline offset; the ellipsis moves onto the text span */
+.row .m.side{display:flex;align-items:center;gap:5px}
+.row .m.side > .mtxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .m.side > .sep{flex:none;color:var(--ink-3)}
+.bs{flex:none;display:grid;place-items:center;width:15px;height:15px;border-radius:4.5px;
   font-family:var(--font-disp);font-size:10px;font-weight:700;letter-spacing:0;line-height:1}
 .bs.buy{background:var(--up-bg);color:var(--up)}
 .bs.sell{background:var(--down-bg);color:var(--down)}
@@ -495,7 +498,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-14b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-14c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -651,11 +654,11 @@ function txnRow(t, showDate){
   const buy = t.order==='Buy';
   // dated groups already show the date, so that space goes to the bucket instead
   const meta = [esc(t.platform||'—'), showDate ? fDate(t.date) : (t.bucket?esc(t.bucket):null)].filter(Boolean).join(' · ');
-  const side = `<span class="bs ${buy?'buy':'sell'}" aria-label="${buy?'Buy':'Sell'}">${buy?'B':'S'}</span> · `;
+  const side = `<span class="bs ${buy?'buy':'sell'}" aria-label="${buy?'Buy':'Sell'}">${buy?'B':'S'}</span><span class="sep">·</span>`;
   return `<button class="row" data-row="${t.row}">
     ${tickerTile(t)}
     <div class="l"><div class="n">${esc(t.ticker)}</div>
-      <div class="m">${side}${meta}</div></div>
+      <div class="m side">${side}<span class="mtxt">${meta}</span></div></div>
     <div class="r"><div class="v num money">${fAmt(t)}</div>
       ${isUSD(t)&&t.inr!=null?`<div class="s num money">${fINR(Math.abs(t.inr))}</div>`:''}</div>
   </button>`;
