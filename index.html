@@ -104,11 +104,11 @@ main{padding:0}
 /* ---------- rows ---------- */
 .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--hairline);width:100%;text-align:left}
 .row:first-child{border-top:0}
-/* ticker tile */
+/* one mark for every list: category icon underneath, ticker logo on top when
+   there is a file for it */
 .tile{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:11px;overflow:visible;
-  display:grid;place-items:center;background:var(--tile,#ececed)}
-.tile .mono{font-size:12px;font-weight:700;letter-spacing:-.3px;color:var(--tileink,#6e6e73)}
-.tile .mono.l3{font-size:10.5px;letter-spacing:-.4px}
+  display:grid;place-items:center;background:var(--tile,#ececed);color:var(--tileink,#6e6e73)}
+.tile svg{width:21px;height:21px;display:block}
 /* logos arrive with white or transparent backgrounds; a white tile with a
    hairline keeps both kinds legible against the card, and contain stops any
    of them being cropped */
@@ -116,7 +116,7 @@ main{padding:0}
   object-fit:contain;padding:5px;background:#fff;
   box-shadow:inset 0 0 0 .5px rgba(0,0,0,.08);
   /* invisible until the file actually decodes, so a ticker with no logo never
-     flashes a white box over its monogram on the way past */
+     flashes a white box over its icon on the way past */
   opacity:0;transition:opacity .12s ease}
 .tile img.ok{opacity:1}
 .tile.us{--tile:#e7f0fd;--tileink:#0b5fc1}
@@ -125,6 +125,10 @@ main{padding:0}
 .tile.mf{--tile:#fdf0e2;--tileink:#a35a07}
 .tile.gd{--tile:#fdf4dc;--tileink:#8a6a00}
 .tile.ch{--tile:#eeeef0;--tileink:#6e6e73}
+.tile.lq{--tile:#e2f4f7;--tileink:#0b6b7d}   /* liquid / parking          */
+.tile.rt{--tile:#eceaf7;--tileink:#4a44a8}   /* NPS, EPF, PPF             */
+.tile.bk{--tile:#e9f1ee;--tileink:#2d6b5c}   /* wallets, bank balances    */
+.tile.bu{--tile:#eef0f4;--tileink:#4a5568}   /* buckets, anything unknown */
 /* buy / sell reads as a letter on the meta line instead of a corner dot, so the
    tile is left to the logo and the side is legible rather than colour-coded */
 /* the chip is a flex child so it centres on the text's optical middle rather
@@ -136,9 +140,6 @@ main{padding:0}
   font-family:var(--font-disp);font-size:10px;font-weight:700;letter-spacing:0;line-height:1}
 .bs.buy{background:var(--up-bg);color:var(--up)}
 .bs.sell{background:var(--down-bg);color:var(--down)}
-.badge{width:38px;height:38px;border-radius:var(--r-sm);background:var(--sunken);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2);flex:none;letter-spacing:-.02em}
-.badge.buy{background:var(--up-bg);color:var(--up)}
-.badge.sell{background:var(--down-bg);color:var(--down)}
 .row .l{flex:1;min-width:0}
 .row .n{font-size:16px;font-weight:600;letter-spacing:-.35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .m{font-size:12.5px;color:var(--ink-2);letter-spacing:-.06px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -498,7 +499,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-14c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-15a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -532,9 +533,6 @@ const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 const isUSD = t => t.category==='US Stocks';
 const fAmt = t => isUSD(t) ? usd.format(t.amount||0) : fINR(t.amount);
 const ago = ms => ms<60e3 ? 'just now' : ms<3600e3 ? Math.round(ms/60e3)+'m ago' : Math.round(ms/3600e3)+'h ago';
-const initials = n => { const clean=String(n).replace(/[^A-Za-z ]/g,'').trim(), w=clean.split(/\s+/);
-  if(w.length>1) return (w[0][0]+w[1][0]).toUpperCase();
-  return (clean.length<=3 ? clean : clean.slice(0,2)).toUpperCase(); };
 
 /* ---------- api ---------- */
 async function api(params){
@@ -610,7 +608,7 @@ function renderHome(d){
     .sort((a,b)=>(b.value||0)-(a.value||0));
   $('#assets').innerHTML = rows.map(a=>`
     <div class="row">
-      <div class="badge">${esc(initials(a.name))}</div>
+      ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div><div class="m num money">Invested ${fINR(a.invested)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>
         <div class="p"><span class="pill sm ${cls(a.dayChange)} num money">${fPct(a.dayChangePct)}</span></div></div>
@@ -625,26 +623,85 @@ function renderHome(d){
   // banks
   const banks = (nw.banks||[]).filter(b=>b.amount);
   $('#banks').innerHTML = banks.map(b=>`
-    <div class="row"><div class="badge">${esc(initials(b.name))}</div>
+    <div class="row">${mark(b.name, FB_BANK)}
       <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.amount)}</div></div></div>`).join('')
     + (h.runningBalance!=null ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(h.runningBalance)}</span></div>` : '')
     || '<div class="empty">No balances</div>';
 }
 
+/* ==========================================================================
+   ICONS — one mark for every list in the app.
+   Resolved from the row's label, not hard-coded per screen, so Overview
+   assets, Balances, Breakdown types, Buckets, Holdings and Activity all draw
+   from the same set and nothing falls back to letters.
+   ========================================================================== */
+const S = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+// small/mid/large cap share one glyph with a different bar filled, so the
+// three read as a family rather than three unrelated pictures
+const cap = n => S(`<path d="M3 20.4h18"/>
+  <rect x="4.6" y="13.6" width="4.2" height="4.6" rx="1" ${n===1?'fill="currentColor"':''}/>
+  <rect x="10.1" y="9.6" width="4.2" height="8.6" rx="1" ${n===2?'fill="currentColor"':''}/>
+  <rect x="15.6" y="5.4" width="4.2" height="12.8" rx="1" ${n===3?'fill="currentColor"':''}/>`);
+const ICONS = {
+  stocks:  S(`<path d="M7 4v3M7 17v3M17 4v2M17 16v4"/><rect x="4.5" y="7" width="5" height="10" rx="1.4"/><rect x="14.5" y="6" width="5" height="10" rx="1.4"/>`),
+  us:      S(`<circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8"/><ellipse cx="12" cy="12" rx="3.7" ry="8.4"/>`),
+  mf:      S(`<rect x="3.4" y="4.2" width="17.2" height="4.4" rx="1.6"/><rect x="3.4" y="9.8" width="17.2" height="4.4" rx="1.6"/><rect x="3.4" y="15.4" width="17.2" height="4.4" rx="1.6"/>`),
+  gold:    S(`<path d="M8.6 5.2h6.8l2.2 4.2H6.4z"/><path d="M4.2 14.5h7.1l2.2 4.2H2z"/><path d="M12.7 14.5h7.1l2.2 4.2h-11.5z"/>`),
+  crypto:  S(`<path d="M12 2.9 20.1 7.5v9L12 21.1 3.9 16.5v-9z"/><path d="M12 8.2 15.4 12 12 15.8 8.6 12z"/>`),
+  charges: S(`<path d="M6 3.4h12v17.2l-2.4-1.6-2.4 1.6-2.4-1.6L8.4 20.6 6 19z"/><path d="M9.2 8.2h5.6M9.2 12.2h5.6"/>`),
+  liquid:  S(`<path d="M12 3.2c3.4 3.7 5.6 6.4 5.6 9.2A5.6 5.6 0 0 1 6.4 12.4c0-2.8 2.2-5.5 5.6-9.2z"/>`),
+  retire:  S(`<path d="M12 3.2 19 6v5.6c0 4.2-2.9 7.4-7 9.2-4.1-1.8-7-5-7-9.2V6z"/><path d="M9.4 12.1l1.9 1.9 3.5-3.6"/>`),
+  bank:    S(`<rect x="3.2" y="6.6" width="17.6" height="12.4" rx="2.6"/><path d="M3.2 10.4h17.6"/><path d="M16.4 15.2h1.6"/>`),
+  bucket:  S(`<path d="M4.4 6.6h15.2l-1.5 12.1a2 2 0 0 1-2 1.7H7.9a2 2 0 0 1-2-1.7z"/><path d="M3.2 6.6a8.8 3.2 0 0 1 17.6 0"/>`),
+  build:   S(`<path d="M3 18.6h18"/><path d="M5.4 15.6c0-4.6 2.9-7.8 6.6-7.8s6.6 3.2 6.6 7.8"/><path d="M10.2 8.4V5.1a1.2 1.2 0 0 1 1.2-1.2h1.2a1.2 1.2 0 0 1 1.2 1.2v3.3"/>`),
+  generic: S(`<circle cx="12" cy="12" r="8.4"/><path d="M12 7.6v8.8M7.6 12h8.8"/>`)
+};
+// first match wins, so order matters: 'US Stocks' has to beat 'Stocks'
+const ICON_MAP = [
+  [/^us\s*stock/i,                        ['us','us']],
+  [/^(stocks?|equit)/i,                   ['stocks','in']],
+  [/^(mutual\s*fund|mf\b|sip)/i,          ['mf','mf']],
+  [/^(gold|silver|sgb|bullion)/i,         ['gold','gd']],
+  [/^crypto/i,                            ['crypto','cr']],
+  [/^(charges?|fees?|less:)/i,            ['charges','ch']],
+  [/^liquid/i,                            ['liquid','lq']],
+  [/^(nps|epf|ppf|pension)/i,             ['retire','rt']],
+  [/(bank|wallet|account|balance|cash)/i, ['bank','bk']],
+  [/^smallcap/i,                          [()=>cap(1),'in']],
+  [/^midcap/i,                            [()=>cap(2),'in']],
+  [/^largecap/i,                          [()=>cap(3),'in']],
+  [/construction|renovat|build/i,         ['build','bu']]
+];
+// fb names the icon to use when nothing matches — the list a row belongs to is
+// itself a strong hint, so a balance called "Jupiter Pot" still reads as money
+function iconFor(label, fb){
+  const s = String(label||'').trim();
+  for (const [re,[k,tint]] of ICON_MAP)
+    if (re.test(s)) return [typeof k==='function' ? k() : ICONS[k], tint];
+  return fb ? [ICONS[fb[0]], fb[1]] : [ICONS.generic,'bu'];
+}
+// a labelled row — assets, balances, breakdown types, buckets
+function mark(label, fb){
+  const [svg,tint] = iconFor(label, fb);
+  return `<div class="tile ${tint}">${svg}</div>`;
+}
+const FB_BANK   = ['bank','bk'];
+const FB_BUCKET = ['bucket','bu'];
+
 // Tickers with a file in /logos show it; everything else — gold, charges,
-// most ETFs and every mutual fund — gets a monogram tinted by category, so a
-// missing logo reads as a deliberate style rather than a hole in the row.
+// most ETFs and every mutual fund — shows its category icon, so a missing
+// logo reads as a deliberate style rather than a hole in the row.
 const LOGO_CAT = { 'US Stocks':'us', 'Stocks':'in', 'Crypto':'cr',
                    'Mutual Fund':'mf', 'Gold/Silver':'gd', 'Charges':'ch' };
 const logoSafe = t => String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 function tickerTile(t){
   const cls = LOGO_CAT[t.category] || 'in';
   const file = logoSafe(t.ticker);
-  const mono = esc(initials(t.ticker));
-  // the <img> simply fails to appear when there is no file, revealing the monogram
-  return `<div class="tile ${cls}">
-    <span class="mono${mono.length>2?' l3':''}">${mono}</span>
+  const [svg] = iconFor(t.category);
+  // the <img> simply fails to appear when there is no file, revealing the icon
+  return `<div class="tile ${cls}">${svg}
     ${file ? `<img loading="lazy" decoding="async" src="logos/${file}.png" alt=""
        onload="this.classList.add('ok')" onerror="this.remove()">` : ''}
   </div>`;
@@ -666,7 +723,7 @@ function txnRow(t, showDate){
 
 function renderBreakdown(bd, bk){
   $('#breakdown').innerHTML = (bd||[]).filter(r=>r.value).map(r=>`
-    <div class="row"><div class="badge">${esc(initials(r.type))}</div>
+    <div class="row">${mark(r.type)}
       <div class="l wrap"><div class="n">${esc(r.type)}</div><div class="m num money">Invested ${fCompact(r.invested)} · realised ${fCompact(r.realized)}</div></div>
       <div class="r"><div class="v num money">${fINR(r.value)}</div>
         <div class="p"><span class="pill sm ${cls(r.currPnl)} num money">${fPct(r.currPnlPct)}</span></div></div>
@@ -674,7 +731,7 @@ function renderBreakdown(bd, bk){
 
   const buckets = (bk&&bk.buckets)||[];
   $('#buckets').innerHTML = buckets.map(b=>`
-    <div class="row"><div class="badge">${esc(initials(b.name))}</div>
+    <div class="row">${mark(b.name, FB_BUCKET)}
       <div class="l wrap"><div class="n">${esc(b.name)}${b.excluded?' <span class="faint" style="font-weight:400">· excluded</span>':''}</div>
         <div class="m num money">Invested ${fCompact(b.invested)}${b.targetPct!=null?' · target '+Math.round(b.targetPct*100)+'%':''}${b.allocation!=null?' · actual '+Math.round(b.allocation*100)+'%':''}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
@@ -690,7 +747,7 @@ function renderBreakdown(bd, bk){
     .filter(h=>h.qty>1e-7).sort((a,b)=>(b.value||0)-(a.value||0));
   $('#holdings').innerHTML = hs.map(h=>{
     const pnl=(h.value||0)-(h.invested||0), pct=h.invested?pnl/h.invested:null;
-    return `<div class="row"><div class="badge">${esc(String(h.ticker).slice(0,4))}</div>
+    return `<div class="row">${tickerTile(h)}
       <div class="l"><div class="n">${esc(h.ticker)}</div><div class="m">${esc(h.platform)} · ${esc(h.bucket)}</div></div>
       <div class="r"><div class="v num money">${fINR(h.value)}</div>
         <div class="p"><span class="pill sm ${cls(pnl)} num money">${fPct(pct)}</span></div></div></div>`;
