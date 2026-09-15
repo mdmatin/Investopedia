@@ -474,7 +474,7 @@ th.r,td.r{text-align:right}
     <div class="f"><label>Category</label><select id="fCategory"></select></div>
     <div class="f"><label>Platform</label><select id="fPlatform"></select></div>
     <div class="f"><label>Date</label><input id="fDate" type="date"></div>
-    <div class="f" id="rowBucket"><label>Bucket</label><select id="fBucket"></select></div>
+    <div class="f" id="rowBucket"><label id="lblBucket">Bucket</label><select id="fBucket"></select></div>
   </div>
   <div class="fields">
     <div class="f"><label>Volume</label><input id="fVolume" type="number" step="any" inputmode="decimal" placeholder="0"></div>
@@ -489,7 +489,7 @@ th.r,td.r{text-align:right}
   </div>
   <button class="btn" id="btnSave">Save</button>
   <button class="btn danger" id="btnDelete" hidden>Delete transaction</button>
-  <p class="hint">Amount left blank is written to the sheet as <b>=Volume × Price</b>, exactly like a hand-typed row. Sells are allocated to buckets by your FIFO script, so Bucket is asked only on buys.
+  <p class="hint">Amount left blank is written to the sheet as <b>=Volume × Price</b>, exactly like a hand-typed row. Leave <b>Bucket</b> blank on a sell and your FIFO script allocates it; choose one and that is written to the row instead. On INDmoney the bucket also moves its dollar wallet.
   <br><span id="buildStamp" class="faint"></span></p>
 </div>
 
@@ -499,7 +499,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-15b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-09-15d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -898,8 +898,10 @@ function openSheet(t){
 }
 function closeSheet(){ $('#backdrop').classList.remove('show'); $('#sheet').classList.remove('show');
   setTimeout(()=>{ $('#backdrop').hidden=true; $('#sheet').hidden=true; },280); }
+// Left blank on a sell, the FIFO script allocates it. Chosen, it is written to
+// the row and overrides FIFO — and either way it decides which wallet moves.
 function setOrder(v){ $$('#segOrder button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  $('#rowBucket').style.opacity = v==='Buy'?1:.4; }
+  $('#lblBucket').textContent = v==='Buy' ? 'Bucket' : 'Bucket · blank = FIFO'; }
 $$('#segOrder button').forEach(b=>b.onclick=()=>setOrder(b.dataset.v));
 function onCategory(){ $('#lblAmount').textContent = $('#fCategory').value==='US Stocks' ? 'Amount $' : 'Amount ₹'; }
 $('#fCategory').onchange = onCategory;
@@ -1150,7 +1152,12 @@ function formData(){
   const order = $('#segOrder .on').dataset.v;
   return { date:v('fDate'), ticker:v('fTicker'), category:v('fCategory'), order, platform:v('fPlatform'),
     amount:v('fAmount'), notional:v('fNotional'), volume:v('fVolume'), price:v('fPrice'),
-    dp:v('fDp'), fees:v('fFees'), remark:v('fRemark'), bucket: order==='Buy' ? v('fBucket') : '' };
+    dp:v('fDp'), fees:v('fFees'), remark:v('fRemark'),
+    // written to the row only on a buy, but always sent so a sell can still
+    // move the INDmoney wallet it belongs to
+    // A blank bucket on a sell leaves the allocation to the FIFO script; a
+    // chosen one is written to the row and takes over from it.
+    bucket: v('fBucket') };
 }
 
 // A trade from the queue, ready to post. The bucket comes from the form, so
@@ -1159,7 +1166,7 @@ function tradeData(t){
   return { date:t.date, ticker:t.ticker, category:t.category||'Stocks', order:t.order,
     platform:t.platform||'Kite', amount:t.amount, notional:'', volume:t.volume, price:t.price,
     dp:(t.dp==null?'':t.dp), fees:(t.fees==null?'':t.fees), remark:'',
-    bucket: t.order==='Buy' ? $('#fBucket').value.trim() : '' };
+    bucket: $('#fBucket').value.trim() };
 }
 
 $('#btnSave').onclick = async ()=>{
