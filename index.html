@@ -161,16 +161,20 @@ main{padding:0}
 .hc-bot{display:grid;grid-template-columns:auto auto auto;justify-content:space-between;
   align-items:flex-end;margin-top:11px;gap:8px}
 .hc-bot .k{font-size:12px;color:var(--ink-3);white-space:nowrap}
-.hc-bot .vv{font-size:17px;font-weight:600;letter-spacing:-.45px;font-variant-numeric:tabular-nums;
+/* same weight and size as the value column on the By type rows below, so the
+   three figures sit quieter than the ticker itself */
+.hc-bot .vv{font-size:16px;font-weight:400;letter-spacing:-.35px;font-variant-numeric:tabular-nums;
   line-height:1.25;white-space:nowrap}
 .hc-bot .right{text-align:right}
-.hc-bot .arrow{font-size:10px;letter-spacing:0}
+/* sized in em so the arrow scales with whatever it sits in — the small label
+   and the larger amount — instead of being a fixed 10px in both */
+.hc-bot .arrow{font-size:.82em;letter-spacing:0;margin-right:1px}
 /* three money columns is tight on a 375px phone — ease the type down rather
    than let the rupee figures run off the card */
 @media (max-width:400px){
   .card.tight{padding:6px 14px;margin:0 12px 14px}
   .hc-bot{gap:6px}
-  .hc-bot .vv{font-size:15.5px;letter-spacing:-.35px}
+  .hc-bot .vv{font-size:15px;letter-spacing:-.3px}
   .hc-bot .k{font-size:11px}
 }
 .listfoot{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);
@@ -547,7 +551,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-03b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-03e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -883,10 +887,10 @@ function renderAssets(holdings, usdInr){
         <div><div class="k">Invested</div><div class="vv">${m(h.invested)}</div></div>
         ${day==null ? '' : `<div style="text-align:center;justify-self:center">
           <div class="k">Today</div>
-          <div class="vv ${cls(day)}">${day>=0?'+':'−'}${m(Math.abs(day))}</div></div>`}
+          <div class="vv ${cls(day)}"><span class="arrow">${day>=0?'▲':'▼'}</span>${m(Math.abs(day))}</div></div>`}
         <div class="right">
           <div class="k">Current ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
-          <div class="vv ${cls(ret)}">${m(h.value)}</div></div>
+          <div class="vv ${cls(ret)}"><span class="arrow">${ret>=0?'▲':'▼'}</span>${m(Math.abs(ret))}</div></div>
       </div>
     </div>`;
   }).join('') + (rows.length
