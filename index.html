@@ -148,6 +148,51 @@ main{padding:0}
 .row .r .v{font-size:16px;letter-spacing:-.35px}
 .row .r .p{margin-top:3px}
 .row .r .s{font-size:12.5px;color:var(--ink-2)}
+
+/* ---------- asset card (Breakdown ▸ Assets) ---------- */
+.hcard{padding:14px 0;border-top:1px solid var(--hairline)}
+.hcard:first-child{border-top:0}
+.hc-top{display:flex;align-items:center;gap:12px}
+.hc-name{flex:1;min-width:0}
+.hc-name .n{font-size:16px;font-weight:600;letter-spacing:-.35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-name .sub{font-size:13.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.hc-stats{text-align:right;font-size:13px;color:var(--ink-3);line-height:1.5;white-space:nowrap}
+.hc-stats b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.hc-bot{display:grid;grid-template-columns:auto auto auto;justify-content:space-between;
+  align-items:flex-end;margin-top:11px;gap:8px}
+.hc-bot .k{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.hc-bot .vv{font-size:17px;font-weight:600;letter-spacing:-.45px;font-variant-numeric:tabular-nums;
+  line-height:1.25;white-space:nowrap}
+.hc-bot .right{text-align:right}
+.hc-bot .arrow{font-size:10px;letter-spacing:0}
+/* three money columns is tight on a 375px phone — ease the type down rather
+   than let the rupee figures run off the card */
+@media (max-width:400px){
+  .card.tight{padding:6px 14px;margin:0 12px 14px}
+  .hc-bot{gap:6px}
+  .hc-bot .vv{font-size:15.5px;letter-spacing:-.35px}
+  .hc-bot .k{font-size:11px}
+}
+.listfoot{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);
+  font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- editable cash row ---------- */
+.row.tap{cursor:pointer}
+.row .chev{flex:none;color:var(--ink-3);font-size:15px;line-height:1}
+.ed{padding:16px 0 18px;border-top:1px solid var(--hairline)}
+.ed .inwrap{display:flex;align-items:center;gap:10px;background:var(--parchment);
+  border:1px solid var(--card-edge);border-radius:12px;padding:10px 14px}
+.ed .inwrap span{color:var(--ink-3);font-size:19px}
+.ed input{flex:1;min-width:0;border:0;outline:0;font-size:22px;font-weight:600;letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums;background:none;font-family:var(--font-disp)}
+.ed .quick{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.ed .quick button{padding:7px 13px;font-size:13.5px;font-weight:500;background:var(--sunken);
+  border-radius:var(--r-pill);color:var(--ink)}
+.ed .btns{display:flex;gap:10px;margin-top:13px}
+.ed .btns button{flex:1;padding:12px;border-radius:12px;font-size:16px;font-weight:600}
+.ed .save{background:var(--blue);color:#fff}
+.ed .cancel{background:var(--sunken);color:var(--ink)}
+.ed .save[disabled]{opacity:.5}
 .rowtotal{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);font-weight:600;font-size:16px;letter-spacing:-.35px}
 
 /* ---------- chart ---------- */
@@ -415,6 +460,9 @@ th.r,td.r{text-align:right}
 
     <!-- BREAKDOWN -->
     <section class="view" id="v-break">
+      <div class="sechead"><h2>Assets</h2></div>
+      <div class="chips" id="assetChips"></div>
+      <div class="card tight" id="assetList"></div>
       <div class="sechead"><h2>By type</h2></div>
       <div class="card tight" id="breakdown"></div>
       <div class="sechead"><h2>Buckets</h2></div>
@@ -499,7 +547,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-09-15d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-03a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -574,6 +622,7 @@ function render(){
   if(!D) return;
   const d = D.data;
   renderHome(d);
+  renderAssets(d.holdings, d.netWorth && d.netWorth.head && d.netWorth.head.usdInr);
   renderBreakdown(d.breakdown, d.buckets);
   renderTrends(d.daily, d.monthly);
   renderTxns(d.transactions);
@@ -620,14 +669,66 @@ function renderHome(d){
   $('#recent').innerHTML = rec.map(t=>txnRow(t,true)).join('') || '<div class="empty">No transactions</div>';
   $$('#recent .row').forEach(b=>b.onclick=()=>openSheet((d.transactions||[]).find(t=>t.row==b.dataset.row)));
 
-  // banks
-  const banks = (nw.banks||[]).filter(b=>b.amount);
-  $('#banks').innerHTML = banks.map(b=>`
-    <div class="row">${mark(b.name, FB_BANK)}
+  // banks — tappable, each opening an editor that writes the cell back
+  bankRows = (nw.banks||[]).filter(b=>b.amount);
+  renderBanks(h.runningBalance);
+}
+
+// which balance is open for editing, by index into bankRows
+let bankRows = [], bankOpen = -1;
+function renderBanks(running){
+  const el = $('#banks'); if(!el) return;
+  el.innerHTML = bankRows.map((b,i)=>`
+    <div class="row tap" data-bank="${i}">${bankMark(b.name)}
       <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div></div>
-      <div class="r"><div class="v num money">${fINR(b.amount)}</div></div></div>`).join('')
-    + (h.runningBalance!=null ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(h.runningBalance)}</span></div>` : '')
+      <div class="r"><div class="v num money">${fINR(b.amount)}</div></div>
+      <span class="chev">${bankOpen===i?'⌄':'›'}</span></div>`
+    + (bankOpen===i ? bankEditor(b,i) : '')).join('')
+    + (running!=null ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(running)}</span></div>` : '')
     || '<div class="empty">No balances</div>';
+
+  $$('#banks .row.tap').forEach(r=>r.onclick=e=>{
+    if(e.target.closest('.ed')) return;              // taps inside the editor aren't a toggle
+    const i = Number(r.dataset.bank);
+    bankOpen = bankOpen===i ? -1 : i;
+    renderBanks(running);
+  });
+  const ed = $('#banks .ed'); if(!ed) return;
+  const inp = ed.querySelector('input');
+  inp.focus(); inp.select();
+  ed.querySelectorAll('[data-add]').forEach(q=>q.onclick=()=>{
+    const by = Number(q.dataset.add);
+    inp.value = by===0 ? '0' : String(Math.round(((Number(inp.value)||0) + by) * 100) / 100);
+    inp.focus();
+  });
+  ed.querySelector('.cancel').onclick = ()=>{ bankOpen=-1; renderBanks(running); };
+  ed.querySelector('.save').onclick  = ()=>saveBank(bankRows[bankOpen], inp.value, running);
+  inp.onkeydown = e=>{ if(e.key==='Enter') saveBank(bankRows[bankOpen], inp.value, running); };
+}
+function bankEditor(b){
+  return `<div class="ed">
+    <div class="inwrap"><span>₹</span>
+      <input type="text" inputmode="decimal" value="${b.amount}" aria-label="${esc(b.name)} balance"></div>
+    <div class="quick">
+      <button data-add="1000">+1,000</button><button data-add="5000">+5,000</button>
+      <button data-add="-1000">−1,000</button><button data-add="0">Set 0</button></div>
+    <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div>
+  </div>`;
+}
+async function saveBank(b, raw, running){
+  const amount = Number(String(raw).replace(/[,\s₹]/g,''));
+  if(!isFinite(amount)) { toast('That is not a number'); return; }
+  const btn = $('#banks .ed .save'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  try{
+    const res = await apiPost('setBank', { row:b.row, col:b.col, name:b.name, amount });
+    b.amount = res && res.after!=null ? res.after : amount;
+    bankOpen = -1; renderBanks(running);
+    toast(b.name + ' → ' + fINR(b.amount));
+    refresh();                                        // the running balance is a sheet formula
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='Save'; }
+    toast(e.message || 'Could not save');
+  }
 }
 
 /* ==========================================================================
@@ -690,6 +791,18 @@ function mark(label, fb){
 const FB_BANK   = ['bank','bk'];
 const FB_BUCKET = ['bucket','bu'];
 
+// Bank names carry account digits and spacing ("Jupiter  ●●●2433"), so the
+// logo is matched on the brand inside the name — all three Jupiter rows share
+// one file. Drop a PNG in /logos and add a line here to use it.
+const BANK_LOGOS = [[/sbi/i,'SBI'],[/icici/i,'ICICI'],[/jupiter/i,'JUPITER'],[/deel/i,'DEEL']];
+function bankMark(name){
+  const [svg,tint] = iconFor(name, FB_BANK);
+  let file = '';
+  for (const [re,f] of BANK_LOGOS) if (re.test(name)) { file = f; break; }
+  return `<div class="tile ${tint}">${svg}${file ? `<img loading="lazy" decoding="async"
+    src="logos/${file}.png" alt="" onload="this.classList.add('ok')" onerror="this.remove()">` : ''}</div>`;
+}
+
 // Tickers with a file in /logos show it; everything else — gold, charges,
 // most ETFs and every mutual fund — shows its category icon, so a missing
 // logo reads as a deliberate style rather than a hole in the row.
@@ -719,6 +832,62 @@ function txnRow(t, showDate){
     <div class="r"><div class="v num money">${fAmt(t)}</div>
       ${isUSD(t)&&t.inr!=null?`<div class="s num money">${fINR(Math.abs(t.inr))}</div>`:''}</div>
   </button>`;
+}
+
+/* ---------- Breakdown ▸ Assets ----------
+   One row per ticker from Master List, filtered by category. Every figure on a
+   row is in the currency the sheet holds it in — dollars for US stocks — and
+   the rupee conversion is used only to rank a mixed list and total it. */
+const CAT_ORDER = ['US Stocks','Stocks','Mutual Fund','Gold/Silver','Crypto'];
+const CAT_LABEL = { 'Stocks':'Indian', 'Gold/Silver':'Gold', 'Mutual Fund':'Mutual Fund' };
+let assetCat = 'All';
+
+function renderAssets(holdings, usdInr){
+  const all = holdings || [], fx = usdInr || 1;
+  const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
+  const money = h => v => isUSD(h)
+    ? '$' + (v<0?'−':'') + Math.round(Math.abs(v)).toLocaleString('en-US')
+    : (v<0?'−':'') + '₹' + inr.format(Math.abs(v));
+  const rup2 = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const money2 = h => v => isUSD(h) ? usd.format(v) : '₹' + rup2.format(v);
+  const qtyf = n => n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
+
+  const cats = CAT_ORDER.filter(c=>all.some(h=>h.category===c));
+  $('#assetChips').innerHTML = ['All',...cats].map(c=>
+    `<button class="chip ${c===assetCat?'on':''}" data-c="${esc(c)}">${esc(CAT_LABEL[c]||c)}</button>`).join('');
+  $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; renderAssets(all, fx); });
+
+  const rows = all.filter(h=>assetCat==='All'||h.category===assetCat)
+                  .sort((a,b)=>inInr(b)-inInr(a));
+  // one category filtered → total in its own currency; All → converted to ₹
+  const native = assetCat!=='All' && rows.length && isUSD(rows[0]);
+  const sum = rows.reduce((s,h)=> s + (native ? (h.value||0) : inInr(h)), 0);
+
+  $('#assetList').innerHTML = rows.map(h=>{
+    const m = money(h), m2 = money2(h);
+    const ret = h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
+    const p   = h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
+    const day = h.day;
+    return `<div class="hcard">
+      <div class="hc-top">${tickerTile(h)}
+        <div class="hc-name"><div class="n">${esc(h.ticker)}</div>
+          <div class="sub">${m2(h.ltp)}</div></div>
+        <div class="hc-stats">Avg. <b>${m2(h.avg)}</b><br>Qty. <b>${qtyf(h.qty)}</b></div>
+      </div>
+      <div class="hc-bot">
+        <div><div class="k">Invested</div><div class="vv">${m(h.invested)}</div></div>
+        ${day==null ? '' : `<div style="text-align:center;justify-self:center">
+          <div class="k">Today</div>
+          <div class="vv ${cls(day)}">${day>=0?'+':'−'}${m(Math.abs(day))}</div></div>`}
+        <div class="right">
+          <div class="k">Current ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
+          <div class="vv ${cls(ret)}">${m(h.value)}</div></div>
+      </div>
+    </div>`;
+  }).join('') + (rows.length
+      ? `<div class="listfoot"><span>${rows.length} holding${rows.length===1?'':'s'}</span>
+         <span>${native ? '$'+Math.round(sum).toLocaleString('en-US') : fCompact(sum)}</span></div>`
+      : '<div class="empty">No holdings</div>');
 }
 
 function renderBreakdown(bd, bk){
