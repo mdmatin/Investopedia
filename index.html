@@ -453,7 +453,7 @@ th.r,td.r{text-align:right}
         <div class="kpirow" id="kpis"></div>
       </div>
 
-      <div class="sechead"><h2>Assets</h2><button data-go="break">Breakdown</button></div>
+      <div class="sechead"><h2>Assets</h2><button data-go="break">Holdings</button></div>
       <div class="card tight" id="assets"></div>
 
       <div class="sechead"><h2>Recent</h2><button data-go="txn">All</button></div>
@@ -472,7 +472,7 @@ th.r,td.r{text-align:right}
       <div class="card tight" id="breakdown"></div>
       <div class="sechead"><h2>Buckets</h2></div>
       <div class="card tight" id="buckets"></div>
-      <div class="sechead"><h2>Holdings</h2></div>
+      <div class="sechead"><h2>By bucket</h2></div>
       <div class="chips" id="bucketChips"></div>
       <div class="card tight" id="holdings"></div>
     </section>
@@ -503,7 +503,7 @@ th.r,td.r{text-align:right}
 
   <nav class="tabs">
     <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>Overview</button>
-    <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Breakdown</button>
+    <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Holdings</button>
     <button data-v="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Trends</button>
     <button data-v="txn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</button>
   </nav>
@@ -552,7 +552,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-03g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-03i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -845,7 +845,7 @@ function txnRow(t, showDate){
    the rupee conversion is used only to rank a mixed list and total it. */
 const CAT_ORDER = ['US Stocks','Stocks','Mutual Fund','Gold/Silver','Crypto'];
 const CAT_LABEL = { 'Stocks':'Indian', 'Gold/Silver':'Gold', 'Mutual Fund':'Mutual Fund' };
-let assetCat = 'All';
+let assetCat = 'US Stocks';   // the filter the tab opens on
 
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
@@ -1478,7 +1478,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Investments',break:'Breakdown',trend:'Trends',txn:'Activity'};
+const TITLES={home:'Investments',break:'Holdings',trend:'Trends',txn:'Activity'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
