@@ -157,8 +157,8 @@ main{padding:0}
 .hc-name .n{font-size:16px;font-weight:600;letter-spacing:-.35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hc-name .sub{font-size:13.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .hc-stats{text-align:right;font-size:13px;color:var(--ink-3);line-height:1.5;white-space:nowrap}
-.hc-stats b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-.hc-bot{display:grid;grid-template-columns:auto auto auto;justify-content:space-between;
+.hc-stats b{font-weight:400;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.hc-bot{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
   align-items:flex-end;margin-top:11px;gap:8px}
 .hc-bot .k{font-size:12px;color:var(--ink-3);white-space:nowrap}
 /* same weight and size as the value column on the By type rows below, so the
@@ -166,6 +166,7 @@ main{padding:0}
 .hc-bot .vv{font-size:16px;font-weight:400;letter-spacing:-.35px;font-variant-numeric:tabular-nums;
   line-height:1.25;white-space:nowrap}
 .hc-bot .right{text-align:right}
+.hc-bot .mid{text-align:center}
 /* sized in em so the arrow scales with whatever it sits in — the small label
    and the larger amount — instead of being a fixed 10px in both */
 .hc-bot .arrow{font-size:.82em;letter-spacing:0;margin-right:1px}
@@ -551,7 +552,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-03e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-03g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -849,12 +850,18 @@ let assetCat = 'All';
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
   const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
+  const two = {minimumFractionDigits:2, maximumFractionDigits:2};
   const money = h => v => isUSD(h)
-    ? '$' + (v<0?'−':'') + Math.round(Math.abs(v)).toLocaleString('en-US')
-    : (v<0?'−':'') + '₹' + inr.format(Math.abs(v));
+    ? '$' + (v<0?'−':'') + Math.abs(v).toLocaleString('en-US', two)
+    : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN', two);
   const rup2 = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
   const money2 = h => v => isUSD(h) ? usd.format(v) : '₹' + rup2.format(v);
   const qtyf = n => n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
+  // the fallback when a row's three figures won't fit side by side
+  const short = h => v => { const a=Math.abs(v), sym = isUSD(h) ? '$' : '₹';
+    if (isUSD(h)) return sym + (a>=1e6 ? (a/1e6).toFixed(2)+'M' : a>=1e3 ? (a/1e3).toFixed(2)+'k' : a.toFixed(2));
+    return sym + (a>=1e7 ? (a/1e7).toFixed(2)+'Cr' : a>=1e5 ? (a/1e5).toFixed(2)+'L'
+                : a>=1e3 ? (a/1e3).toFixed(2)+'k' : a.toFixed(2)); };
 
   const cats = CAT_ORDER.filter(c=>all.some(h=>h.category===c));
   $('#assetChips').innerHTML = ['All',...cats].map(c=>
@@ -884,19 +891,36 @@ function renderAssets(holdings, usdInr){
         <div class="hc-stats">Avg. <b>${m2(h.avg)}</b><br>Qty. <b>${qtyf(h.qty)}</b></div>
       </div>
       <div class="hc-bot">
-        <div><div class="k">Invested</div><div class="vv">${m(h.invested)}</div></div>
-        ${day==null ? '' : `<div style="text-align:center;justify-self:center">
+        <div><div class="k">Invested</div>
+          <div class="vv" data-short="${esc(short(h)(h.invested))}"><span class="amt">${m(h.invested)}</span></div></div>
+        ${day==null ? '' : `<div class="mid">
           <div class="k">Today</div>
-          <div class="vv ${cls(day)}"><span class="arrow">${day>=0?'▲':'▼'}</span>${m(Math.abs(day))}</div></div>`}
+          <div class="vv ${cls(day)}" data-short="${esc(short(h)(Math.abs(day)))}"><span class="arrow">${day>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(day))}</span></div></div>`}
         <div class="right">
           <div class="k">Current ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
-          <div class="vv ${cls(ret)}"><span class="arrow">${ret>=0?'▲':'▼'}</span>${m(Math.abs(ret))}</div></div>
+          <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}"><span class="arrow">${ret>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(ret))}</span></div></div>
       </div>
     </div>`;
   }).join('') + (rows.length
       ? `<div class="listfoot"><span>${rows.length} holding${rows.length===1?'':'s'}</span>
          <span>${native ? '$'+Math.round(sum).toLocaleString('en-US') : fCompact(sum)}</span></div>`
       : '<div class="empty">No holdings</div>');
+
+  fitAssetRows();
+}
+
+// Two decimals on every figure is the default, but three money columns on a
+// narrow phone can run out of room. Measure each row as rendered and, only for
+// the ones that actually overflow, fall back to the compact form (₹2.45L).
+function fitAssetRows(){
+  $$('#assetList .hc-bot').forEach(row=>{
+    const overflows = () => row.scrollWidth > row.clientWidth + 1;
+    if (!overflows()) return;
+    row.querySelectorAll('.vv[data-short]').forEach(v=>{
+      const amt = v.querySelector('.amt');
+      if (amt) amt.textContent = v.dataset.short;
+    });
+  });
 }
 
 function renderBreakdown(bd, bk){
