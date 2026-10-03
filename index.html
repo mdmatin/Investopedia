@@ -552,7 +552,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-03i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-03j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -897,8 +897,8 @@ function renderAssets(holdings, usdInr){
           <div class="k">Today</div>
           <div class="vv ${cls(day)}" data-short="${esc(short(h)(Math.abs(day)))}"><span class="arrow">${day>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(day))}</span></div></div>`}
         <div class="right">
-          <div class="k">Current ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
-          <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}"><span class="arrow">${ret>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(ret))}</span></div></div>
+          <div class="k">Returns ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
+          <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}">${ret>=0?'+':'−'}<span class="amt">${m(Math.abs(ret))}</span></div></div>
       </div>
     </div>`;
   }).join('') + (rows.length
