@@ -451,6 +451,12 @@ body.paged{overflow:hidden}
 .sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
 .hcard.tap,.row.tap{cursor:pointer}
+.bkin{margin:0 -20px;padding:0 20px 4px 72px;background:var(--parchment);border-top:1px solid var(--hairline)}
+.bkin .row{border-top-color:var(--hairline)}
+.bkin .row:first-child{border-top:0}
+.bkin .tile{flex-basis:34px;width:34px;height:34px}
+.bkin .tile svg{width:18px;height:18px}
+.bkrow.open .chev{color:var(--ink)}
 .hcard.tap:active,.row.tap:active{opacity:.6}
 
 /* ---------- Face ID lock ---------- */
@@ -540,9 +546,6 @@ body.paged{overflow:hidden}
 
       <div class="hsec" id="s-buckets" hidden>
         <div class="card tight" id="buckets"></div>
-        <div class="sechead"><h2>By bucket</h2></div>
-        <div class="chips" id="bucketChips"></div>
-        <div class="card tight" id="holdings"></div>
       </div>
     </section>
 
@@ -633,7 +636,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -642,7 +645,7 @@ const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' 
 let cfg = load(LS.cfg) || null;
 let D = load(LS.data) || null;
 let timer = null, loading = false, activeView = 'home';
-let range = load(LS.range) || '3M', bucketFilter = 'All', editing = null;
+let range = load(LS.range) || '3M', bucketFilter = 'All', openBucket = null, editing = null;
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -1074,36 +1077,35 @@ function renderPlatforms(bk){
 function renderBreakdown(bd, bk){
   renderPlatforms(bk);
 
+  // tap a bucket to open it in place and show what it holds; tap again to close
   const buckets = (bk&&bk.buckets)||[];
-  $('#buckets').innerHTML = buckets.map(b=>`
-    <div class="row tap" data-bk="${esc(b.name)}">${mark(b.name, FB_BUCKET)}
+  const held = ((bk&&bk.holdings)||[]).filter(h=>h.qty>1e-7);
+  $('#buckets').innerHTML = buckets.map(b=>{
+    const open = openBucket===b.name;
+    const hs = open ? held.filter(h=>h.bucket===b.name).sort((x,y)=>(y.value||0)-(x.value||0)) : [];
+    return `<div class="row tap bkrow ${open?'open':''}" data-bk="${esc(b.name)}">${mark(b.name, FB_BUCKET)}
       <div class="l wrap"><div class="n">${esc(b.name)}${b.excluded?' <span class="faint" style="font-weight:400">· excluded</span>':''}</div>
         <div class="m num money">Invested ${fCompact(b.invested)} · realised ${fCompact(b.realized)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
         <div class="p"><span class="pill sm ${cls(b.currPnl)} num money">${fPct(b.currPnlPct)}</span></div></div>
-    </div>`).join('') || '<div class="empty">No buckets</div>';
-
-  const names = ['All', ...buckets.map(b=>b.name)];
-  $('#bucketChips').innerHTML = names.map(n=>`<button class="chip ${n===bucketFilter?'on':''}" data-b="${esc(n)}">${esc(n)}</button>`).join('');
-  $$('#bucketChips .chip').forEach(c=>c.onclick=()=>{ bucketFilter=c.dataset.b; renderBreakdown(bd,bk); });
-  $$('#buckets .row[data-bk]').forEach(r=>r.onclick=()=>{
-    bucketFilter = r.dataset.bk; renderBreakdown(bd,bk);
-    const head = $('#bucketChips').previousElementSibling || $('#bucketChips');
+      <span class="chev">${open?'⌄':'›'}</span></div>`
+    + (open ? `<div class="bkin">${hs.map(h=>{
+        const pnl=(h.value||0)-(h.invested||0), pct=h.invested?pnl/h.invested:null;
+        return `<div class="row tap" data-t="${esc(h.ticker)}">${tickerTile(h)}
+          <div class="l"><div class="n">${esc(h.ticker)}</div><div class="m">${esc(h.platform)}</div></div>
+          <div class="r"><div class="v num money">${fINR(h.value)}</div>
+            <div class="p"><span class="pill sm ${cls(pnl)} num money">${fPct(pct)}</span></div></div></div>`;
+      }).join('') || '<div class="empty">Nothing held in this bucket</div>'}</div>` : '');
+  }).join('') || '<div class="empty">No buckets</div>';
+  $$('#buckets .bkrow').forEach(r=>r.onclick=()=>{
+    openBucket = openBucket===r.dataset.bk ? null : r.dataset.bk;
+    renderBreakdown(bd,bk);
+    const row = $(`#buckets .bkrow[data-bk="${CSS.escape(r.dataset.bk)}"]`);
     const navH = ($('.nav')||{}).offsetHeight || 0;
-    window.scrollTo({ top: head.getBoundingClientRect().top + window.scrollY - navH - 4, behavior:'smooth' });
+    if (openBucket && row && row.getBoundingClientRect().top < navH)
+      window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - navH - 6, behavior:'smooth' });
   });
-
-  const hs = ((bk&&bk.holdings)||[])
-    .filter(h=>bucketFilter==='All'||h.bucket===bucketFilter)
-    .filter(h=>h.qty>1e-7).sort((a,b)=>(b.value||0)-(a.value||0));
-  $('#holdings').innerHTML = hs.map(h=>{
-    const pnl=(h.value||0)-(h.invested||0), pct=h.invested?pnl/h.invested:null;
-    return `<div class="row tap" data-t="${esc(h.ticker)}">${tickerTile(h)}
-      <div class="l"><div class="n">${esc(h.ticker)}</div><div class="m">${esc(h.platform)} · ${esc(h.bucket)}</div></div>
-      <div class="r"><div class="v num money">${fINR(h.value)}</div>
-        <div class="p"><span class="pill sm ${cls(pnl)} num money">${fPct(pct)}</span></div></div></div>`;
-  }).join('') || '<div class="empty">No holdings</div>';
-  $$('#holdings .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
+  $$('#buckets .bkin .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
 }
 
 function renderTrends(daily, monthly){
