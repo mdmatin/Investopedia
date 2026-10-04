@@ -178,6 +178,10 @@ main{padding:0}
   .hc-bot .vv{font-size:15px;letter-spacing:-.3px}
   .hc-bot .k{font-size:11px}
 }
+.loadmore{display:block;width:calc(100% - 32px);margin:4px 16px 0;padding:13px;border-radius:14px;
+  background:var(--canvas);border:1px solid var(--card-edge);font-size:15px;font-weight:600;color:var(--blue)}
+.loadmore[disabled]{opacity:.55}
+.loadend{text-align:center;padding:14px 16px 0;font-size:12.5px;color:var(--ink-3)}
 .listfoot{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);
   font-weight:600;font-variant-numeric:tabular-nums}
 
@@ -360,6 +364,9 @@ th.r,td.r{text-align:right}
 .seg{display:flex;background:var(--sunken);border-radius:var(--r-mid);padding:3px;margin-bottom:14px}
 .seg button{flex:1;padding:8px;border-radius:11px;font-weight:600;font-size:15px;color:var(--ink-2)}
 .seg button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* the Holdings switcher sits on the page rather than inside a card */
+.seg.segwide{margin:4px 16px 14px}
+.seg.segwide button{font-size:14px;letter-spacing:-.2px}
 .fields{background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);overflow:hidden;margin-bottom:14px}
 .f{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--hairline)}
 .f:first-child{border-top:0}
@@ -465,16 +472,28 @@ th.r,td.r{text-align:right}
 
     <!-- BREAKDOWN -->
     <section class="view" id="v-break">
-      <div class="sechead"><h2>Assets</h2></div>
-      <div class="chips" id="assetChips"></div>
-      <div class="card tight" id="assetList"></div>
-      <div class="sechead"><h2>By type</h2></div>
-      <div class="card tight" id="breakdown"></div>
-      <div class="sechead"><h2>Buckets</h2></div>
-      <div class="card tight" id="buckets"></div>
-      <div class="sechead"><h2>By bucket</h2></div>
-      <div class="chips" id="bucketChips"></div>
-      <div class="card tight" id="holdings"></div>
+      <!-- one page, three views — switching beats scrolling past all of them -->
+      <div class="seg segwide" id="holdSeg">
+        <button data-s="assets" class="on">Assets</button>
+        <button data-s="platforms">Platforms</button>
+        <button data-s="buckets">Buckets</button>
+      </div>
+
+      <div class="hsec" id="s-assets">
+        <div class="chips" id="assetChips"></div>
+        <div class="card tight" id="assetList"></div>
+      </div>
+
+      <div class="hsec" id="s-platforms" hidden>
+        <div class="card tight" id="platformList"></div>
+      </div>
+
+      <div class="hsec" id="s-buckets" hidden>
+        <div class="card tight" id="buckets"></div>
+        <div class="sechead"><h2>By bucket</h2></div>
+        <div class="chips" id="bucketChips"></div>
+        <div class="card tight" id="holdings"></div>
+      </div>
     </section>
 
     <!-- TRENDS -->
@@ -552,7 +571,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-03j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-04b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -923,19 +942,44 @@ function fitAssetRows(){
   });
 }
 
+/* Platform totals are summed from the Bucket Ledger, which already carries a
+   platform per holding — so this costs no extra sheet read. A platform wears
+   the icon of what it holds: Coin, CoinDCX and Coinswitch would all shorten to
+   the same monogram. */
+function renderPlatforms(bk){
+  const hs = ((bk&&bk.holdings)||[]).filter(h=>h.qty>1e-7);
+  const by = new Map();
+  for (const h of hs){
+    const k = h.platform || '—';
+    const o = by.get(k) || { platform:k, invested:0, value:0, realized:0, n:0, cats:[] };
+    o.invested += h.invested||0; o.value += h.value||0; o.realized += h.realized||0; o.n++;
+    if (h.category && o.cats.indexOf(h.category)<0) o.cats.push(h.category);
+    by.set(k, o);
+  }
+  const rows = [...by.values()].sort((a,b)=>b.value-a.value);
+  $('#platformList').innerHTML = rows.map(p=>{
+    const ret = p.value - p.invested, pc = p.invested ? ret/p.invested : null;
+    const [svg,tint] = iconFor(p.cats[0] || '');
+    return `<div class="row"><div class="tile ${tint}">${svg}</div>
+      <div class="l"><div class="n">${esc(p.platform)}</div>
+        <div class="m num money">${p.n} holding${p.n===1?'':'s'} · ${p.cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')}</div></div>
+      <div class="r"><div class="v num money">${fINR(p.value)}</div>
+        <div class="p"><span class="pill sm ${cls(ret)} num money">${fPct(pc)}</span></div></div>
+    </div>`;
+  }).join('') + (rows.length
+      ? `<div class="listfoot"><span>${rows.length} platform${rows.length===1?'':'s'}</span>
+         <span>${fCompact(rows.reduce((s,p)=>s+p.value,0))}</span></div>`
+      : '<div class="empty">No platforms</div>');
+}
+
 function renderBreakdown(bd, bk){
-  $('#breakdown').innerHTML = (bd||[]).filter(r=>r.value).map(r=>`
-    <div class="row">${mark(r.type)}
-      <div class="l wrap"><div class="n">${esc(r.type)}</div><div class="m num money">Invested ${fCompact(r.invested)} · realised ${fCompact(r.realized)}</div></div>
-      <div class="r"><div class="v num money">${fINR(r.value)}</div>
-        <div class="p"><span class="pill sm ${cls(r.currPnl)} num money">${fPct(r.currPnlPct)}</span></div></div>
-    </div>`).join('') || '<div class="empty">No breakdown data</div>';
+  renderPlatforms(bk);
 
   const buckets = (bk&&bk.buckets)||[];
   $('#buckets').innerHTML = buckets.map(b=>`
     <div class="row">${mark(b.name, FB_BUCKET)}
       <div class="l wrap"><div class="n">${esc(b.name)}${b.excluded?' <span class="faint" style="font-weight:400">· excluded</span>':''}</div>
-        <div class="m num money">Invested ${fCompact(b.invested)}${b.targetPct!=null?' · target '+Math.round(b.targetPct*100)+'%':''}${b.allocation!=null?' · actual '+Math.round(b.allocation*100)+'%':''}</div></div>
+        <div class="m num money">Invested ${fCompact(b.invested)} · realised ${fCompact(b.realized)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
         <div class="p"><span class="pill sm ${cls(b.currPnl)} num money">${fPct(b.currPnlPct)}</span></div></div>
     </div>`).join('') || '<div class="empty">No buckets</div>';
@@ -973,13 +1017,19 @@ function renderTxns(txns){
   const q=($('#q').value||'').toLowerCase().trim();
   const list=(txns||[]).filter(t=>!q || [t.ticker,t.platform,t.category,t.remark,t.bucket,t.order].join(' ').toLowerCase().includes(q));
   let html='', last=null, open=false;
-  list.slice(0,250).forEach(t=>{
+  // no display cap any more — the list only holds what was deliberately loaded
+  list.forEach(t=>{
     if(t.date!==last){ if(open) html+='</div>'; html+=`<div class="daygroup">${fDate(t.date)}</div><div class="card tight">`; last=t.date; open=true; }
     html+=txnRow(t,false);
   });
   if(open) html+='</div>';
-  $('#txnList').innerHTML = html || '<div class="empty">No transactions</div>';
+  // no point offering older rows while a search is narrowing what is on screen
+  const canLoadMore = !q && !txnsExhausted;
+  $('#txnList').innerHTML = (html || '<div class="empty">No transactions</div>')
+    + (canLoadMore ? `<button class="loadmore" id="btnMoreTxns">Load older</button>` : '')
+    + (txnsExhausted && !q ? `<div class="loadend">${list.length} transactions · that is everything</div>` : '');
   $$('#txnList .row').forEach(b=>b.onclick=()=>openSheet((txns||[]).find(t=>t.row==b.dataset.row)));
+  const more = $('#btnMoreTxns'); if(more) more.onclick = loadOlderTxns;
 }
 $('#q').oninput = ()=> D && renderTxns(D.data.transactions);
 
@@ -1617,6 +1667,46 @@ function show(v){
   window.scrollTo(0,0);
   if(D){ if(v==='trend') renderTrends(D.data.daily,D.data.monthly); if(v==='home') renderHome(D.data); }
 }
+/* ---------- Holdings section switcher ---------- */
+let holdSec = 'assets';
+function showHoldSec(k){
+  holdSec = k;
+  $$('#holdSeg button').forEach(b=>b.classList.toggle('on', b.dataset.s===k));
+  ['assets','platforms','buckets'].forEach(n=>{ const el=$('#s-'+n); if(el) el.hidden = n!==k; });
+  window.scrollTo(0,0);
+}
+$$('#holdSeg button').forEach(b=>b.onclick=()=>showHoldSec(b.dataset.s));
+
+/* ---------- Activity loads older rows on request ----------
+   The first load carries 30 transactions — enough for Overview's Recent list
+   and for the top of Activity. Older ones arrive only when asked for, a page
+   at a time, so nothing pays for history it never looks at. */
+const TXN_PAGE = 120;
+let txnsExhausted = false, txnsBusy = false;
+async function loadOlderTxns(){
+  if (txnsExhausted || txnsBusy || !D) return;
+  txnsBusy = true;
+  const btn = $('#btnMoreTxns');
+  if (btn){ btn.disabled = true; btn.textContent = 'Loading…'; }
+  const had = (D.data.transactions||[]).length;
+  try{
+    const j = await api({ action:'txns', limit: had + TXN_PAGE });   // api() returns the envelope
+    const rows = j && j.data && j.data.transactions;
+    if (rows){
+      // the sheet ran out before the page filled, so there is nothing older
+      if (rows.length <= had) txnsExhausted = true;
+      D.data.transactions = rows;
+      save(LS.data, D);
+      renderTxns(D.data.transactions);
+    }
+  }catch(e){ toast(e.message || 'Could not load older'); }
+  finally{
+    txnsBusy = false;
+    const b2 = $('#btnMoreTxns');
+    if (b2){ b2.disabled = false; b2.textContent = 'Load older'; }
+  }
+}
+
 $('#btnRefresh').onclick=()=>refresh(true);
 $('#btnEye').onclick=()=>{ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); };
 if(load(LS.blur)) document.body.classList.add('blur');
