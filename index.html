@@ -571,7 +571,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-04b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-04d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -626,7 +626,11 @@ async function refresh(manual){
   if(loading || !cfg) return; loading = true;
   $('#btnRefresh').classList.add('spin'); setStatus('Refreshing…','');
   try{
-    const j = await api({action:'all'});
+    const t0 = Date.now();
+    // the refresh button wants the sheet as it is right now; everything else
+    // (auto-refresh, reopening the app) is happy with a copy up to 2 min old
+    const j = await api(manual ? {action:'all', fresh:'1'} : {action:'all'});
+    lastTiming = { ms: j.ms || null, round: Date.now() - t0, cached: !!j.cached };
     D = { data:j.data, at:Date.now() }; save(LS.data, D);
     render(); setStatus('Updated just now','');
   }catch(e){
@@ -1706,6 +1710,27 @@ async function loadOlderTxns(){
     if (b2){ b2.disabled = false; b2.textContent = 'Load older'; }
   }
 }
+
+/* Where did the last refresh go? Long-press the status line under the title.
+   Server timings come back with the payload, so this separates sheet time
+   from network time without any guesswork. */
+let lastTiming = null;
+(function(){
+  const el = $('#statusTxt'); if(!el) return;
+  let t;
+  const show = ()=>{
+    if(!lastTiming){ toast('Refresh first'); return; }
+    const m = lastTiming.ms;
+    const parts = m ? Object.keys(m).filter(k=>k!=='total').sort((a,b)=>m[b]-m[a]).slice(0,3)
+                        .map(k=>k+' '+m[k]+'ms').join(' · ') : 'no server timings';
+    toast(lastTiming.cached
+      ? `round trip ${(lastTiming.round/1000).toFixed(1)}s · served from cache, no sheet work`
+      : `round trip ${(lastTiming.round/1000).toFixed(1)}s · sheet ${m?(m.total/1000).toFixed(1)+'s':'—'} · ${parts}`);
+  };
+  el.addEventListener('touchstart',()=>{ t=setTimeout(show,700); });
+  el.addEventListener('touchend',()=>clearTimeout(t));
+  el.addEventListener('dblclick',show);
+})();
 
 $('#btnRefresh').onclick=()=>refresh(true);
 $('#btnEye').onclick=()=>{ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); };
