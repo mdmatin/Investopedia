@@ -202,6 +202,9 @@ main{padding:0}
 .ed .save{background:var(--blue);color:#fff}
 .ed .cancel{background:var(--sunken);color:var(--ink)}
 .ed .save[disabled]{opacity:.5}
+.rowsub{display:flex;justify-content:space-between;padding:7px 0 0;font-size:14px;color:var(--ink-2)}
+.rowsub:last-child{padding-bottom:12px}
+.rowsub.hi{color:var(--ink);font-weight:600}
 .rowtotal{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);font-weight:600;font-size:16px;letter-spacing:-.35px}
 
 /* ---------- chart ---------- */
@@ -468,6 +471,9 @@ th.r,td.r{text-align:right}
 
       <div class="sechead"><h2>Cash</h2></div>
       <div class="card tight" id="banks"></div>
+
+      <div class="sechead" id="consHead" hidden><h2>Construction fund</h2></div>
+      <div class="card tight" id="construction" hidden></div>
     </section>
 
     <!-- BREAKDOWN -->
@@ -571,7 +577,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-04f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-04g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -698,30 +704,51 @@ function renderHome(d){
   $$('#recent .row').forEach(b=>b.onclick=()=>openSheet((d.transactions||[]).find(t=>t.row==b.dataset.row)));
 
   // banks — tappable, each opening an editor that writes the cell back
-  bankRows = (nw.banks||[]).filter(b=>b.amount);
-  renderBanks(h.runningBalance);
+  EL.banks.rows = (nw.banks||[]).filter(b=>b.amount);
+  EL.banks.foot = h.runningBalance!=null
+    ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(h.runningBalance)}</span></div>` : '';
+  renderEditList(EL.banks);
+
+  // construction fund (Net Worth AB/AC) — same editor; formula rows are read-only
+  const cons = nw.construction || {items:[], summary:[]};
+  $('#consHead').hidden = $('#construction').hidden = !cons.items.length;
+  EL.cons.rows = cons.items;
+  const sum = cons.summary||[], ctot = sum.find(x=>/^total$/i.test(x.name));
+  EL.cons.foot = (ctot ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(ctot.value)}</span></div>` : '')
+    + sum.filter(x=>x!==ctot).map(x=>`<div class="rowsub num money ${/available/i.test(x.name)?'hi':''}">
+        <span>${esc(x.name)}</span><span>${fINR(x.value)}</span></div>`).join('');
+  renderEditList(EL.cons);
 }
 
-// which balance is open for editing, by index into bankRows
-let bankRows = [], bankOpen = -1;
-function renderBanks(running){
-  const el = $('#banks'); if(!el) return;
-  el.innerHTML = bankRows.map((b,i)=>`
-    <div class="row tap" data-bank="${i}">${bankMark(b.name)}
-      <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div></div>
+// Editable money lists (Cash, Construction fund): tap a row to open an editor
+// that writes the cell back through setBank. Rows the sheet computes (formula)
+// aren't tappable — the server would refuse them anyway.
+const EL = {
+  banks: { sel:'#banks',        rows:[], open:-1, foot:'', empty:'No balances' },
+  cons:  { sel:'#construction', rows:[], open:-1, foot:'', empty:'Nothing allocated' }
+};
+function editRowMeta(b){
+  if (b.current!=null) return `Now ${fINR(b.current)}${b.pnl!=null?` · ${b.pnl<0?'−':'+'}${fINR(Math.abs(b.pnl))}`:''}`;
+  return b.formula ? 'From the sheet' : '';
+}
+function renderEditList(L){
+  const el = $(L.sel); if(!el) return;
+  el.innerHTML = L.rows.map((b,i)=>{
+    const meta = editRowMeta(b), can = !b.formula;
+    return `<div class="row ${can?'tap':''}" data-i="${i}">${bankMark(b.name)}
+      <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div>${meta?`<div class="m num money">${meta}</div>`:''}</div>
       <div class="r"><div class="v num money">${fINR(b.amount)}</div></div>
-      <span class="chev">${bankOpen===i?'⌄':'›'}</span></div>`
-    + (bankOpen===i ? bankEditor(b,i) : '')).join('')
-    + (running!=null ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(running)}</span></div>` : '')
-    || '<div class="empty">No balances</div>';
+      ${can?`<span class="chev">${L.open===i?'⌄':'›'}</span>`:'<span class="chev"></span>'}</div>`
+    + (L.open===i ? bankEditor(b) : '');
+  }).join('') + L.foot || `<div class="empty">${L.empty}</div>`;
 
-  $$('#banks .row.tap').forEach(r=>r.onclick=e=>{
+  el.querySelectorAll('.row.tap').forEach(r=>r.onclick=e=>{
     if(e.target.closest('.ed')) return;              // taps inside the editor aren't a toggle
-    const i = Number(r.dataset.bank);
-    bankOpen = bankOpen===i ? -1 : i;
-    renderBanks(running);
+    const i = Number(r.dataset.i);
+    L.open = L.open===i ? -1 : i;
+    renderEditList(L);
   });
-  const ed = $('#banks .ed'); if(!ed) return;
+  const ed = el.querySelector('.ed'); if(!ed) return;
   const inp = ed.querySelector('input');
   inp.focus(); inp.select();
   ed.querySelectorAll('[data-add]').forEach(q=>q.onclick=()=>{
@@ -729,30 +756,30 @@ function renderBanks(running){
     inp.value = by===0 ? '0' : String(Math.round(((Number(inp.value)||0) + by) * 100) / 100);
     inp.focus();
   });
-  ed.querySelector('.cancel').onclick = ()=>{ bankOpen=-1; renderBanks(running); };
-  ed.querySelector('.save').onclick  = ()=>saveBank(bankRows[bankOpen], inp.value, running);
-  inp.onkeydown = e=>{ if(e.key==='Enter') saveBank(bankRows[bankOpen], inp.value, running); };
+  ed.querySelector('.cancel').onclick = ()=>{ L.open=-1; renderEditList(L); };
+  ed.querySelector('.save').onclick  = ()=>saveEdit(L, L.rows[L.open], inp.value);
+  inp.onkeydown = e=>{ if(e.key==='Enter') saveEdit(L, L.rows[L.open], inp.value); };
 }
 function bankEditor(b){
   return `<div class="ed">
     <div class="inwrap"><span>₹</span>
-      <input type="text" inputmode="decimal" value="${b.amount}" aria-label="${esc(b.name)} balance"></div>
+      <input type="text" inputmode="decimal" value="${b.amount ?? 0}" aria-label="${esc(b.name)} amount"></div>
     <div class="quick">
       <button data-add="1000">+1,000</button><button data-add="5000">+5,000</button>
       <button data-add="-1000">−1,000</button><button data-add="0">Set 0</button></div>
     <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div>
   </div>`;
 }
-async function saveBank(b, raw, running){
+async function saveEdit(L, b, raw){
   const amount = Number(String(raw).replace(/[,\s₹]/g,''));
   if(!isFinite(amount)) { toast('That is not a number'); return; }
-  const btn = $('#banks .ed .save'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  const btn = $(L.sel+' .ed .save'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
   try{
     const res = await apiPost('setBank', { row:b.row, col:b.col, name:b.name, amount });
     b.amount = res && res.after!=null ? res.after : amount;
-    bankOpen = -1; renderBanks(running);
+    L.open = -1; renderEditList(L);
     toast(b.name + ' → ' + fINR(b.amount));
-    refresh();                                        // the running balance is a sheet formula
+    refresh();                                        // totals below are sheet formulas
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent='Save'; }
     toast(e.message || 'Could not save');
@@ -867,7 +894,7 @@ function txnRow(t, showDate){
    One row per ticker from Master List, filtered by category. Every figure on a
    row is in the currency the sheet holds it in — dollars for US stocks — and
    the rupee conversion is used only to rank a mixed list and total it. */
-const CAT_ORDER = ['US Stocks','Stocks','Mutual Fund','Gold/Silver','Crypto'];
+const CAT_ORDER = ['US Stocks','Stocks','Gold/Silver','Mutual Fund','Crypto'];
 const CAT_LABEL = { 'Stocks':'Indian', 'Gold/Silver':'Gold', 'Mutual Fund':'Mutual Fund' };
 let assetCat = 'US Stocks';   // the filter the tab opens on
 
