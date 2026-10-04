@@ -420,6 +420,49 @@ th.r,td.r{text-align:right}
 .setup{padding:56px 24px;max-width:520px;margin:0 auto}
 .setup h1{font-family:var(--font-disp);font-size:32px;font-weight:600;letter-spacing:-.9px;margin:0 0 8px;line-height:1.1}
 .setup p{color:var(--ink-2);margin:0 0 24px;font-size:16px;line-height:1.45}
+
+/* ---------- drill-down pages (holding, platform) ---------- */
+.page{position:fixed;inset:0;z-index:15;background:var(--parchment);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+.page.show{transform:none}
+body.paged{overflow:hidden}
+.pg-head{position:sticky;top:0;z-index:2;background:rgba(245,245,247,.86);backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+  display:flex;align-items:center;gap:6px;min-height:44px}
+.pg-back{display:flex;align-items:center;gap:2px;color:var(--blue);font-size:17px;padding:6px 4px;min-width:0}
+.pg-back svg{width:22px;height:22px;flex:none}
+.pg-back span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+.pg-title{position:absolute;left:50%;transform:translateX(-50%);font-weight:600;font-size:17px;letter-spacing:-.4px;
+  max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:14px}
+.pg-card{margin-top:6px}
+.pg-id{display:flex;align-items:center;gap:12px}
+.pg-id .tile{flex-basis:46px;width:46px;height:46px}
+.pg-id .t{font-family:var(--font-disp);font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
+.pg-id .s{font-size:13px;color:var(--ink-2);letter-spacing:-.08px}
+.pg-big{font-family:var(--font-disp);font-size:34px;font-weight:600;letter-spacing:-1px;line-height:1.1;margin:16px 0 4px}
+.pg-cap{font-size:13px;color:var(--ink-2);letter-spacing:-.08px;margin-top:14px}
+.pg-chg{font-size:14.5px;letter-spacing:-.2px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+.pg-chg .k{color:var(--ink-3);font-size:13px}
+.pg-chg .arrow{font-size:.82em}
+.pg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--hairline)}
+.pg-grid .k{font-size:11px;color:var(--ink-3);text-transform:uppercase;font-weight:600;letter-spacing:.02em}
+.pg-grid .v{font-size:15px;font-weight:600;letter-spacing:-.3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
+.pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
+.hcard.tap,.row.tap{cursor:pointer}
+.hcard.tap:active,.row.tap:active{opacity:.6}
+
+/* ---------- Face ID lock ---------- */
+.lock{position:fixed;inset:0;z-index:40;background:var(--parchment);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;padding:24px;text-align:center}
+.lock[hidden]{display:none}
+.lock img{width:76px;height:76px;border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.lock h2{font-family:var(--font-disp);font-size:24px;font-weight:600;letter-spacing:-.5px;margin:6px 0 0}
+.lock p{margin:0;color:var(--ink-2);font-size:15px;min-height:22px}
+.lock .btn{width:auto;padding:13px 26px;margin-top:6px}
+.lock .alt{color:var(--blue);font-size:15px;margin-top:4px}
+#btnLock.on{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -446,6 +489,7 @@ th.r,td.r{text-align:right}
       <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
+      <button id="btnLock" aria-label="Face ID lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path id="lockShackle" d="M8 10.5V7.5a4 4 0 0 1 7.6-1.7"/></svg></button>
       <button id="btnEye" aria-label="Hide amounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       <button id="btnRefresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     </div>
@@ -571,13 +615,25 @@ th.r,td.r{text-align:right}
   <br><span id="buildStamp" class="faint"></span></p>
 </div>
 
+<!-- =================== DRILL-DOWN PAGE =================== -->
+<div class="page" id="page" hidden></div>
+
+<!-- =================== LOCK =================== -->
+<div class="lock" id="lock" hidden>
+  <img src="apple-touch-icon.png?v=folio" alt="">
+  <h2>Folio is locked</h2>
+  <p id="lockMsg"></p>
+  <button class="btn" id="btnUnlock">Unlock with Face ID</button>
+  <button class="alt" id="btnLockPass" hidden>Use passcode instead</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-04j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -626,7 +682,9 @@ async function apiPost(action, data){
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({key:cfg.key, action, data})});
   const j = await r.json(); noteScriptBuild(j);
-  if(!j.ok) throw new Error(j.error||'Request failed'); return j.data;
+  if(!j.ok) throw new Error(j.error||'Request failed');
+  if (action!=='setBank' && typeof tkCache!=='undefined') Object.keys(tkCache).forEach(k=>delete tkCache[k]);
+  return j.data;
 }
 async function refresh(manual){
   if(loading || !cfg) return; loading = true;
@@ -661,6 +719,7 @@ function render(){
   renderTrends(d.daily, d.monthly);
   renderTxns(d.transactions);
   fillLists(d.lists);
+  if (typeof pageStack!=='undefined' && pageStack.length){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 
 const RANGES = {'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
@@ -942,7 +1001,7 @@ function renderAssets(holdings, usdInr){
     const day = h.day==null ? null
               : isUSD(h) ? (haveFx ? h.day / fx : null)
               : h.day;
-    return `<div class="hcard">
+    return `<div class="hcard tap" data-t="${esc(h.ticker)}">
       <div class="hc-top">${tickerTile(h)}
         <div class="hc-name"><div class="n">${esc(h.ticker)}</div>
           <div class="sub">${m2(h.ltp)}</div></div>
@@ -965,6 +1024,7 @@ function renderAssets(holdings, usdInr){
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
+  $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t));
 }
 
 // Two decimals on every figure is the default, but three money columns on a
@@ -998,7 +1058,7 @@ function renderPlatforms(bk){
   const rows = [...by.values()].sort((a,b)=>b.value-a.value);
   $('#platformList').innerHTML = rows.map(p=>{
     const ret = p.value - p.invested, pc = p.invested ? ret/p.invested : null;
-    return `<div class="row">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
+    return `<div class="row tap" data-p="${esc(p.platform)}">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
       <div class="l"><div class="n">${esc(p.platform)}</div>
         <div class="m num money">${p.n} holding${p.n===1?'':'s'} · ${p.cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')}</div></div>
       <div class="r"><div class="v num money">${fINR(p.value)}</div>
@@ -1008,6 +1068,7 @@ function renderPlatforms(bk){
       ? `<div class="listfoot"><span>${rows.length} platform${rows.length===1?'':'s'}</span>
          <span>${fCompact(rows.reduce((s,p)=>s+p.value,0))}</span></div>`
       : '<div class="empty">No platforms</div>');
+  $$('#platformList .row[data-p]').forEach(r=>r.onclick=()=>openPlatform(r.dataset.p));
 }
 
 function renderBreakdown(bd, bk){
@@ -1015,7 +1076,7 @@ function renderBreakdown(bd, bk){
 
   const buckets = (bk&&bk.buckets)||[];
   $('#buckets').innerHTML = buckets.map(b=>`
-    <div class="row">${mark(b.name, FB_BUCKET)}
+    <div class="row tap" data-bk="${esc(b.name)}">${mark(b.name, FB_BUCKET)}
       <div class="l wrap"><div class="n">${esc(b.name)}${b.excluded?' <span class="faint" style="font-weight:400">· excluded</span>':''}</div>
         <div class="m num money">Invested ${fCompact(b.invested)} · realised ${fCompact(b.realized)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
@@ -1025,17 +1086,24 @@ function renderBreakdown(bd, bk){
   const names = ['All', ...buckets.map(b=>b.name)];
   $('#bucketChips').innerHTML = names.map(n=>`<button class="chip ${n===bucketFilter?'on':''}" data-b="${esc(n)}">${esc(n)}</button>`).join('');
   $$('#bucketChips .chip').forEach(c=>c.onclick=()=>{ bucketFilter=c.dataset.b; renderBreakdown(bd,bk); });
+  $$('#buckets .row[data-bk]').forEach(r=>r.onclick=()=>{
+    bucketFilter = r.dataset.bk; renderBreakdown(bd,bk);
+    const head = $('#bucketChips').previousElementSibling || $('#bucketChips');
+    const navH = ($('.nav')||{}).offsetHeight || 0;
+    window.scrollTo({ top: head.getBoundingClientRect().top + window.scrollY - navH - 4, behavior:'smooth' });
+  });
 
   const hs = ((bk&&bk.holdings)||[])
     .filter(h=>bucketFilter==='All'||h.bucket===bucketFilter)
     .filter(h=>h.qty>1e-7).sort((a,b)=>(b.value||0)-(a.value||0));
   $('#holdings').innerHTML = hs.map(h=>{
     const pnl=(h.value||0)-(h.invested||0), pct=h.invested?pnl/h.invested:null;
-    return `<div class="row">${tickerTile(h)}
+    return `<div class="row tap" data-t="${esc(h.ticker)}">${tickerTile(h)}
       <div class="l"><div class="n">${esc(h.ticker)}</div><div class="m">${esc(h.platform)} · ${esc(h.bucket)}</div></div>
       <div class="r"><div class="v num money">${fINR(h.value)}</div>
         <div class="p"><span class="pill sm ${cls(pnl)} num money">${fPct(pct)}</span></div></div></div>`;
   }).join('') || '<div class="empty">No holdings</div>';
+  $$('#holdings .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
 }
 
 function renderTrends(daily, monthly){
@@ -1783,6 +1851,256 @@ function disconnect(){ if(confirm('Disconnect this sheet and enter a new URL / p
   localStorage.removeItem(LS.cfg); localStorage.removeItem(LS.data); location.reload(); } }
 
 /* ---------- setup ---------- */
+/* ==========================================================================
+   DRILL-DOWN PAGES
+   A holding or a platform opens as a page that slides over the tabs. Pages
+   stack — platform ▸ holding — and Back pops one. Everything shown comes from
+   data already loaded, except a holding's full trade history, which is
+   fetched once per ticker and kept until something is saved.
+   ========================================================================== */
+let pageStack = [];
+const tkCache = {};            // ticker → { txns, at } | { loading } | { err }
+
+const nativeMoney = usdRow => v => v==null ? '—'
+  : usdRow ? (v<0?'−':'') + usd.format(Math.abs(v))
+           : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const qtyFmt = n => n==null ? '—' : n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
+const arrowAmt = (v, m) => v==null ? '—'
+  : `<span class="${cls(v)}"><span class="arrow">${v>=0?'▲':'▼'}</span> ${m(Math.abs(v))}</span>`;
+
+function openHolding(ticker){ pushPage({ kind:'holding', ticker:String(ticker) }); }
+function openPlatform(name){ pushPage({ kind:'platform', platform:String(name) }); }
+
+function pushPage(p){
+  pageStack.push(p);
+  const el = $('#page'), opening = el.hidden;
+  if (opening){ el.hidden = false; document.body.classList.add('paged'); }
+  renderPage();
+  el.scrollTop = 0;                       // after unhiding — a hidden element ignores it
+  if (opening) requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+}
+function popPage(){
+  pageStack.pop();
+  const el = $('#page');
+  if (pageStack.length){ renderPage(); el.scrollTop = 0; return; }
+  el.classList.remove('show'); document.body.classList.remove('paged');
+  setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
+}
+function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.platform; }
+
+function renderPage(){
+  const p = pageStack[pageStack.length-1]; if(!p || !D) return;
+  const prev = pageStack[pageStack.length-2];
+  const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
+  const body = p.kind==='holding' ? holdingBody(p.ticker) : platformBody(p.platform);
+  $('#page').innerHTML = `<div class="pg-head">
+      <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
+      <div class="pg-title">${esc(pageTitle(p))}</div></div>` + body;
+  $('#pgBack').onclick = popPage;
+  $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
+  $$('#page .row[data-row]').forEach(b=>b.onclick=()=>{
+    const list = (tkCache[p.ticker]||{}).txns || [];
+    openSheet(list.find(t=>t.row==b.dataset.row));
+  });
+  if (p.kind==='holding') loadTickerTxns(p.ticker);
+}
+
+async function loadTickerTxns(ticker){
+  const c = tkCache[ticker];
+  if (c && (c.txns || c.loading)) return;
+  tkCache[ticker] = { loading:true };
+  try{
+    const j = await api({ action:'ticker', ticker });
+    tkCache[ticker] = { txns: (j.data && j.data.transactions) || [], at: Date.now() };
+  }catch(e){ tkCache[ticker] = { err: e.message || 'Could not load' }; }
+  const top = pageStack[pageStack.length-1];
+  if (top && top.kind==='holding' && top.ticker===ticker){
+    const el = $('#page'), y = el.scrollTop; renderPage(); el.scrollTop = y;
+  }
+}
+
+function holdingBody(ticker){
+  const d = D.data, up = ticker.toUpperCase();
+  const h = (d.holdings||[]).find(x=>String(x.ticker).toUpperCase()===up);
+  const led = ((d.buckets&&d.buckets.holdings)||[]).filter(x=>String(x.ticker).toUpperCase()===up && x.qty>1e-7);
+  const c = tkCache[ticker] || {};
+  const txns = c.txns || [];
+  const cat = (h&&h.category) || (led[0]&&led[0].category) || (txns[0]&&txns[0].category) || '';
+  const usdRow = cat==='US Stocks', m = nativeMoney(usdRow);
+  const fx = d.netWorth && d.netWorth.head && d.netWorth.head.usdInr;
+
+  let card;
+  if (h){
+    const ret = h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
+    const pct = h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
+    // Master List keeps Day in rupees on US rows — same conversion as the Assets list
+    const day = h.day==null ? null : usdRow ? (fx ? h.day/fx : null) : h.day;
+    const first = txns.length ? txns[txns.length-1].date : null;
+    card = `<div class="card pg-card">
+      <div class="pg-id">${tickerTile({ticker, category:cat})}
+        <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')} · LTP ${m(h.ltp)}</div></div></div>
+      <div class="pg-big num money">${m(h.value)}</div>
+      <div class="pg-chg num money">
+        <span><span class="k">Returns</span> ${arrowAmt(ret, m)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span>
+        ${day!=null?`<span><span class="k">Today</span> ${arrowAmt(day, m)}</span>`:''}</div>
+      <div class="pg-grid num money">
+        <div><div class="k">Quantity</div><div class="v">${qtyFmt(h.qty)}</div></div>
+        <div><div class="k">Avg cost</div><div class="v">${m(h.avg)}</div></div>
+        <div><div class="k">Invested</div><div class="v">${m(h.invested)}</div></div>
+        <div><div class="k">Realised</div><div class="v ${cls(h.realized)}">${m(h.realized)}</div></div>
+        <div><div class="k">Total P&amp;L</div><div class="v ${cls(h.totalPnl)}">${m(h.totalPnl)}</div></div>
+        <div><div class="k">First buy</div><div class="v">${first ? new Date(first+'T00:00:00').toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : c.loading ? '…' : '—'}</div></div>
+      </div></div>`;
+  } else {
+    card = `<div class="card pg-card">
+      <div class="pg-id">${tickerTile({ticker, category:cat})}
+        <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')} · not held now</div></div></div></div>`;
+  }
+
+  const held = led.length ? `<div class="sechead"><h2>Held in</h2></div>
+    <div class="card tight">${led.sort((a,b)=>(b.value||0)-(a.value||0)).map(x=>`
+      <div class="row">${logoMark(x.platform, null, iconFor(x.category||''))}
+        <div class="l"><div class="n">${esc(x.platform||'—')}</div><div class="m">${esc(x.bucket||'—')}</div></div>
+        <div class="r"><div class="v num money">${qtyFmt(x.qty)}</div><div class="s num money">${fINR(x.value)}</div></div></div>`).join('')}</div>` : '';
+
+  const buys = txns.filter(t=>t.order==='Buy').length, sells = txns.length - buys;
+  const list = c.err ? `<div class="pg-load">${esc(c.err)}</div>`
+             : !c.txns ? '<div class="pg-load">Loading trades…</div>'
+             : txns.length ? txns.map(t=>txnRow(t,true)).join('')
+             : '<div class="pg-load">No trades found for this ticker</div>';
+  return card + held + `<div class="sechead"><h2>Trades</h2>
+      ${c.txns&&txns.length?`<span class="cnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</span>`:''}</div>
+    <div class="card tight">${list}</div>`;
+}
+
+function platformBody(name){
+  const all = ((D.data.buckets&&D.data.buckets.holdings)||[]).filter(h=>(h.platform||'—')===name && h.qty>1e-7);
+  // one row per ticker — the same ticker can sit in several buckets on a platform
+  const by = new Map();
+  for (const h of all){
+    const o = by.get(h.ticker) || { ticker:h.ticker, category:h.category, qty:0, invested:0, value:0, realized:0, buckets:[] };
+    o.qty += h.qty||0; o.invested += h.invested||0; o.value += h.value||0; o.realized += h.realized||0;
+    if (h.bucket && o.buckets.indexOf(h.bucket)<0) o.buckets.push(h.bucket);
+    by.set(h.ticker, o);
+  }
+  const rows = [...by.values()].sort((a,b)=>b.value-a.value);
+  const inv = rows.reduce((s,r)=>s+r.invested,0), val = rows.reduce((s,r)=>s+r.value,0),
+        rl = rows.reduce((s,r)=>s+r.realized,0), ret = val-inv, pct = inv ? ret/inv : null;
+  const cats = [...new Set(rows.map(r=>r.category).filter(Boolean))];
+  const fI = v => fINR(v);
+  return `<div class="card pg-card">
+      <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
+        <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'}</div></div></div>
+      <div class="pg-big num money">${fINR(val)}</div>
+      <div class="pg-chg num money"><span><span class="k">Returns</span> ${arrowAmt(ret, fI)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span></div>
+      <div class="pg-grid num money">
+        <div><div class="k">Invested</div><div class="v">${fINR(inv)}</div></div>
+        <div><div class="k">Realised</div><div class="v ${cls(rl)}">${fINR(rl)}</div></div>
+        <div><div class="k">Holdings</div><div class="v">${rows.length}</div></div>
+      </div></div>
+    <div class="sechead"><h2>Holdings</h2></div>
+    <div class="card tight">${rows.map(r=>{
+      const g = r.value-r.invested, gp = r.invested ? g/r.invested : null;
+      return `<div class="row tap" data-t="${esc(r.ticker)}">${tickerTile(r)}
+        <div class="l"><div class="n">${esc(r.ticker)}</div><div class="m">${qtyFmt(r.qty)} · ${r.buckets.map(esc).join(', ')||'—'}</div></div>
+        <div class="r"><div class="v num money">${fINR(r.value)}</div>
+          <div class="p"><span class="pill sm ${cls(g)} num money">${fPct(gp)}</span></div></div></div>`;
+    }).join('') || '<div class="empty">Nothing held here</div>'}</div>`;
+}
+
+/* ==========================================================================
+   FACE ID LOCK
+   A passkey made on this phone, checked with Face ID whenever the app opens or
+   comes back after a minute away. The passkey only gates the screen here — the
+   sheet passcode still guards the data — so the sheet passcode is also
+   accepted as a fallback in case the passkey is ever removed.
+   ========================================================================== */
+const LOCK_AFTER_MS = 60 * 1000;
+let lockCfg = load('inv.lock'), lockBusy = false, hiddenAt = 0, lockedNow = false;
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((s.length+3)%4)), c=>c.charCodeAt(0));
+const rand = n => crypto.getRandomValues(new Uint8Array(n));
+
+function paintLockBtn(){
+  const b = $('#btnLock'); if(!b) return;
+  b.classList.toggle('on', !!lockCfg);
+  b.setAttribute('aria-label', lockCfg ? 'Lock now' : 'Turn on Face ID lock');
+  $('#lockShackle').setAttribute('d', lockCfg ? 'M8 10.5V7.5a4 4 0 0 1 8 0v3' : 'M8 10.5V7.5a4 4 0 0 1 7.6-1.7');
+}
+async function enrollLock(){
+  if (!window.PublicKeyCredential || !navigator.credentials){ toast('Face ID isn\'t available in this browser'); return; }
+  try{
+    const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!ok){ toast('Face ID isn\'t set up on this device'); return; }
+  }catch(e){}
+  try{
+    const cred = await navigator.credentials.create({ publicKey:{
+      rp:{ name:'Folio' },
+      user:{ id: rand(16), name:'folio', displayName:'Folio' },
+      challenge: rand(32),
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' },
+      timeout: 60000, attestation:'none' }});
+    lockCfg = { id: b64u(cred.rawId), at: Date.now() }; save('inv.lock', lockCfg);
+    paintLockBtn(); toast('Face ID lock is on');
+  }catch(e){ toast(e && e.name==='NotAllowedError' ? 'Face ID lock not turned on' : 'Could not set up Face ID: '+(e.message||e)); }
+}
+async function verifyFace(){
+  return navigator.credentials.get({ publicKey:{
+    challenge: rand(32), timeout: 60000, userVerification:'required',
+    allowCredentials:[{ type:'public-key', id: unb64u(lockCfg.id), transports:['internal','hybrid'] }] }});
+}
+function lockNow(auto){
+  if (!lockCfg) return;
+  lockedNow = true;
+  $('#lock').hidden = false; $('#lockMsg').textContent = '';
+  if (auto) tryUnlock(true);
+}
+function unlockScreen(){ lockedNow = false; $('#lock').hidden = true; $('#btnLockPass').hidden = true; }
+async function tryUnlock(auto){
+  if (lockBusy || !lockCfg) return; lockBusy = true;
+  try{ await verifyFace(); unlockScreen(); }
+  catch(e){
+    // iOS may refuse a Face ID prompt the user didn't tap for — that's not a failure
+    $('#lockMsg').textContent = auto ? '' : 'Face ID didn\'t work. Try again.';
+    if (!auto) $('#btnLockPass').hidden = false;
+  }finally{ lockBusy = false; }
+}
+$('#btnUnlock').onclick = ()=>tryUnlock(false);
+$('#btnLockPass').onclick = ()=>{
+  const v = prompt('Sheet passcode');
+  if (v!=null && cfg && v.trim()===String(cfg.key)) unlockScreen();
+  else if (v!=null) $('#lockMsg').textContent = 'That passcode doesn\'t match.';
+};
+(function(){
+  const b = $('#btnLock'); let t, long = false;
+  const off = async ()=>{
+    long = true;
+    if (!lockCfg){ toast('Tap to turn on Face ID lock'); return; }
+    try{ await verifyFace(); }catch(e){ toast('Face ID is needed to turn the lock off'); return; }
+    if (confirm('Turn off Face ID lock?')){ lockCfg = null; localStorage.removeItem('inv.lock'); paintLockBtn(); toast('Face ID lock is off'); }
+  };
+  b.addEventListener('touchstart', ()=>{ long = false; t = setTimeout(off, 700); }, {passive:true});
+  b.addEventListener('touchend', ()=>clearTimeout(t));
+  b.addEventListener('contextmenu', e=>{ e.preventDefault(); off(); });
+  b.onclick = ()=>{
+    if (long) return;
+    if (!lockCfg){ if (confirm('Turn on Face ID lock?\n\nFolio will ask for Face ID when it opens and after a minute in the background. Long-press this button to turn it off.')) enrollLock(); }
+    else lockNow(false);
+  };
+})();
+document.addEventListener('visibilitychange', ()=>{
+  if (!lockCfg) return;
+  if (document.visibilityState==='hidden'){
+    hiddenAt = Date.now();
+    if (!lockedNow){ $('#lock').hidden = false; $('#lockMsg').textContent = ''; }   // covers the app-switcher snapshot
+  } else {
+    if (lockedNow || Date.now()-hiddenAt > LOCK_AFTER_MS) lockNow(true);
+    else $('#lock').hidden = true;
+  }
+});
+paintLockBtn();
+
 $('#btnConnect').onclick = async ()=>{
   const url=$('#inUrl').value.trim(), key=$('#inKey').value.trim(), b=$('#btnConnect');
   $('#setupErr').hidden=true;
@@ -1808,6 +2126,7 @@ function stampBuild(){
 stampBuild();
 
 function start(){
+  if (lockCfg) lockNow(true);
   $('#setup').hidden=true; $('#app').hidden=false;
   if(D){ render(); setStatus('Updated '+ago(Date.now()-D.at),'stale'); }
   refresh(); schedule();
