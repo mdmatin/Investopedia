@@ -451,12 +451,18 @@ body.paged{overflow:hidden}
 .sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
 .hcard.tap,.row.tap{cursor:pointer}
-.bkin{margin:0 -20px;padding:0 20px 4px 72px;background:var(--parchment);border-top:1px solid var(--hairline)}
-.bkin .row{border-top-color:var(--hairline)}
-.bkin .row:first-child{border-top:0}
-.bkin .tile{flex-basis:34px;width:34px;height:34px}
-.bkin .tile svg{width:18px;height:18px}
+.bkrow .chev{width:10px;text-align:center}
 .bkrow.open .chev{color:var(--ink)}
+/* open bucket: holdings full width on white, a thin rule on the left, and an
+   empty slot where the bucket row has its chevron so the amounts line up */
+.bkin{border-top:1px solid var(--hairline)}
+.bkin .row{padding:10px 0 10px 14px;border-top:0;position:relative}
+.bkin .row::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:2px;background:var(--hairline)}
+.bkin .row::after{content:'';flex:0 0 10px}
+.bkin .tile{flex:0 0 34px;width:34px;height:34px}
+.bkin .tile svg{width:18px;height:18px}
+.bkin .row .n{font-size:15px}
+.bkin .row .r .v{font-size:15px}
 .hcard.tap:active,.row.tap:active{opacity:.6}
 
 /* ---------- Face ID lock ---------- */
@@ -636,7 +642,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
