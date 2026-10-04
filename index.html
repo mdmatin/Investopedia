@@ -571,7 +571,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-04e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-04f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -823,13 +823,14 @@ const FB_BUCKET = ['bucket','bu'];
 // logo is matched on the brand inside the name — all three Jupiter rows share
 // one file. Drop a PNG in /logos and add a line here to use it.
 const BANK_LOGOS = [[/sbi/i,'SBI'],[/icici/i,'ICICI'],[/jupiter/i,'JUPITER'],[/deel/i,'DEEL']];
-function bankMark(name){
-  const [svg,tint] = iconFor(name, FB_BANK);
-  let file = '';
-  for (const [re,f] of BANK_LOGOS) if (re.test(name)) { file = f; break; }
+// platforms (Holdings ▸ Platforms) use their name: Kite → logos/KITE.png, INDmoney → logos/INDMONEY.png
+function logoMark(name, list, [svg,tint]){
+  let file = list ? '' : logoSafe(name);
+  for (const [re,f] of list||[]) if (re.test(name)) { file = f; break; }
   return `<div class="tile ${tint}">${svg}${file ? `<img loading="lazy" decoding="async"
     src="logos/${file}.png" alt="" onload="this.classList.add('ok')" onerror="this.remove()">` : ''}</div>`;
 }
+function bankMark(name){ return logoMark(name, BANK_LOGOS, iconFor(name, FB_BANK)); }
 
 // Tickers with a file in /logos show it; everything else — gold, charges,
 // most ETFs and every mutual fund — shows its category icon, so a missing
@@ -963,8 +964,7 @@ function renderPlatforms(bk){
   const rows = [...by.values()].sort((a,b)=>b.value-a.value);
   $('#platformList').innerHTML = rows.map(p=>{
     const ret = p.value - p.invested, pc = p.invested ? ret/p.invested : null;
-    const [svg,tint] = iconFor(p.cats[0] || '');
-    return `<div class="row"><div class="tile ${tint}">${svg}</div>
+    return `<div class="row">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
       <div class="l"><div class="n">${esc(p.platform)}</div>
         <div class="m num money">${p.n} holding${p.n===1?'':'s'} · ${p.cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')}</div></div>
       <div class="r"><div class="v num money">${fINR(p.value)}</div>
