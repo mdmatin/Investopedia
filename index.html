@@ -445,12 +445,20 @@ body.paged{overflow:hidden}
 .pg-chg{font-size:14.5px;letter-spacing:-.2px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
 .pg-chg .k{color:var(--ink-3);font-size:13px}
 .pg-chg .arrow{font-size:.82em}
+.pg-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
+.pg-two .k{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
+.pg-two .v{font-size:16px;font-weight:600;letter-spacing:-.3px;margin-top:1px;white-space:nowrap}
+.pg-two .arrow{font-size:.82em}
 .pg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--hairline)}
 .pg-grid .k{font-size:11px;color:var(--ink-3);text-transform:uppercase;font-weight:600;letter-spacing:.02em}
 .pg-grid .v{font-size:15px;font-weight:600;letter-spacing:-.3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
 .hcard.tap,.row.tap{cursor:pointer}
+.platrow .r .v{font-weight:600}
+.platrow .r .s{margin-top:3px}
+.platrow .r .s.up{color:var(--up)} .platrow .r .s.down{color:var(--down)}
+.platrow .arrow{font-size:.82em}
 .bkrow .chev{width:10px;text-align:center}
 .bkrow.open .chev{color:var(--ink)}
 /* open bucket: holdings full width on white, a thin rule on the left, and an
@@ -642,7 +650,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1054,24 +1062,38 @@ function fitAssetRows(){
    platform per holding — so this costs no extra sheet read. A platform wears
    the icon of what it holds: Coin, CoinDCX and Coinswitch would all shorten to
    the same monogram. */
+// Day change per platform, from the latest Platform Snapshot rows. Matched on
+// the name with case and spaces ignored (INDmoney = INDMoney). The snapshot
+// lumps crypto apps together as "Crypto exchanges", so Binance, CoinDCX and
+// Coinswitch have no day figure of their own and show none.
+const platKey = n => String(n||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function platformDay(name){
+  const list = (D && D.data && D.data.platformDay) || [];
+  return list.find(x=>platKey(x.app)===platKey(name)) || null;
+}
+
 function renderPlatforms(bk){
   const hs = ((bk&&bk.holdings)||[]).filter(h=>h.qty>1e-7);
   const by = new Map();
   for (const h of hs){
     const k = h.platform || '—';
-    const o = by.get(k) || { platform:k, invested:0, value:0, realized:0, n:0, cats:[] };
-    o.invested += h.invested||0; o.value += h.value||0; o.realized += h.realized||0; o.n++;
+    const o = by.get(k) || { platform:k, invested:0, value:0, realized:0, n:0, cats:[], tk:new Set() };
+    o.invested += h.invested||0; o.value += h.value||0; o.realized += h.realized||0;
+    o.tk.add(h.ticker); o.n = o.tk.size;          // a ticker in two buckets is still one holding
     if (h.category && o.cats.indexOf(h.category)<0) o.cats.push(h.category);
     by.set(k, o);
   }
   const rows = [...by.values()].sort((a,b)=>b.value-a.value);
   $('#platformList').innerHTML = rows.map(p=>{
     const ret = p.value - p.invested, pc = p.invested ? ret/p.invested : null;
-    return `<div class="row tap" data-p="${esc(p.platform)}">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
+    const d = platformDay(p.platform);
+    const day = d && d.dayChange!=null
+      ? `<div class="s num money ${cls(d.dayChange)}">${fINR(Math.abs(d.dayChange))}${d.dayChangePct!=null
+          ? ` (${d.dayChangePct?`<span class="arrow">${d.dayChangePct>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(d.dayChangePct),false)})` : ''}</div>` : '';
+    return `<div class="row tap platrow" data-p="${esc(p.platform)}">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
       <div class="l"><div class="n">${esc(p.platform)}</div>
-        <div class="m num money">${p.n} holding${p.n===1?'':'s'} · ${p.cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')}</div></div>
-      <div class="r"><div class="v num money">${fINR(p.value)}</div>
-        <div class="p"><span class="pill sm ${cls(ret)} num money">${fPct(pc)}</span></div></div>
+        <div class="m num money">${fINR(p.invested)} <span class="faint">(${fPct(pc)})</span></div></div>
+      <div class="r"><div class="v num money">${fINR(p.value)}</div>${day}</div>
     </div>`;
   }).join('') + (rows.length
       ? `<div class="listfoot"><span>${rows.length} platform${rows.length===1?'':'s'}</span>
@@ -1874,7 +1896,7 @@ const nativeMoney = usdRow => v => v==null ? '—'
            : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const qtyFmt = n => n==null ? '—' : n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
 const arrowAmt = (v, m) => v==null ? '—'
-  : `<span class="${cls(v)}"><span class="arrow">${v>=0?'▲':'▼'}</span> ${m(Math.abs(v))}</span>`;
+  : `<span class="${cls(v)}">${v?`<span class="arrow">${v>0?'▲':'▼'}</span> `:''}${m(Math.abs(v))}</span>`;
 
 function openHolding(ticker){ pushPage({ kind:'holding', ticker:String(ticker) }); }
 function openPlatform(name){ pushPage({ kind:'platform', platform:String(name) }); }
@@ -2000,7 +2022,14 @@ function platformBody(name){
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
         <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'}</div></div></div>
       <div class="pg-big num money">${fINR(val)}</div>
-      <div class="pg-chg num money"><span><span class="k">Returns</span> ${arrowAmt(ret, fI)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span></div>
+      <div class="pg-two num money">
+        <div><div class="k">Returns${pct!=null?` <span class="${cls(pct)}">(<span class="arrow">${pct>=0?'▲':'▼'}</span>${fPct(Math.abs(pct),false)})</span>`:''}</div>
+          <div class="v ${cls(ret)}">${ret<0?'−':'+'}${fINR(Math.abs(ret))}</div></div>
+        ${(()=>{ const pd = platformDay(name); if (!pd || pd.dayChange==null) return '';
+          const q = pd.dayChangePct;
+          return `<div><div class="k">Today${q!=null?` <span class="${cls(q)}">(${q?`<span class="arrow">${q>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(q),false)})</span>`:''}</div>
+            <div class="v ${cls(pd.dayChange)}">${pd.dayChange<0?'−':pd.dayChange>0?'+':''}${fINR(Math.abs(pd.dayChange))}</div></div>`; })()}
+      </div>
       <div class="pg-grid num money">
         <div><div class="k">Invested</div><div class="v">${fINR(inv)}</div></div>
         <div><div class="k">Realised</div><div class="v ${cls(rl)}">${fINR(rl)}</div></div>
