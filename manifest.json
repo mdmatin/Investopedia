@@ -1,10 +1,22 @@
 {
-  "name": "Investments",
-  "short_name": "Investments",
+  "name": "Folio",
+  "short_name": "Folio",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f1115",
-  "theme_color": "#0f1115",
-  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+  "background_color": "#04241c",
+  "theme_color": "#f5f5f7",
+  "icons": [
+    {
+      "src": "icon.png?v=folio",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "apple-touch-icon.png?v=folio",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
 }

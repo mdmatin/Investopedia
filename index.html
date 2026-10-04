@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>Investments</title>
+<title>Folio</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Investments">
+<meta name="apple-mobile-web-app-title" content="Folio">
 <meta name="theme-color" content="#f5f5f7">
 <meta name="color-scheme" content="light">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=folio">
 <style>
 /* ==========================================================================
    THEME — every colour, font and radius the app uses. Edit here to restyle.
@@ -439,7 +439,7 @@ th.r,td.r{text-align:right}
 <div id="app" hidden>
   <header class="nav">
     <div>
-      <h1 id="title">Investments</h1>
+      <h1 id="title">Folio</h1>
       <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
@@ -571,7 +571,7 @@ th.r,td.r{text-align:right}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-04d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-04e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1532,7 +1532,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Investments',break:'Holdings',trend:'Trends',txn:'Activity'};
+const TITLES={home:'Folio',break:'Holdings',trend:'Trends',txn:'Activity'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
