@@ -623,7 +623,7 @@ body.paged{overflow:hidden}
   <img src="apple-touch-icon.png?v=folio" alt="">
   <h2>Folio is locked</h2>
   <p id="lockMsg"></p>
-  <button class="btn" id="btnUnlock">Unlock with Face ID</button>
+  <button class="btn" id="btnUnlock">Tap to unlock</button>
   <button class="alt" id="btnLockPass" hidden>Use passcode instead</button>
 </div>
 
@@ -633,7 +633,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2048,7 +2048,7 @@ async function enrollLock(){
 async function verifyFace(){
   return navigator.credentials.get({ publicKey:{
     challenge: rand(32), timeout: 60000, userVerification:'required',
-    allowCredentials:[{ type:'public-key', id: unb64u(lockCfg.id), transports:['internal','hybrid'] }] }});
+    allowCredentials:[{ type:'public-key', id: unb64u(lockCfg.id), transports:['internal'] }] }});
 }
 function lockNow(auto){
   if (!lockCfg) return;
@@ -2066,7 +2066,8 @@ async function tryUnlock(auto){
     if (!auto) $('#btnLockPass').hidden = false;
   }finally{ lockBusy = false; }
 }
-$('#btnUnlock').onclick = ()=>tryUnlock(false);
+$('#btnUnlock').onclick = e=>{ e.stopPropagation(); tryUnlock(false); };
+$('#lock').onclick = e=>{ if(!e.target.closest('#btnLockPass')) tryUnlock(false); };
 $('#btnLockPass').onclick = ()=>{
   const v = prompt('Sheet passcode');
   if (v!=null && cfg && v.trim()===String(cfg.key)) unlockScreen();
