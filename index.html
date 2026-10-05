@@ -445,6 +445,21 @@ body.paged{overflow:hidden}
 .pg-chg{font-size:14.5px;letter-spacing:-.2px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
 .pg-chg .k{color:var(--ink-3);font-size:13px}
 .pg-chg .arrow{font-size:.82em}
+.pg-sub{font-size:14.5px;letter-spacing:-.2px;margin-top:2px}
+.pg-sub .k{color:var(--ink-3);font-size:13.5px}
+.pg-sub .sep2{color:var(--ink-3);margin:0 6px}
+.pg-sub .grp{white-space:nowrap}
+.pg-sub .arrow{font-size:.82em}
+.pg-hero .hchart{height:160px;margin-top:18px}
+.hlg{display:flex;gap:14px;font-size:12px;color:var(--ink-2);margin-top:8px;align-items:center}
+.hlg i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.hlg .cv i{border-color:var(--blue)} .hlg .iv i{border-color:var(--ink-2);border-top-style:dashed}
+.hlg .since{margin-left:auto;color:var(--ink-3)}
+.pg-hero .pg-load{padding:28px 0 10px}
+.kvlist > div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--hairline);font-size:15px}
+.kvlist > div:first-child{border-top:0}
+.kvlist > div > span:first-child{color:var(--ink-2)}
+.kvlist > div > span:last-child{font-weight:600;text-align:right}
 .pg-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
 .pg-two .k{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-two .v{font-size:16px;font-weight:600;letter-spacing:-.3px;margin-top:1px;white-space:nowrap}
@@ -650,7 +665,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1962,7 +1977,69 @@ function renderPage(){
     const list = (tkCache[p.ticker]||{}).txns || [];
     openSheet(list.find(t=>t.row==b.dataset.row));
   });
-  if (p.kind==='holding') loadTickerTxns(p.ticker);
+  if (p.kind==='holding'){
+    loadTickerTxns(p.ticker); loadTickerHistory(p.ticker);
+    const h0 = (D.data.holdings||[]).find(x=>String(x.ticker).toUpperCase()===p.ticker.toUpperCase());
+    const usdRow = (h0 && h0.category==='US Stocks');
+    drawHist(p.ticker, usdRow);
+    $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+  }
+}
+
+const histCache = {};          // ticker → { pts } | { loading } | { err }
+let histRange = '3M';
+async function loadTickerHistory(ticker){
+  const c = histCache[ticker];
+  if (c && (c.pts || c.loading)) return;
+  histCache[ticker] = { loading:true };
+  try{
+    const j = await api({ action:'history', ticker });
+    histCache[ticker] = { pts: (j.data && j.data.points) || [] };
+  }catch(e){ histCache[ticker] = { err: e.message || 'Could not load' }; }
+  const top = pageStack[pageStack.length-1];
+  if (top && top.kind==='holding' && top.ticker===ticker){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+}
+function histInner(ticker){
+  const c = histCache[ticker] || {};
+  const days = {'1M':31,'3M':92,'6M':183,'All':1e9}[histRange];
+  const all = c.pts || [];
+  const cut = all.length ? new Date(new Date(all[all.length-1].date) - days*864e5) : null;
+  const pts = all.filter(p=>!cut || new Date(p.date) >= cut);
+  if (c.err) return `<div class="pg-load">${esc(c.err)}</div>`;
+  if (!c.pts) return '<div class="pg-load">Loading history…</div>';
+  if (pts.length < 2) return '<div class="pg-load">Not enough history yet — a point is added every morning</div>';
+  return `<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>
+    <div class="hlg"><span class="cv"><i></i>Current value</span><span class="iv"><i></i>Invested</span><span class="since">since ${fDate(all[0].date)}</span></div>
+    <div class="ranges">${['1M','3M','6M','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
+}
+function drawHist(ticker, usdRow){
+  const el = $('#histChart'); if(!el) return;
+  const c = histCache[ticker] || {}, days = {'1M':31,'3M':92,'6M':183,'All':1e9}[histRange];
+  const all = c.pts || [], cut = new Date(new Date(all[all.length-1].date) - days*864e5);
+  const pts = all.filter(p=>new Date(p.date) >= cut);
+  const m = nativeMoney(usdRow);
+  const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
+  const P={t:10,r:6,b:20,l:46};
+  const vals = pts.flatMap(p=>[p.value,p.invested]).filter(v=>v!=null);
+  let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*0.12||Math.abs(hi)*0.02||1; lo-=pad; hi+=pad;
+  const x=i=>P.l+(i/(pts.length-1))*(W-P.l-P.r), y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
+  const short = v => usdRow ? '$'+(Math.abs(v)>=1e3?(v/1e3).toFixed(1)+'k':v.toFixed(0)) : fCompact(v).replace('₹','');
+  let g='';
+  for(let i=0;i<=2;i++){ const v=lo+(hi-lo)*(i+.5)/3, yy=y(v);
+    g+=`<line class="gridline" x1="${P.l}" x2="${W-P.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${P.l-6}" y="${yy+3.5}" text-anchor="end">${short(v)}</text>`; }
+  [0,pts.length-1].forEach((idx,k)=>{ g+=`<text class="axis" x="${x(idx)}" y="${H-4}" text-anchor="${k?'end':'start'}">${fDate(pts[idx].date)}</text>`; });
+  const path = k => pts.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join('');
+  const last = pts[pts.length-1];
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML = g
+    + `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)" stop-opacity=".12"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>`
+    + `<path d="${path('value')}L${x(pts.length-1)},${H-P.b} L${x(0)},${H-P.b} Z" fill="url(#hg)"/>`
+    + `<path d="${path('invested')}" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round"/>`
+    + `<path d="${path('value')}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
+    + `<circle cx="${x(pts.length-1)}" cy="${y(last.value)}" r="4" fill="var(--blue)" stroke="#fff" stroke-width="2"/>`
+    + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
+  hoverable(el, svg, tip, pts, x, W, p=>{ const g=p.value-p.invested;
+    return `<b>${fDate(p.date)}</b><br>Current ${m(p.value)}<br>Invested ${m(p.invested)}<br>${g>=0?'Gain':'Loss'} ${m(Math.abs(g))}`; });
 }
 
 async function loadTickerTxns(ticker){
@@ -1995,22 +2072,25 @@ function holdingBody(ticker){
     const pct = h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
     // Master List keeps Day in rupees on US rows — same conversion as the Assets list
     const day = h.day==null ? null : usdRow ? (fx ? h.day/fx : null) : h.day;
-    const first = txns.length ? txns[txns.length-1].date : null;
-    card = `<div class="card pg-card">
+    // 1 · value, current returns under it, then the history chart — like the Overview hero
+    card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
-        <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')} · LTP ${m(h.ltp)}</div></div></div>
+        <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}</div></div></div>
       <div class="pg-big num money">${m(h.value)}</div>
-      <div class="pg-chg num money">
-        <span><span class="k">Returns</span> ${arrowAmt(ret, m)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span>
-        ${day!=null?`<span><span class="k">Today</span> ${arrowAmt(day, m)}</span>`:''}</div>
-      <div class="pg-grid num money">
-        <div><div class="k">Quantity</div><div class="v">${qtyFmt(h.qty)}</div></div>
-        <div><div class="k">Avg cost</div><div class="v">${m(h.avg)}</div></div>
-        <div><div class="k">Invested</div><div class="v">${m(h.invested)}</div></div>
-        <div><div class="k">Realised</div><div class="v ${cls(h.realized)}">${m(h.realized)}</div></div>
-        <div><div class="k">Total P&amp;L</div><div class="v ${cls(h.totalPnl)}">${m(h.totalPnl)}</div></div>
-        <div><div class="k">First buy</div><div class="v">${first ? new Date(first+'T00:00:00').toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : c.loading ? '…' : '—'}</div></div>
-      </div></div>`;
+      <div class="pg-sub num money"><span class="grp">${arrowAmt(ret, m)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span>${day!=null?`<span class="sep2">·</span><span class="grp">${arrowAmt(day, m)} <span class="k">today</span></span>`:''}</div>
+      ${histInner(ticker)}
+    </div>
+    <div class="sechead"><h2>Overview</h2></div>
+    <div class="card tight kvlist num money">
+      <div><span>Last price</span><span>${m(h.ltp)}</span></div>
+      <div><span>Quantity</span><span>${qtyFmt(h.qty)}</span></div>
+      <div><span>Avg cost</span><span>${m(h.avg)}</span></div>
+      <div><span>Invested</span><span>${m(h.invested)}</span></div>
+      <div><span>Current returns</span><span class="${cls(ret)}">${ret<0?'−':'+'}${m(Math.abs(ret))}${pct!=null?` (${fPct(pct,false)})`:''}</span></div>
+      ${day!=null?`<div><span>Today</span><span class="${cls(day)}">${day<0?'−':day>0?'+':''}${m(Math.abs(day))}</span></div>`:''}
+      <div><span>Realised</span><span class="${cls(h.realized)}">${m(h.realized)}</span></div>
+      <div><span>Total P&amp;L</span><span class="${cls(h.totalPnl)}">${m(h.totalPnl)}</span></div>
+    </div>`;
   } else {
     card = `<div class="card pg-card">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
