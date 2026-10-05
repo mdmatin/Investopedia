@@ -460,6 +460,12 @@ body.paged{overflow:hidden}
 .kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 10px;padding-bottom:16px}
 .hrow{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-top:1px solid var(--hairline);font-size:15px}
 .hrow span{color:var(--ink-2)} .hrow b{font-weight:600}
+.hlink{width:100%;text-align:left;color:inherit}
+.hlink b{display:inline-flex;align-items:center;gap:4px}
+.hlink svg{width:15px;height:15px;color:var(--ink-3);margin-right:-3px}
+.dvrow{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-top:1px solid var(--hairline);font-size:15px}
+.dvrow:first-child{border-top:0}
+.dvrow span{color:var(--ink-2)} .dvrow b{font-weight:600}
 .kgrid > div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .kgrid > div:nth-child(3n+2){align-items:center;text-align:center}
 .kgrid > div:nth-child(3n){align-items:flex-end;text-align:right}
@@ -681,7 +687,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -798,13 +804,16 @@ function renderHome(d){
   const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && a.value!==0 && !/^Less:|^Charges/i.test(a.name))
     .sort((a,b)=>(b.value||0)-(a.value||0));
   $('#assets').innerHTML = rows.map(a=>`
-    <div class="row">
+    <div class="row"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div><div class="m num money">Invested ${fINR(a.invested)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>
         <div class="p"><span class="pill sm ${cls(a.dayChange)} num money">${fPct(a.dayChangePct)}</span></div></div>
     </div>`).join('') +
     (tot.value!=null ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(tot.value)}</span></div>` : '');
+
+  // an asset class opens Holdings ▸ Assets with that filter on
+  $$('#assets .row[data-acat]').forEach(r=>r.onclick=()=>openAssetCat(r.dataset.acat));
 
   // recent
   const rec = (d.transactions||[]).slice(0,4);
@@ -1012,6 +1021,19 @@ function txnRow(t, showDate){
 const CAT_ORDER = ['US Stocks','Stocks','Gold/Silver','Mutual Fund','Crypto'];
 const CAT_LABEL = { 'Stocks':'Indian', 'Gold/Silver':'Gold', 'Mutual Fund':'Mutual Fund' };
 let assetCat = 'US Stocks';   // the filter the tab opens on
+// Net Worth row name → holdings category, only when that category has holdings
+function assetCatFor(name, holdings){
+  const n = String(name||'').toLowerCase();
+  const c = /^us\b|us stock/.test(n) ? 'US Stocks' : /^(indian )?stock|^equit/.test(n) ? 'Stocks'
+          : /gold|silver/.test(n) ? 'Gold/Silver' : /mutual/.test(n) ? 'Mutual Fund' : /crypto/.test(n) ? 'Crypto' : null;
+  return c && (holdings||[]).some(h=>h.category===c) ? c : null;
+}
+function openAssetCat(cat){
+  assetCat = cat;
+  show('break'); showHoldSec('assets');
+  renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
+  const chip = $('#assetChips .chip.on'); if (chip) chip.scrollIntoView({inline:'center', block:'nearest'});
+}
 
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
@@ -1978,13 +2000,37 @@ function popPage(){
   el.classList.remove('show'); document.body.classList.remove('paged');
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
 }
-function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.platform; }
+function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends' : p.platform; }
+// Payouts logged on the US Stocks tab for one ticker, newest first
+function divsFor(ticker){
+  const up = String(ticker).toUpperCase();
+  return ((D.data && D.data.dividends) || []).filter(x=>x.ticker===up).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function dividendsBody(ticker){
+  const divs = divsFor(ticker), m = nativeMoney(true);
+  const tot = divs.reduce((a,x)=>a+x.amount,0);
+  const first = divs.length ? divs[divs.length-1].date : null;
+  const years = {};
+  divs.forEach(x=>{ const y=String(x.date).slice(0,4); (years[y]=years[y]||[]).push(x); });
+  const hero = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${tickerTile({ticker, category:'US Stocks'})}
+        <div><div class="t">${esc(ticker)}</div><div class="s">Dividends earned</div></div></div>
+      <div class="pg-big num money">${m(tot)}</div>
+      <div class="pg-sub">${divs.length} payout${divs.length===1?'':'s'}${first?` · since ${esc(fDate(first))}`:''}</div>
+    </div>`;
+  if (!divs.length) return hero + '<div class="pg-load">No dividends logged for this ticker</div>';
+  return hero + Object.keys(years).sort().reverse().map(y=>{
+    const ys = years[y], yt = ys.reduce((a,x)=>a+x.amount,0);
+    return `<div class="sechead"><h2>${esc(y)}</h2><span class="cnt num money">${m(yt)}</span></div>
+      <div class="card tight">${ys.map(x=>`<div class="dvrow"><span>${esc(new Date(x.date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))}</span><b class="num money">${m(x.amount)}</b></div>`).join('')}</div>`;
+  }).join('');
+}
 
 function renderPage(){
   const p = pageStack[pageStack.length-1]; if(!p || !D) return;
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
-  const body = p.kind==='holding' ? holdingBody(p.ticker) : platformBody(p.platform);
+  const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
       <div class="pg-title">${esc(pageTitle(p))}</div></div>` + body;
@@ -1999,6 +2045,7 @@ function renderPage(){
     const h0 = (D.data.holdings||[]).find(x=>String(x.ticker).toUpperCase()===p.ticker.toUpperCase());
     const usdRow = (h0 && h0.category==='US Stocks');
     drawHist(p.ticker, usdRow);
+    $$('#page [data-div]').forEach(b=>b.onclick=()=>pushPage({ kind:'dividends', ticker:p.ticker }));
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
@@ -2089,6 +2136,7 @@ function holdingBody(ticker){
   const usdRow = cat==='US Stocks', m = nativeMoney(usdRow);
   const fx = d.netWorth && d.netWorth.head && d.netWorth.head.usdInr;
 
+  const divs = divsFor(ticker), divTot = divs.reduce((a,x)=>a+x.amount,0);
   let card, stats = '';
   if (h){
     const ret = h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
@@ -2123,6 +2171,7 @@ function holdingBody(ticker){
     </div>
     ${wAll!=null?`<div class="hrow"><span>Share of portfolio</span><b>${fPct(wAll,false)}</b></div>`:''}
     ${wCat!=null&&cat?`<div class="hrow"><span>Share of ${esc(CAT_LABEL[cat]||cat)}</span><b>${fPct(wCat,false)}</b></div>`:''}
+    ${divs.length?`<button class="hrow hlink" data-div><span>Dividends earned</span><b>${m(divTot)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></b></button>`:''}
     </div>`;
   } else {
     card = `<div class="card pg-card">
@@ -2144,7 +2193,7 @@ function holdingBody(ticker){
   const top = pageStack[pageStack.length-1] || {}, tab = top.tab || 'overview';
   const seg = `<div class="utabs" id="hdSeg">
       <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
-      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders${c.txns&&txns.length?` <span class="segn">${txns.length}</span>`:''}</button></div>`;
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
   const body = tab==='orders'
     ? `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight">${list}</div>`
     : stats + held;
