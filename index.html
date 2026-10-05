@@ -687,7 +687,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1312,7 +1312,9 @@ function hoverable(el, svg, tip, pts, x, W, fmt){
   const ah = svg.querySelector('#ah');
   const move = ev => {
     const r=svg.getBoundingClientRect(), cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
-    const i=Math.max(0,Math.min(pts.length-1,Math.round(cx/r.width*(pts.length-1))));
+    // nearest point by position, so charts with uneven spacing (weekly then daily) track the finger
+    const vx=cx*W/r.width; let i=0, bd=Infinity;
+    for(let k=0;k<pts.length;k++){ const dx=Math.abs(x(k)-vx); if(dx<bd){ bd=dx; i=k; } }
     if(ah){ ah.setAttribute('x1',x(i)); ah.setAttribute('x2',x(i)); ah.style.display=''; }
     tip.style.display='block'; tip.style.left=Math.max(64,Math.min(W-64,x(i)))+'px'; tip.innerHTML=fmt(pts[i]);
   };
@@ -2068,7 +2070,7 @@ async function loadTickerHistory(ticker){
 // Points inside the chosen range, counted back from the latest point. 'All' has no cut-off.
 function histPts(ticker){
   const all = (histCache[ticker] || {}).pts || [];
-  const days = {'1M':31,'3M':92,'6M':183}[histRange];
+  const days = {'1M':31,'3M':92,'6M':183,'1Y':366}[histRange];
   if (!days || !all.length) return all;
   const cut = new Date(all[all.length-1].date).getTime() - days*864e5;
   return all.filter(p=>new Date(p.date).getTime() >= cut);
@@ -2082,7 +2084,7 @@ function histInner(ticker){
   // The range buttons stay put even if a short range holds too few points.
   return `${pts.length < 2 ? '<div class="pg-load">Not enough history for this range</div>' : '<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>'}
     <div class="hlg"><span class="cv"><i></i>Current value</span><span class="iv"><i></i>Invested</span><span class="since">since ${fDate(all[0].date)}</span></div>
-    <div class="ranges">${['1M','3M','6M','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
+    <div class="ranges">${['1M','3M','6M','1Y','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
 }
 function drawHist(ticker, usdRow){
   const el = $('#histChart'); if(!el) return;
@@ -2092,7 +2094,9 @@ function drawHist(ticker, usdRow){
   const P={t:10,r:6,b:20,l:46};
   const vals = pts.flatMap(p=>[p.value,p.invested]).filter(v=>v!=null);
   let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*0.12||Math.abs(hi)*0.02||1; lo-=pad; hi+=pad;
-  const x=i=>P.l+(i/(pts.length-1))*(W-P.l-P.r), y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
+  // x follows the calendar: older history is weekly, recent days are daily
+  const ts=pts.map(p=>Date.parse(p.date)), t0=ts[0], span=(ts[ts.length-1]-t0)||1;
+  const x=i=>P.l+((ts[i]-t0)/span)*(W-P.l-P.r), y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
   const short = v => usdRow ? '$'+(Math.abs(v)>=1e3?(v/1e3).toFixed(1)+'k':v.toFixed(0)) : fCompact(v).replace('₹','');
   let g='';
   for(let i=0;i<=2;i++){ const v=lo+(hi-lo)*(i+.5)/3, yy=y(v);
