@@ -650,7 +650,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1070,8 +1070,15 @@ function fitAssetRows(){
 // buy or sell can never show up as a gain. % is on the value at the start of
 // the day. No stock on the platform with a Day figure → no figure.
 const platKey = n => String(n||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+// Exchanges listed on the Crypto tab carry their real totals there (Binance's
+// Current is typed in by hand), so those numbers win over adding up coins.
+function cryptoApp(name){
+  return ((D && D.data && D.data.cryptoApps) || []).find(x=>platKey(x.name)===platKey(name)) || null;
+}
 function platformDay(name){
   const d = D && D.data; if (!d) return null;
+  const ca = cryptoApp(name);
+  if (ca && ca.manual) return null;        // a typed-in value has no daily movement to show
   const tk = t => String(t||'').trim().toUpperCase();
   const master = new Map((d.holdings||[]).map(h=>[tk(h.ticker), h]));
   const led = ((d.buckets&&d.buckets.holdings)||[]).filter(x=>x.qty>1e-7 && platKey(x.platform)===platKey(name));
@@ -1098,6 +1105,13 @@ function renderPlatforms(bk){
     o.tk.add(h.ticker); o.n = o.tk.size;          // a ticker in two buckets is still one holding
     if (h.category && o.cats.indexOf(h.category)<0) o.cats.push(h.category);
     by.set(k, o);
+  }
+  for (const ca of ((D && D.data && D.data.cryptoApps) || [])){
+    const hit = [...by.values()].find(o=>platKey(o.platform)===platKey(ca.name));
+    const o = hit || { platform:ca.name, invested:0, value:0, realized:0, n:0, cats:['Crypto'], tk:new Set() };
+    if (ca.current!=null) o.value = ca.current;
+    if (ca.invested!=null) o.invested = ca.invested;
+    if (!hit) by.set(ca.name, o);
   }
   const rows = [...by.values()].sort((a,b)=>b.value-a.value);
   $('#platformList').innerHTML = rows.map(p=>{
@@ -2030,9 +2044,13 @@ function platformBody(name){
     by.set(h.ticker, o);
   }
   const rows = [...by.values()].sort((a,b)=>b.value-a.value);
-  const inv = rows.reduce((s,r)=>s+r.invested,0), val = rows.reduce((s,r)=>s+r.value,0),
-        rl = rows.reduce((s,r)=>s+r.realized,0), ret = val-inv, pct = inv ? ret/inv : null;
+  const ca = cryptoApp(name);
+  let inv = rows.reduce((s,r)=>s+r.invested,0), val = rows.reduce((s,r)=>s+r.value,0);
+  if (ca && ca.current!=null) val = ca.current;          // the Crypto tab's totals win
+  if (ca && ca.invested!=null) inv = ca.invested;
+  const rl = rows.reduce((s,r)=>s+r.realized,0), ret = val-inv, pct = inv ? ret/inv : null;
   const cats = [...new Set(rows.map(r=>r.category).filter(Boolean))];
+  if (!cats.length && ca) cats.push('Crypto');
   const fI = v => fINR(v);
   return `<div class="card pg-card">
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
