@@ -665,7 +665,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05l';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -728,6 +728,7 @@ async function refresh(manual){
     const j = await api(manual ? {action:'all', fresh:'1'} : {action:'all'});
     lastTiming = { ms: j.ms || null, round: Date.now() - t0, cached: !!j.cached };
     D = { data:j.data, at:Date.now() }; save(LS.data, D);
+    if (typeof histCache!=='undefined') Object.keys(histCache).forEach(k=>delete histCache[k]);
     render(); setStatus('Updated just now','');
   }catch(e){
     setStatus('Offline · ' + (D ? 'showing '+ago(Date.now()-D.at) : 'no data'), 'err');
@@ -1990,33 +1991,38 @@ const histCache = {};          // ticker → { pts } | { loading } | { err }
 let histRange = '3M';
 async function loadTickerHistory(ticker){
   const c = histCache[ticker];
-  if (c && (c.pts || c.loading)) return;
-  histCache[ticker] = { loading:true };
+  // Reuse a good result for 10 min; an empty or failed one is retried after 20 s.
+  if (c && (c.loading || (Date.now() - c.at) < ((c.pts && c.pts.length > 1) ? 6e5 : 2e4))) return;
+  histCache[ticker] = { loading:true, pts: c && c.pts, at: Date.now() };
   try{
     const j = await api({ action:'history', ticker });
-    histCache[ticker] = { pts: (j.data && j.data.points) || [] };
-  }catch(e){ histCache[ticker] = { err: e.message || 'Could not load' }; }
+    histCache[ticker] = { pts: (j.data && j.data.points) || [], at: Date.now() };
+  }catch(e){ histCache[ticker] = { err: e.message || 'Could not load', at: Date.now() }; }
   const top = pageStack[pageStack.length-1];
   if (top && top.kind==='holding' && top.ticker===ticker){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
+// Points inside the chosen range, counted back from the latest point. 'All' has no cut-off.
+function histPts(ticker){
+  const all = (histCache[ticker] || {}).pts || [];
+  const days = {'1M':31,'3M':92,'6M':183}[histRange];
+  if (!days || !all.length) return all;
+  const cut = new Date(all[all.length-1].date).getTime() - days*864e5;
+  return all.filter(p=>new Date(p.date).getTime() >= cut);
+}
 function histInner(ticker){
   const c = histCache[ticker] || {};
-  const days = {'1M':31,'3M':92,'6M':183,'All':1e9}[histRange];
-  const all = c.pts || [];
-  const cut = all.length ? new Date(new Date(all[all.length-1].date) - days*864e5) : null;
-  const pts = all.filter(p=>!cut || new Date(p.date) >= cut);
+  const all = c.pts || [], pts = histPts(ticker);
   if (c.err) return `<div class="pg-load">${esc(c.err)}</div>`;
   if (!c.pts) return '<div class="pg-load">Loading history…</div>';
-  if (pts.length < 2) return '<div class="pg-load">Not enough history yet — a point is added every morning</div>';
-  return `<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>
+  if (all.length < 2) return '<div class="pg-load">Not enough history yet — a point is added every morning</div>';
+  // The range buttons stay put even if a short range holds too few points.
+  return `${pts.length < 2 ? '<div class="pg-load">Not enough history for this range</div>' : '<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>'}
     <div class="hlg"><span class="cv"><i></i>Current value</span><span class="iv"><i></i>Invested</span><span class="since">since ${fDate(all[0].date)}</span></div>
     <div class="ranges">${['1M','3M','6M','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
 }
 function drawHist(ticker, usdRow){
   const el = $('#histChart'); if(!el) return;
-  const c = histCache[ticker] || {}, days = {'1M':31,'3M':92,'6M':183,'All':1e9}[histRange];
-  const all = c.pts || [], cut = new Date(new Date(all[all.length-1].date) - days*864e5);
-  const pts = all.filter(p=>new Date(p.date) >= cut);
+  const pts = histPts(ticker); if (pts.length < 2) return;
   const m = nativeMoney(usdRow);
   const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
   const P={t:10,r:6,b:20,l:46};
@@ -2085,7 +2091,6 @@ function holdingBody(ticker){
       <div><span>Quantity</span><span>${qtyFmt(h.qty)}</span></div>
       <div><span>Avg cost</span><span>${m(h.avg)}</span></div>
       <div><span>Invested</span><span>${m(h.invested)}</span></div>
-      <div><span>Current returns</span><span class="${cls(ret)}">${ret<0?'−':'+'}${m(Math.abs(ret))}${pct!=null?` (${fPct(pct,false)})`:''}</span></div>
       ${day!=null?`<div><span>Today</span><span class="${cls(day)}">${day<0?'−':day>0?'+':''}${m(Math.abs(day))}</span></div>`:''}
       <div><span>Realised</span><span class="${cls(h.realized)}">${m(h.realized)}</span></div>
       <div><span>Total P&amp;L</span><span class="${cls(h.totalPnl)}">${m(h.totalPnl)}</span></div>
