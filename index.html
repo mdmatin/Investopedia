@@ -665,7 +665,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-05j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-05k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2077,7 +2077,7 @@ function holdingBody(ticker){
       <div class="pg-id">${tickerTile({ticker, category:cat})}
         <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${m(h.ltp)}</span>`:''}</div></div></div>
       <div class="pg-big num money">${m(h.value)}</div>
-      <div class="pg-sub num money"><span class="grp">${arrowAmt(ret, m)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span>${day!=null?`<span class="sep2">·</span><span class="grp">${arrowAmt(day, m)} <span class="k">today</span></span>`:''}</div>
+      <div class="pg-sub num money"><span class="grp">${arrowAmt(ret, m)}${pct!=null?` <span class="${cls(pct)}">(${fPct(pct,false)})</span>`:''}</span></div>
       ${histInner(ticker)}
     </div>
     <div class="sechead"><h2>Overview</h2></div>
@@ -2086,6 +2086,7 @@ function holdingBody(ticker){
       <div><span>Avg cost</span><span>${m(h.avg)}</span></div>
       <div><span>Invested</span><span>${m(h.invested)}</span></div>
       <div><span>Current returns</span><span class="${cls(ret)}">${ret<0?'−':'+'}${m(Math.abs(ret))}${pct!=null?` (${fPct(pct,false)})`:''}</span></div>
+      ${day!=null?`<div><span>Today</span><span class="${cls(day)}">${day<0?'−':day>0?'+':''}${m(Math.abs(day))}</span></div>`:''}
       <div><span>Realised</span><span class="${cls(h.realized)}">${m(h.realized)}</span></div>
       <div><span>Total P&amp;L</span><span class="${cls(h.totalPnl)}">${m(h.totalPnl)}</span></div>
     </div>`;
