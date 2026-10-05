@@ -413,7 +413,8 @@ th.r,td.r{text-align:right}
 .f.needs label{color:var(--down)}
 .toast{position:fixed;left:50%;bottom:calc(114px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-pill);font-size:14px;font-weight:500;opacity:0;transition:.24s;z-index:30;pointer-events:none;max-width:88vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%)}
-.blur .money{filter:blur(7px)}
+.blur .money,.blur .hcard .sub,.blur .hc-stats b,.blur .vv,.blur .listfoot span + span,
+.blur svg text.axis,.blur .chart .tip,.blur .kpis .v,.blur .kgrid b,.blur .kgrid i,.blur .hrow b{filter:blur(7px)}
 .empty{text-align:center;color:var(--ink-3);padding:36px 0;font-size:15px}
 
 /* ---------- setup ---------- */
@@ -435,6 +436,10 @@ body.paged{overflow:hidden}
 .pg-back span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
 .pg-title{position:absolute;left:50%;transform:translateX(-50%);font-weight:600;font-size:17px;letter-spacing:-.4px;
   max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;bottom:14px}
+.pg-step{margin-left:auto;display:flex;gap:2px;background:var(--sunken);border-radius:999px;padding:2px}
+.pg-step button{width:34px;height:30px;display:grid;place-items:center;border-radius:999px;color:var(--blue)}
+.pg-step button svg{width:18px;height:18px}
+.pg-step button:disabled{color:var(--ink-3);opacity:.45}
 .pg-card{margin-top:6px}
 .pg-id{display:flex;align-items:center;gap:12px}
 .pg-id .tile{flex-basis:46px;width:46px;height:46px}
@@ -519,7 +524,15 @@ body.paged{overflow:hidden}
 .lock p{margin:0;color:var(--ink-2);font-size:15px;min-height:22px}
 .lock .btn{width:auto;padding:13px 26px;margin-top:6px}
 .lock .alt{color:var(--blue);font-size:15px;margin-top:4px}
-#btnLock.on{color:var(--ink)}
+#btnMore.on{color:var(--ink)}
+.nav{position:sticky}
+.menu{position:absolute;right:14px;top:calc(100% - 4px);z-index:30;min-width:232px;background:var(--canvas);border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05);padding:6px;display:flex;flex-direction:column}
+.menu button{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;font-size:16px;letter-spacing:-.3px;color:var(--ink);text-align:left}
+.menu button:active{background:var(--sunken)}
+.menu button svg{width:20px;height:20px;color:var(--blue);flex:none}
+.menu button.dim{color:var(--ink-2)} .menu button.dim svg{color:var(--ink-3)}
+.menu button + button{border-top:1px solid var(--hairline);border-radius:0}
 </style>
 </head>
 <body>
@@ -546,10 +559,10 @@ body.paged{overflow:hidden}
       <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
-      <button id="btnLock" aria-label="Face ID lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path id="lockShackle" d="M8 10.5V7.5a4 4 0 0 1 7.6-1.7"/></svg></button>
-      <button id="btnEye" aria-label="Hide amounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button id="btnMore" aria-label="More" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
       <button id="btnRefresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     </div>
+    <div class="menu" id="moreMenu" role="menu" hidden></div>
   </header>
 
   <main>
@@ -687,7 +700,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1095,7 +1108,7 @@ function renderAssets(holdings, usdInr){
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
-  $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t));
+  $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t, $$('#assetList .hcard[data-t]').map(x=>x.dataset.t)));
 }
 
 // Two decimals on every figure is the default, but three money columns on a
@@ -1217,7 +1230,7 @@ function renderBreakdown(bd, bk){
     if (openBucket && row && row.getBoundingClientRect().top < navH)
       window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - navH - 6, behavior:'smooth' });
   });
-  $$('#buckets .bkin .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
+  $$('#buckets .bkin .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, [...r.closest('.bkin').querySelectorAll('.row[data-t]')].map(x=>x.dataset.t)));
 }
 
 function renderTrends(daily, monthly){
@@ -1951,7 +1964,6 @@ let lastTiming = null;
 })();
 
 $('#btnRefresh').onclick=()=>refresh(true);
-$('#btnEye').onclick=()=>{ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); };
 if(load(LS.blur)) document.body.classList.add('blur');
 let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!D) return;
   if(activeView==='trend') renderTrends(D.data.daily,D.data.monthly); if(activeView==='home') renderHome(D.data); },200); });
@@ -1984,7 +1996,11 @@ const qtyFmt = n => n==null ? '—' : n>=1000 ? inr.format(Math.round(n)) : Stri
 const arrowAmt = (v, m) => v==null ? '—'
   : `<span class="${cls(v)}">${v?`<span class="arrow">${v>0?'▲':'▼'}</span> `:''}${m(Math.abs(v))}</span>`;
 
-function openHolding(ticker){ pushPage({ kind:'holding', ticker:String(ticker) }); }
+// list = the tickers shown alongside it, in on-screen order, for the prev / next arrows
+function openHolding(ticker, list){
+  const L = [...new Set((list||[]).map(String))];
+  pushPage({ kind:'holding', ticker:String(ticker), list: L.length>1 ? L : null });
+}
 function openPlatform(name){ pushPage({ kind:'platform', platform:String(name) }); }
 
 function pushPage(p){
@@ -2001,6 +2017,14 @@ function popPage(){
   if (pageStack.length){ renderPage(); el.scrollTop = 0; return; }
   el.classList.remove('show'); document.body.classList.remove('paged');
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
+}
+function stepper(p){
+  if (p.kind!=='holding' || !p.list) return '';
+  const i = p.list.indexOf(p.ticker); if (i<0) return '';
+  const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<div class="pg-step">
+      <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
+      <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends' : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
@@ -2035,9 +2059,14 @@ function renderPage(){
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
-      <div class="pg-title">${esc(pageTitle(p))}</div></div>` + body;
+      <div class="pg-title">${esc(pageTitle(p))}</div>${stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
-  $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t));
+  $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
+  // prev / next swap the ticker in place, so Back still returns to the list
+  $$('#page [data-step]').forEach(b=>b.onclick=()=>{
+    const L=p.list||[], i=L.indexOf(p.ticker), n=L[i+Number(b.dataset.step)];
+    if(n){ p.ticker=n; renderPage(); $('#page').scrollTop=0; }
+  });
   $$('#page .row[data-row]').forEach(b=>b.onclick=()=>{
     const list = (tkCache[p.ticker]||{}).txns || [];
     openSheet(list.find(t=>t.row==b.dataset.row));
@@ -2165,7 +2194,7 @@ function holdingBody(ticker){
     const allH = d.holdings || [], tot = allH.reduce((a,x)=>a+toInr(x),0);
     const catTot = allH.filter(x=>x.category===cat).reduce((a,x)=>a+toInr(x),0);
     const wAll = tot ? toInr(h)/tot : null, wCat = catTot ? toInr(h)/catTot : null;
-    stats = `<div class="card hstats num money"><div class="kgrid">
+    stats = `<div class="card hstats num"><div class="kgrid">
       <div><span>Invested</span><b>${mm(h.invested)}</b></div>
       <div><span>Avg cost</span><b>${m(h.avg)}</b></div>
       <div><span>Quantity</span><b>${qtyFmt(h.qty)}</b></div>
@@ -2263,11 +2292,20 @@ const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\
 const unb64u = s => Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((s.length+3)%4)), c=>c.charCodeAt(0));
 const rand = n => crypto.getRandomValues(new Uint8Array(n));
 
-function paintLockBtn(){
-  const b = $('#btnLock'); if(!b) return;
-  b.classList.toggle('on', !!lockCfg);
-  b.setAttribute('aria-label', lockCfg ? 'Lock now' : 'Turn on Face ID lock');
-  $('#lockShackle').setAttribute('d', lockCfg ? 'M8 10.5V7.5a4 4 0 0 1 8 0v3' : 'M8 10.5V7.5a4 4 0 0 1 7.6-1.7');
+function paintLockBtn(){ paintMenu(); }
+const ICON = {
+  eye:'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:'<path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c7 0 11 7 11 7a18 18 0 0 1-3.2 3.9M6.6 6.6C3.4 8.5 1 12 1 12s4 7 11 7a10.7 10.7 0 0 0 5.4-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  unlock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.7"/>'
+};
+function paintMenu(){
+  const m = $('#moreMenu'); if(!m) return;
+  const hid = document.body.classList.contains('blur');
+  const item = (act, ic, label, cls='') => `<button role="menuitem" data-act="${act}" class="${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICON[ic]}</svg><span>${label}</span></button>`;
+  m.innerHTML = item('eye', hid?'eye':'eyeOff', hid?'Show amounts':'Hide amounts')
+    + (lockCfg ? item('lock','lock','Lock now') + item('lockoff','unlock','Turn off Face ID lock','dim')
+               : item('lockon','lock','Turn on Face ID lock'));
 }
 async function enrollLock(){
   if (!window.PublicKeyCredential || !navigator.credentials){ toast('Face ID isn\'t available in this browser'); return; }
@@ -2315,21 +2353,22 @@ $('#btnLockPass').onclick = ()=>{
   if (v!=null && cfg && v.trim()===String(cfg.key)) unlockScreen();
   else if (v!=null) $('#lockMsg').textContent = 'That passcode doesn\'t match.';
 };
+// ⋯ menu: hide amounts, Face ID lock
 (function(){
-  const b = $('#btnLock'); let t, long = false;
-  const off = async ()=>{
-    long = true;
-    if (!lockCfg){ toast('Tap to turn on Face ID lock'); return; }
-    try{ await verifyFace(); }catch(e){ toast('Face ID is needed to turn the lock off'); return; }
-    if (confirm('Turn off Face ID lock?')){ lockCfg = null; localStorage.removeItem('inv.lock'); paintLockBtn(); toast('Face ID lock is off'); }
-  };
-  b.addEventListener('touchstart', ()=>{ long = false; t = setTimeout(off, 700); }, {passive:true});
-  b.addEventListener('touchend', ()=>clearTimeout(t));
-  b.addEventListener('contextmenu', e=>{ e.preventDefault(); off(); });
-  b.onclick = ()=>{
-    if (long) return;
-    if (!lockCfg){ if (confirm('Turn on Face ID lock?\n\nFolio will ask for Face ID when it opens and after a minute in the background. Long-press this button to turn it off.')) enrollLock(); }
-    else lockNow(false);
+  const btn = $('#btnMore'), m = $('#moreMenu');
+  const close = ()=>{ m.hidden = true; btn.classList.remove('on'); };
+  btn.onclick = e=>{ e.stopPropagation(); paintMenu(); m.hidden = !m.hidden; btn.classList.toggle('on', !m.hidden); };
+  document.addEventListener('click', e=>{ if(!m.hidden && !e.target.closest('#moreMenu')) close(); });
+  m.onclick = async e=>{
+    const a = e.target.closest('[data-act]'); if(!a) return;
+    const act = a.dataset.act; close();
+    if (act==='eye'){ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); }
+    else if (act==='lock') lockNow(false);
+    else if (act==='lockon'){ if (confirm('Turn on Face ID lock?\n\nFolio will ask for Face ID when it opens and after a minute in the background.')) enrollLock(); }
+    else if (act==='lockoff'){
+      try{ await verifyFace(); }catch(err){ toast('Face ID is needed to turn the lock off'); return; }
+      if (confirm('Turn off Face ID lock?')){ lockCfg = null; localStorage.removeItem('inv.lock'); paintMenu(); toast('Face ID lock is off'); }
+    }
   };
 })();
 document.addEventListener('visibilitychange', ()=>{
