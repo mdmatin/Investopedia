@@ -1,6 +1,6 @@
 {
-  "name": "Folio",
-  "short_name": "Folio",
+  "name": "Centric",
+  "short_name": "Centric",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -8,13 +8,13 @@
   "theme_color": "#f5f5f7",
   "icons": [
     {
-      "src": "icon.png?v=folio",
+      "src": "icon.png?v=centric",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "apple-touch-icon.png?v=folio",
+      "src": "apple-touch-icon.png?v=centric",
       "sizes": "180x180",
       "type": "image/png"
     }

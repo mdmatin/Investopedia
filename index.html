@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>Folio</title>
+<title>Centric</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Folio">
+<meta name="apple-mobile-web-app-title" content="Centric">
 <meta name="theme-color" content="#f5f5f7">
 <meta name="color-scheme" content="light">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=folio">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=centric">
 <style>
 /* ==========================================================================
    THEME — every colour, font and radius the app uses. Edit here to restyle.
@@ -574,7 +574,7 @@ body.paged{overflow:hidden}
 <div id="app" hidden>
   <header class="nav">
     <div>
-      <h1 id="title">Folio</h1>
+      <h1 id="title">Centric</h1>
       <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
@@ -707,8 +707,8 @@ body.paged{overflow:hidden}
 
 <!-- =================== LOCK =================== -->
 <div class="lock" id="lock" hidden>
-  <img src="apple-touch-icon.png?v=folio" alt="">
-  <h2>Folio is locked</h2>
+  <img src="apple-touch-icon.png?v=centric" alt="">
+  <h2>Centric is locked</h2>
   <p id="lockMsg"></p>
   <button class="btn" id="btnUnlock">Tap to unlock</button>
   <button class="alt" id="btnLockPass" hidden>Use passcode instead</button>
@@ -720,7 +720,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06l';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1831,7 +1831,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Folio',break:'Holdings',trend:'Trends',txn:'Activity'};
+const TITLES={home:'Centric',break:'Holdings',trend:'Trends',txn:'Activity'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
@@ -2543,8 +2543,8 @@ async function enrollLock(){
   }catch(e){}
   try{
     const cred = await navigator.credentials.create({ publicKey:{
-      rp:{ name:'Folio' },
-      user:{ id: rand(16), name:'folio', displayName:'Folio' },
+      rp:{ name:'Centric' },
+      user:{ id: rand(16), name:'centric', displayName:'Centric' },
       challenge: rand(32),
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' },
@@ -2592,7 +2592,7 @@ $('#btnLockPass').onclick = ()=>{
     const act = a.dataset.act; close();
     if (act==='eye'){ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); }
     else if (act==='lock') lockNow(false);
-    else if (act==='lockon'){ if (confirm('Turn on Face ID lock?\n\nFolio will ask for Face ID when it opens and after a minute in the background.')) enrollLock(); }
+    else if (act==='lockon'){ if (confirm('Turn on Face ID lock?\n\nCentric will ask for Face ID when it opens and after a minute in the background.')) enrollLock(); }
     else if (act==='lockoff'){
       try{ await verifyFace(); }catch(err){ toast('Face ID is needed to turn the lock off'); return; }
       if (confirm('Turn off Face ID lock?')){ lockCfg = null; localStorage.removeItem('inv.lock'); paintMenu(); toast('Face ID lock is off'); }
