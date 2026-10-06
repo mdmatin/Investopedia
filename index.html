@@ -700,7 +700,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1015,10 +1015,13 @@ function tickerTile(t){
   </div>`;
 }
 
-function txnRow(t, showDate){
+function txnRow(t, showDate, noPlatform){
   const buy = t.order==='Buy';
-  // dated groups already show the date, so that space goes to the bucket instead
-  const meta = [esc(t.platform||'—'), showDate ? fDate(t.date) : (t.bucket?esc(t.bucket):null)].filter(Boolean).join(' · ');
+  // dated groups already show the date, so that space goes to the bucket instead;
+  // on a platform's own page the platform is known, so the bucket takes its place
+  const meta = (noPlatform
+    ? [t.bucket?esc(t.bucket):null, fDate(t.date)]
+    : [esc(t.platform||'—'), showDate ? fDate(t.date) : (t.bucket?esc(t.bucket):null)]).filter(Boolean).join(' · ');
   const side = `<span class="bs ${buy?'buy':'sell'}" aria-label="${buy?'Buy':'Sell'}">${buy?'B':'S'}</span><span class="sep">·</span>`;
   return `<button class="row" data-row="${t.row}">
     ${tickerTile(t)}
@@ -1198,7 +1201,7 @@ function renderPlatforms(bk){
       ? `<div class="listfoot"><span>${rows.length} platform${rows.length===1?'':'s'}</span>
          <span>${fCompact(rows.reduce((s,p)=>s+p.value,0))}</span></div>`
       : '<div class="empty">No platforms</div>');
-  $$('#platformList .row[data-p]').forEach(r=>r.onclick=()=>openPlatform(r.dataset.p));
+  $$('#platformList .row[data-p]').forEach(r=>r.onclick=()=>openPlatform(r.dataset.p, $$('#platformList .row[data-p]').map(x=>x.dataset.p)));
 }
 
 function renderBreakdown(bd, bk){
@@ -2003,7 +2006,10 @@ function openHolding(ticker, list){
   const L = [...new Set((list||[]).map(String))];
   pushPage({ kind:'holding', ticker:String(ticker), list: L.length>1 ? L : null });
 }
-function openPlatform(name){ pushPage({ kind:'platform', platform:String(name) }); }
+function openPlatform(name, list){
+  const L = [...new Set((list||[]).map(String))];
+  pushPage({ kind:'platform', platform:String(name), list: L.length>1 ? L : null });
+}
 
 function pushPage(p){
   pageStack.push(p);
@@ -2021,8 +2027,8 @@ function popPage(){
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
 }
 function stepper(p){
-  if (p.kind!=='holding' || !p.list) return '';
-  const i = p.list.indexOf(p.ticker); if (i<0) return '';
+  if ((p.kind!=='holding' && p.kind!=='platform') || !p.list) return '';
+  const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.platform); if (i<0) return '';
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<div class="pg-step">
       <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
@@ -2066,13 +2072,20 @@ function renderPage(){
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
   // prev / next swap the ticker in place, so Back still returns to the list
   $$('#page [data-step]').forEach(b=>b.onclick=()=>{
-    const L=p.list||[], i=L.indexOf(p.ticker), n=L[i+Number(b.dataset.step)];
-    if(n){ p.ticker=n; renderPage(); $('#page').scrollTop=0; }
+    const k = p.kind==='holding' ? 'ticker' : 'platform';
+    const L=p.list||[], i=L.indexOf(p[k]), n=L[i+Number(b.dataset.step)];
+    if(n){ p[k]=n; renderPage(); $('#page').scrollTop=0; }
   });
   $$('#page .row[data-row]').forEach(b=>b.onclick=()=>{
-    const list = (tkCache[p.ticker]||{}).txns || [];
+    const list = ((p.kind==='platform' ? platCache[p.platform] : tkCache[p.ticker])||{}).txns || [];
     openSheet(list.find(t=>t.row==b.dataset.row));
   });
+  if (p.kind==='platform'){
+    loadPlatform(p.platform);
+    drawHist('P:'+p.platform, false);
+    $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+    $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+  }
   if (p.kind==='holding'){
     loadTickerTxns(p.ticker); loadTickerHistory(p.ticker);
     const h0 = (D.data.holdings||[]).find(x=>String(x.ticker).toUpperCase()===p.ticker.toUpperCase());
@@ -2145,6 +2158,35 @@ function drawHist(ticker, usdRow){
     + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
   hoverable(el, svg, tip, pts, x, W, p=>{ const g=p.value-p.invested;
     return `<b>${fDate(p.date)}</b><br>Current ${m(p.value)}<br>Invested ${m(p.invested)}<br>${g>=0?'Gain':'Loss'} ${m(Math.abs(g))}`; });
+}
+
+// One call per platform: its orders and its weekly invested-vs-value history.
+// The history is kept in histCache under 'P:<name>' so the ticker chart code draws it.
+const platCache = {};
+async function loadPlatform(name){
+  const c = platCache[name];
+  if (c && (c.loading || (Date.now() - c.at) < ((c.txns) ? 6e5 : 2e4))) return;
+  platCache[name] = { loading:true, txns: c && c.txns, at: Date.now() };
+  histCache['P:'+name] = histCache['P:'+name] || { loading:true, at: Date.now() };
+  try{
+    const j = await api({ action:'platform', platform:name });
+    const dd = j.data || {};
+    platCache[name] = { txns: dd.transactions || [], at: Date.now() };
+    histCache['P:'+name] = { pts: dd.points || [], at: Date.now() };
+  }catch(e){
+    const msg = e.message || 'Could not load';
+    if (/unknown action/i.test(msg)){
+      // older script: fall back to the orders the app already has, and say what the chart needs
+      const k = platKey(name);
+      platCache[name] = { txns: ((D.data && D.data.transactions) || []).filter(t=>platKey(t.platform)===k), at: Date.now(), partial:true };
+      histCache['P:'+name] = { err: 'Chart needs the latest script (2026-10-06b)', at: Date.now() };
+    } else {
+      platCache[name] = { err: msg, at: Date.now() };
+      histCache['P:'+name] = { err: msg, at: Date.now() };
+    }
+  }
+  const top = pageStack[pageStack.length-1];
+  if (top && top.kind==='platform' && top.platform===name){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 
 async function loadTickerTxns(ticker){
@@ -2235,6 +2277,26 @@ function holdingBody(ticker){
   return card + seg + body;
 }
 
+// Annualised return from the platform's orders: buys out, sells in, today's value in.
+// Rupee amount per order — column N, or the native amount (× rate for dollars).
+function platXirr(txns, value){
+  const fl = [];
+  for (const t of txns){
+    let a = t.inr!=null ? Math.abs(t.inr) : t.amount!=null ? Math.abs(t.amount) * (isUSD(t) ? (t.fx||0) : 1) : 0;
+    if (!a || !t.date) continue;
+    fl.push({ t: Date.parse(t.date), a: t.order==='Buy' ? -a : a });
+  }
+  if (!fl.length || !(value>0)) return null;
+  fl.push({ t: Date.now(), a: value });
+  const t0 = Math.min(...fl.map(f=>f.t)), yr = f => (f.t - t0) / 31557600000;
+  if (Date.now() - t0 < 30*864e5) return null;          // under a month — not meaningful
+  const npv = r => fl.reduce((s,f)=>s + f.a / Math.pow(1+r, yr(f)), 0);
+  let lo = -0.99, hi = 10, flo = npv(lo), fhi = npv(hi);
+  if (flo*fhi > 0) return null;
+  for (let i=0;i<100;i++){ const m=(lo+hi)/2, fm=npv(m); if (Math.abs(fm)<1e-6) return m; if (flo*fm<0){hi=m;fhi=fm;} else {lo=m;flo=fm;} }
+  return (lo+hi)/2;
+}
+
 function platformBody(name){
   const all = ((D.data.buckets&&D.data.buckets.holdings)||[]).filter(h=>(h.platform||'—')===name && h.qty>1e-7);
   // one row per ticker — the same ticker can sit in several buckets on a platform
@@ -2253,25 +2315,49 @@ function platformBody(name){
   const rl = rows.reduce((s,r)=>s+r.realized,0), ret = val-inv, pct = inv ? ret/inv : null;
   const cats = [...new Set(rows.map(r=>r.category).filter(Boolean))];
   if (!cats.length && ca) cats.push('Crypto');
-  const fI = v => fINR(v);
-  return `<div class="card pg-card">
+  const pd = platformDay(name);
+  const sgn = v => v==null ? '—' : `${v<0?'−':v>0?'+':''}${fINR(Math.abs(v))}`;
+  // Share of the whole portfolio, in rupees (Total row of the Net worth assets)
+  const totNW = (((D.data.netWorth||{}).assets||[]).find(a=>a.isTotal)||{}).value;
+  const share = totNW ? val/totNW : null;
+
+  // 1 · hero — value, today, then the invested-vs-value chart, like a ticker
+  const card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
-        <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'}</div></div></div>
+        <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div></div>
       <div class="pg-big num money">${fINR(val)}</div>
-      <div class="pg-two num money">
-        <div><div class="k">Returns${pct!=null?` <span class="${cls(pct)}">(<span class="arrow">${pct>=0?'▲':'▼'}</span>${fPct(Math.abs(pct),false)})</span>`:''}</div>
-          <div class="v ${cls(ret)}">${ret<0?'−':'+'}${fINR(Math.abs(ret))}</div></div>
-        ${(()=>{ const pd = platformDay(name); if (!pd || pd.dayChange==null) return '';
-          const q = pd.dayChangePct;
-          return `<div><div class="k">Today${q!=null?` <span class="${cls(q)}">(${q?`<span class="arrow">${q>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(q),false)})</span>`:''}</div>
-            <div class="v ${cls(pd.dayChange)}">${pd.dayChange<0?'−':pd.dayChange>0?'+':''}${fINR(Math.abs(pd.dayChange))}</div></div>`; })()}
-      </div>
-      <div class="pg-grid num money">
-        <div><div class="k">Invested</div><div class="v">${fINR(inv)}</div></div>
-        <div><div class="k">Realised</div><div class="v ${cls(rl)}">${fINR(rl)}</div></div>
-        <div><div class="k">Holdings</div><div class="v">${rows.length}</div></div>
-      </div></div>
-    <div class="sechead"><h2>Holdings</h2></div>
+      ${pd && pd.dayChange!=null ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(pd.dayChange, fINR)}${pd.dayChangePct!=null?` <span class="${cls(pd.dayChangePct)}">(${fPct(Math.abs(pd.dayChangePct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
+      ${histInner('P:'+name)}
+    </div>`;
+
+  const c = platCache[name] || {}, txns = c.txns || [];
+  const xr = c.txns && !c.partial ? platXirr(txns, val) : null;
+  const top = pageStack[pageStack.length-1] || {}, tab = top.tab || 'overview';
+  const seg = `<div class="utabs" id="hdSeg">
+      <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
+
+  if (tab==='orders'){
+    const buys = txns.filter(t=>t.order==='Buy').length, sells = txns.length - buys;
+    const list = c.err ? `<div class="pg-load">${esc(c.err)}</div>`
+               : !c.txns ? '<div class="pg-load">Loading orders…</div>'
+               : txns.length ? txns.map(t=>txnRow(t,true,true)).join('')
+               : '<div class="pg-load">No orders found on this platform</div>';
+    return card + seg + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight">${list}</div>`;
+  }
+
+  // 2 · Overview — the same tiles as a ticker, then the holdings on this platform
+  const stats = `<div class="card hstats num"><div class="kgrid">
+      <div><span>Invested</span><b>${fINR(inv)}</b></div>
+      <div><span>Holdings</span><b>${rows.length}</b></div>
+      <div><span>XIRR</span><b class="${xr!=null?cls(xr):''}">${xr!=null?fPct(xr,false):c.txns?'—':'…'}</b></div>
+      <div><span>Current returns</span><b class="${cls(ret)}">${sgn(ret)}</b>${pct!=null?`<i class="${cls(pct)}">(${fPct(pct,false)})</i>`:''}</div>
+      <div><span>Realised</span><b class="${cls(rl)}">${sgn(rl)}</b></div>
+      <div><span>Total P&amp;L</span><b class="${cls(ret+rl)}">${sgn(ret+rl)}</b></div>
+    </div>
+    ${share!=null?`<div class="hrow"><span>Share of portfolio</span><b>${fPct(share,false)}</b></div>`:''}
+    </div>`;
+  const held = `<div class="sechead"><h2>Holdings</h2></div>
     <div class="card tight">${rows.map(r=>{
       const g = r.value-r.invested, gp = r.invested ? g/r.invested : null;
       return `<div class="row tap" data-t="${esc(r.ticker)}">${tickerTile(r)}
@@ -2279,6 +2365,7 @@ function platformBody(name){
         <div class="r"><div class="v num money">${fINR(r.value)}</div>
           <div class="p"><span class="pill sm ${cls(g)} num money">${fPct(gp)}</span></div></div></div>`;
     }).join('') || '<div class="empty">Nothing held here</div>'}</div>`;
+  return card + seg + stats + held;
 }
 
 /* ==========================================================================
