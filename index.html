@@ -720,7 +720,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06l';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2117,21 +2117,69 @@ function openPlatform(name, list){
   pushPage({ kind:'platform', platform:String(name), list: L.length>1 ? L : null });
 }
 
+// Each drill-down page is also a history entry, so iOS's back swipe, the
+// browser's Back and the on-screen back button all walk the same stack.
 function pushPage(p){
   pageStack.push(p);
+  try{ history.pushState({ pg: pageStack.length }, ''); }catch(e){}
   const el = $('#page'), opening = el.hidden;
   if (opening){ el.hidden = false; document.body.classList.add('paged'); }
+  el.style.transition = ''; el.style.transform = '';
   renderPage();
   el.scrollTop = 0;                       // after unhiding — a hidden element ignores it
   if (opening) requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
 }
+// back button / edge swipe: step the history; popstate does the work
 function popPage(){
+  if (history.state && history.state.pg) history.back(); else popPageNow();
+}
+function popPageNow(){
   pageStack.pop();
   const el = $('#page');
+  el.style.transition = ''; el.style.transform = '';
   if (pageStack.length){ renderPage(); el.scrollTop = 0; return; }
   el.classList.remove('show'); document.body.classList.remove('paged');
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
 }
+window.addEventListener('popstate', e=>{
+  const want = (e.state && e.state.pg) || 0;
+  if ($('#sheet') && $('#sheet').classList.contains('show') && typeof closeSheet==='function') closeSheet();
+  while (pageStack.length > want) popPageNow();
+});
+try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
+
+// Swipe from the left edge of a detail page to go back, like a native app.
+// If iOS's own back gesture already went back, the stack has shrunk and this
+// does nothing more.
+(function edgeSwipe(){
+  let x0 = null, y0 = 0, dx = 0, depth = 0, horiz = null;
+  const el = () => $('#page');
+  window.addEventListener('touchstart', e=>{
+    if (!pageStack.length || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (t.clientX > 28) return;
+    x0 = t.clientX; y0 = t.clientY; dx = 0; horiz = null; depth = pageStack.length;
+  }, { passive:true });
+  window.addEventListener('touchmove', e=>{
+    if (x0 == null) return;
+    const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+    if (horiz == null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horiz = Math.abs(mx) > Math.abs(my);
+    if (!horiz) return;
+    dx = Math.max(0, mx);
+    const p = el(); p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`;
+  }, { passive:true });
+  window.addEventListener('touchend', ()=>{
+    if (x0 == null) return;
+    const p = el(), go = horiz && dx > window.innerWidth * 0.33;
+    x0 = null;
+    p.style.transition = 'transform .25s cubic-bezier(.32,.72,0,1)';
+    if (!go){ p.style.transform = ''; return; }
+    // a top-level page slides fully out; a nested one snaps back as the previous page renders in place
+    p.style.transform = pageStack.length === 1 ? 'translateX(100%)' : '';
+    setTimeout(()=>{ if (pageStack.length === depth) popPage(); }, 60);
+  }, { passive:true });
+})();
+
 function stepper(p){
   if ((p.kind!=='holding' && p.kind!=='platform') || !p.list) return '';
   const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.platform); if (i<0) return '';
