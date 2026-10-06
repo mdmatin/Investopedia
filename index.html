@@ -189,6 +189,10 @@ main{padding:0}
 .row.tap{cursor:pointer}
 .row .chev{flex:none;color:var(--ink-3);font-size:15px;line-height:1}
 .ed{padding:16px 0 18px;border-top:1px solid var(--hairline)}
+.pg-edit{display:inline-flex;align-items:center;gap:8px;color:inherit;text-align:left}
+.pg-edit svg{width:18px;height:18px;color:var(--blue);flex:none}
+.pg-ed{margin-top:10px;padding-bottom:6px}
+.pg-ed .hint{font-size:12px;color:var(--ink-3);margin-top:8px}
 .ed .inwrap{display:flex;align-items:center;gap:10px;background:var(--parchment);
   border:1px solid var(--card-edge);border-radius:12px;padding:10px 14px}
 .ed .inwrap span{color:var(--ink-3);font-size:19px}
@@ -711,7 +715,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2136,6 +2140,32 @@ function renderPage(){
   });
   if (p.kind==='platform'){
     loadPlatform(p.platform);
+    const vb = $('#page [data-vedit]');
+    if (vb) vb.onclick = ()=>{ p.editVal = !p.editVal; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+    const ed = $('#page .pg-ed');
+    if (ed){
+      const inp = ed.querySelector('input'); inp.focus(); inp.select();
+      const close = ()=>{ p.editVal=false; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+      const save = async ()=>{
+        const ca = cryptoApp(p.platform); if (!ca) return;
+        const amount = Number(String(inp.value).replace(/[,\s₹]/g,''));
+        if (!isFinite(amount) || amount < 0){ toast('That is not a valid amount'); return; }
+        const btn = ed.querySelector('.save'); btn.disabled = true; btn.textContent = 'Saving…';
+        try{
+          const res = await apiPost('setCrypto', { row:ca.row, col:ca.col, name:ca.name, amount });
+          ca.current = res && res.after!=null ? res.after : amount;
+          toast(ca.name + ' → ' + fINR(ca.current));
+          close();
+          refresh();                                   // totals on Net Worth are sheet formulas
+        }catch(e){
+          btn.disabled = false; btn.textContent = 'Save';
+          toast(/unknown action/i.test(e.message||'') ? 'Needs the latest script (2026-10-06c)' : (e.message || 'Could not save'));
+        }
+      };
+      ed.querySelector('.cancel').onclick = close;
+      ed.querySelector('.save').onclick = save;
+      inp.onkeydown = e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') close(); };
+    }
     drawHist('P:'+p.platform, false);
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
@@ -2233,7 +2263,7 @@ async function loadPlatform(name){
       // older script: fall back to the orders the app already has, and say what the chart needs
       const k = platKey(name);
       platCache[name] = { txns: ((D.data && D.data.transactions) || []).filter(t=>platKey(t.platform)===k), at: Date.now(), partial:true };
-      histCache['P:'+name] = { err: 'Chart needs the latest script (2026-10-06b)', at: Date.now() };
+      histCache['P:'+name] = { err: 'Chart needs the latest script (2026-10-06c)', at: Date.now() };
     } else {
       platCache[name] = { err: msg, at: Date.now() };
       histCache['P:'+name] = { err: msg, at: Date.now() };
@@ -2370,6 +2400,9 @@ function platformBody(name){
   const cats = [...new Set(rows.map(r=>r.category).filter(Boolean))];
   if (!cats.length && ca) cats.push('Crypto');
   const pd = platformDay(name);
+  // an exchange whose value is typed on the Crypto tab can be updated from here
+  const top0 = pageStack[pageStack.length-1] || {};
+  const canEdit = !!(ca && ca.manual && ca.row && ca.col);
   const sgn = v => v==null ? '—' : `${v<0?'−':v>0?'+':''}${fINR(Math.abs(v))}`;
   // Share of the whole portfolio, in rupees (Total row of the Net worth assets)
   const totNW = (((D.data.netWorth||{}).assets||[]).find(a=>a.isTotal)||{}).value;
@@ -2379,7 +2412,11 @@ function platformBody(name){
   const card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
         <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div></div>
-      <div class="pg-big num money">${fINR(val)}</div>
+      ${canEdit ? `<button class="pg-big pg-edit num money" data-vedit aria-label="Edit current value">${fINR(val)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>` : `<div class="pg-big num money">${fINR(val)}</div>`}
+      ${canEdit && top0.editVal ? `<div class="ed pg-ed">
+        <div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${ca.current ?? 0}" aria-label="${esc(name)} current value"></div>
+        <div class="hint">Saved to the Crypto tab · ${esc(ca.name)} current value</div>
+        <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : ''}
       ${pd && pd.dayChange!=null ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(pd.dayChange, fINR)}${pd.dayChangePct!=null?` <span class="${cls(pd.dayChangePct)}">(${fPct(Math.abs(pd.dayChangePct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
       ${histInner('P:'+name)}
     </div>`;
