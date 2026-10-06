@@ -477,6 +477,16 @@ body.paged{overflow:hidden}
 .kgrid i{font-style:normal;font-size:13px;font-weight:500}
 .kgrid span{font-size:12.5px;color:var(--ink-2);letter-spacing:-.08px}
 .kgrid b{font-size:16px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asum{padding:14px 16px 12px;margin-bottom:12px}
+.asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
+.asum .big{font-family:var(--font-disp);font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15;margin-top:2px}
+.asum .big{font-size:26px}
+.asum .dd{font-size:13.5px;letter-spacing:-.15px;margin-top:1px;white-space:nowrap} .asum .dd .arrow{font-size:.82em} .asum .dd .k{color:var(--ink-3)}
+.arow{display:grid;grid-template-columns:auto 1fr auto;column-gap:14px;border-top:1px solid var(--hairline);margin-top:12px;padding-top:10px}
+.arow > div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.arow > div:nth-child(2){align-items:center;text-align:center} .arow > div:nth-child(3){align-items:flex-end;text-align:right}
+.arow span{font-size:12px;color:var(--ink-2)} .arow b{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.arow b i{font-style:normal;font-weight:500;font-size:12px}
 .segn{font-weight:500;color:var(--ink-3);font-size:13px;margin-left:2px}
 .ocnt{font-size:13px;color:var(--ink-2);padding:0 24px 8px;letter-spacing:-.08px}
 .utabs{display:flex;gap:26px;margin:18px 16px 14px;padding:0 4px;border-bottom:1px solid var(--hairline)}
@@ -601,6 +611,7 @@ body.paged{overflow:hidden}
 
       <div class="hsec" id="s-assets">
         <div class="chips" id="assetChips"></div>
+        <div class="card asum" id="assetSum" hidden></div>
         <div class="card tight" id="assetList"></div>
       </div>
 
@@ -700,7 +711,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1079,6 +1090,42 @@ function renderAssets(holdings, usdInr){
   // one category filtered → total in its own currency; All → converted to ₹
   const native = assetCat!=='All' && rows.length && isUSD(rows[0]);
   const sum = rows.reduce((s,h)=> s + (native ? (h.value||0) : inInr(h)), 0);
+
+  // summary of whatever the chip shows — in dollars for US alone, otherwise rupees
+  { const el = $('#assetSum');
+    if (!rows.length){ el.hidden = true; }
+    else {
+      const conv = h => native ? 1 : (isUSD(h) ? fx : 1);
+      const invested = rows.reduce((s,h)=>s+(h.invested||0)*conv(h),0);
+      const ret = sum - invested, rp = invested ? ret/invested : null;
+      // Day is held in rupees on every row; divide back to dollars only for the US view
+      const dayRows = rows.filter(h=>h.day!=null);
+      const dayInr = dayRows.reduce((s,h)=>s+h.day,0);
+      const day = !dayRows.length ? null : native ? (haveFx ? dayInr/fx : null) : dayInr;
+      const dp = day!=null && (sum-day) ? day/(sum-day) : null;
+      const mo = native ? (v => usd.format(v)) : (v => fINR(v));
+      const sg = v => `${v<0?'−':v>0?'+':''}${mo(Math.abs(v))}`;
+      // XIRR from the matching Net Worth row (the Total row for All)
+      const nwA = ((D && D.data && D.data.netWorth && D.data.netWorth.assets) || []);
+      const nwRow = assetCat==='All' ? nwA.find(a=>a.isTotal) : nwA.find(a=>!a.isTotal && assetCatFor(a.name, all)===assetCat);
+      const xr = nwRow && nwRow.xirr!=null ? nwRow.xirr : null;
+      el.hidden = false;
+      // short side figures: dollars in K / M, rupees in K / L / Cr
+      const dp2 = (n, d) => String(+n.toFixed(d));
+      const km = v => { const x=Math.abs(v);
+        if (native) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'K' : x.toFixed(0));
+        return '₹' + (x>=1e7 ? dp2(x/1e7,2)+'Cr' : x>=1e5 ? dp2(x/1e5, x>=1e6?1:2)+'L' : x>=1e3 ? dp2(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); };
+      const skm = v => `${v<0?'−':v>0?'+':''}${km(v)}`;
+      el.innerHTML = `<div class="lbl">${assetCat==='All' ? 'All holdings' : esc(CAT_LABEL[assetCat]||assetCat)} · ${rows.length} holding${rows.length===1?'':'s'}</div>
+        <div class="big num money">${mo(sum)}</div>
+        ${day!=null ? `<div class="dd num money">${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span></div>` : ''}
+        <div class="arow num">
+          <div><span>Invested</span><b class="money">${km(invested)}</b></div>
+          <div><span>Returns</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
+          <div><span>XIRR</span><b class="${xr!=null?cls(xr):''}">${xr!=null?fPct(xr,false):'—'}</b></div>
+        </div>`;
+    }
+  }
 
   $('#assetList').innerHTML = rows.map(h=>{
     const m = money(h), m2 = money2(h);
