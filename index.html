@@ -55,7 +55,8 @@
 /* ========================================================================== */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--parchment);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.374px;-webkit-font-smoothing:antialiased}
-body{padding-bottom:calc(96px + env(safe-area-inset-bottom));min-height:100vh;overscroll-behavior-y:contain}
+html{overscroll-behavior-y:none}
+body{padding-bottom:calc(96px + env(safe-area-inset-bottom));min-height:100vh;overscroll-behavior-y:none}
 button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 button:active{transform:scale(.97)}
@@ -388,6 +389,7 @@ th.r,td.r{text-align:right}
 .backdrop.show{opacity:1}
 .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--parchment);border-radius:22px 22px 0 0;z-index:21;max-height:93vh;overflow:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);padding:8px 16px calc(20px + env(safe-area-inset-bottom))}
 .sheet.show{transform:none}
+.sheet{overscroll-behavior:contain}
 .grab{width:36px;height:5px;border-radius:3px;background:#d6d6db;margin:4px auto 12px;position:relative}
 .grab::after{content:'';position:absolute;left:-60px;right:-60px;top:-12px;bottom:-10px}
 .sheet h3{font-family:var(--font-disp);margin:0 4px 14px;font-size:22px;font-weight:600;letter-spacing:-.5px;display:flex;justify-content:space-between;align-items:center}
@@ -738,7 +740,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06v';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1520,8 +1522,9 @@ function openSheet(t){
     if (!vert) { if (vert === false) y0 = null; return; }
     if (el.scrollTop > 0) { y0 = null; el.style.transform=''; return; }
     dy = Math.max(0, my);
+    if (e.cancelable) e.preventDefault();           // don't let the browser pull or reload underneath
     el.style.transition = 'none'; el.style.transform = `translateY(${dy}px)`;
-  }, { passive:true });
+  }, { passive:false });
   const end = ()=>{
     if (y0 == null) return;
     const el = sh(), fast = dy > 40 && dy / Math.max(1, Date.now() - t0) > 0.6;
