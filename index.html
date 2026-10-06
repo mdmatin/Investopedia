@@ -437,6 +437,7 @@ th.r,td.r{text-align:right}
   padding-bottom:calc(40px + env(safe-area-inset-bottom))}
 .page.show{transform:none}
 body.paged{overflow:hidden}
+.page{touch-action:pan-y}
 .pg-head{position:sticky;top:0;z-index:2;background:rgba(245,245,247,.86);backdrop-filter:saturate(180%) blur(20px);
   -webkit-backdrop-filter:saturate(180%) blur(20px);padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
   display:flex;align-items:center;gap:6px;min-height:44px}
@@ -720,7 +721,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2171,7 +2172,7 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
   window.addEventListener('touchstart', e=>{
     if (!pageStack.length || e.touches.length !== 1) return;
     const t = e.touches[0];
-    if (t.clientX > 28) return;
+    if (t.clientX > 40) return;
     x0 = t.clientX; y0 = t.clientY; dx = 0; horiz = null; depth = pageStack.length;
   }, { passive:true });
   window.addEventListener('touchmove', e=>{
@@ -2182,7 +2183,9 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
     dx = Math.max(0, mx);
     const p = el(); p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`;
   }, { passive:true });
-  window.addEventListener('touchend', ()=>{
+  // iOS sends touchcancel instead of touchend when it takes the touch for
+  // scrolling, so both finish the gesture
+  const finish = ()=>{
     if (x0 == null) return;
     const p = el(), go = horiz && dx > window.innerWidth * 0.33;
     x0 = null;
@@ -2191,7 +2194,9 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
     // a top-level page slides fully out; a nested one snaps back as the previous page renders in place
     p.style.transform = pageStack.length === 1 ? 'translateX(100%)' : '';
     setTimeout(()=>{ if (pageStack.length === depth) popPage(); }, 60);
-  }, { passive:true });
+  };
+  window.addEventListener('touchend', finish, { passive:true });
+  window.addEventListener('touchcancel', finish, { passive:true });
 })();
 
 function stepper(p){
