@@ -720,7 +720,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2130,19 +2130,32 @@ function pushPage(p){
   if (opening) requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
 }
 // back button / edge swipe: step the history; popstate does the work
+let backFromButton = false;
 function popPage(){
-  if (history.state && history.state.pg) history.back(); else popPageNow();
+  if (history.state && history.state.pg){ backFromButton = true; history.back(); } else popPageNow();
 }
-function popPageNow(){
+function popPageNow(instant){
   pageStack.pop();
   const el = $('#page');
-  el.style.transition = ''; el.style.transform = '';
+  el.style.transition = instant ? 'none' : ''; el.style.transform = '';
   if (pageStack.length){ renderPage(); el.scrollTop = 0; return; }
   el.classList.remove('show'); document.body.classList.remove('paged');
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
 }
+// In Safari the browser has its own back swipe (with its own animation); only the
+// home-screen app needs ours. When Safari's swipe goes back, skip our slide-out
+// so the page doesn't animate twice.
+const IS_STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 window.addEventListener('popstate', e=>{
   const want = (e.state && e.state.pg) || 0;
+  const ours = backFromButton; backFromButton = false;
+  if (!IS_STANDALONE && !ours && pageStack.length > want){
+    const el = $('#page');
+    while (pageStack.length > want) popPageNow(true);
+    if (!pageStack.length){ el.style.transition = 'none'; el.hidden = true; el.innerHTML = ''; }
+    requestAnimationFrame(()=>{ el.style.transition = ''; });
+    return;
+  }
   if ($('#sheet') && $('#sheet').classList.contains('show') && typeof closeSheet==='function') closeSheet();
   while (pageStack.length > want) popPageNow();
 });
@@ -2154,6 +2167,7 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
 (function edgeSwipe(){
   let x0 = null, y0 = 0, dx = 0, depth = 0, horiz = null;
   const el = () => $('#page');
+  if (!IS_STANDALONE) return;                    // Safari already has a back swipe
   window.addEventListener('touchstart', e=>{
     if (!pageStack.length || e.touches.length !== 1) return;
     const t = e.touches[0];
