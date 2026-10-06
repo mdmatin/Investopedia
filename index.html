@@ -71,7 +71,22 @@ button:active{transform:scale(.97)}
 .nav .sub{font-size:12px;color:var(--ink-3);letter-spacing:-.12px;display:flex;align-items:center;gap:5px;margin-top:1px}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--up);flex:none}
 .dot.stale{background:var(--ink-3)} .dot.err{background:var(--down)}
-.navbtns{display:flex;gap:18px;color:var(--blue);padding-bottom:4px}
+.navbtns{display:flex;gap:18px;color:var(--blue);padding-bottom:4px;align-self:center}
+.nav .eyebrow{font-size:12px;font-weight:600;letter-spacing:.4px;color:var(--ink-3);text-transform:uppercase;line-height:1.3}
+.nav .eyebrow:empty{display:none}
+.navbtns .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0d5c4a,#0aa58a);color:#fff;
+  font-weight:600;font-size:15px;letter-spacing:0;display:grid;place-items:center;transition:width .2s,height .2s}
+.mk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.mk + .mk{margin-left:10px}
+.mk i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block}
+.mk i.on{background:var(--up)}
+/* scrolled: the large title folds into a small centred one, like iOS */
+.nav h1,.nav .eyebrow,.nav .sub{transition:font-size .2s,opacity .2s}
+.nav.mini{padding-bottom:9px;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.nav.mini .navl{flex:1;text-align:center;padding-left:34px}
+.nav.mini h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.nav.mini .eyebrow,.nav.mini .sub{display:none}
+.nav.mini .navbtns .avatar{width:30px;height:30px;font-size:13px}
 .navbtns button{width:24px;height:24px;display:grid;place-items:center}
 .navbtns svg{width:20px;height:20px}
 .spin svg{animation:spin 1s linear infinite}
@@ -573,12 +588,13 @@ body.paged{overflow:hidden}
 <!-- =================== APP =================== -->
 <div id="app" hidden>
   <header class="nav">
-    <div>
-      <h1 id="title">Centric</h1>
-      <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
+    <div class="navl">
+      <div class="eyebrow" id="navDate"></div>
+      <h1 id="title">Overview</h1>
+      <div class="sub" id="navSub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
-      <button id="btnMore" aria-label="More" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
+      <button id="btnMore" class="avatar" aria-label="Menu" aria-haspopup="menu">M</button>
     </div>
     <div class="menu" id="moreMenu" role="menu" hidden></div>
   </header>
@@ -720,7 +736,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06p';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -790,9 +806,43 @@ async function refresh(manual){
     if(manual) toast(e.message);
   }finally{ loading=false; ptrSpin(false); }
 }
-function setStatus(t,k){ $('#statusTxt').textContent=t; $('#dot').className='dot '+k; }
+// The line under the title shows the markets. Sync state takes its place only
+// when it matters: refreshing, offline, or data older than a few minutes.
+let navState = { t:'Loading…', k:'' };
+function setStatus(t,k){ navState = { t, k }; paintSub(); }
+function paintSub(){
+  const sub = $('#navSub'); if (!sub) return;
+  const fresh = D && navState.k==='' && !/^Refreshing/.test(navState.t) && (Date.now()-D.at) < 5*60*1000;
+  if (fresh){ sub.innerHTML = marketLine(); return; }
+  sub.innerHTML = `<span class="dot ${navState.k}" id="dot"></span><span id="statusTxt">${esc(navState.t)}</span>`;
+}
+// minutes since midnight and weekday in a market's own time zone
+function zoneNow(tz){
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'short',hour:'numeric',minute:'numeric',hourCycle:'h23'})
+    .formatToParts(new Date()).map(x=>[x.type,x.value]));
+  return { wd:p.weekday, mins:Number(p.hour)*60+Number(p.minute) };
+}
+function mkt(name, tz, open, close){
+  const z = zoneNow(tz), weekday = !/Sat|Sun/.test(z.wd);
+  if (weekday && z.mins >= open && z.mins < close) return `<span class="mk"><i class="on"></i>${name} open</span>`;
+  if (weekday && z.mins < open){
+    const at = new Date(Date.now() + (open - z.mins) * 60000);
+    return `<span class="mk"><i></i>${name} opens ${at.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</span>`;
+  }
+  return `<span class="mk"><i></i>${name} closed</span>`;
+}
+// regular sessions only — exchange holidays aren't known here
+function marketLine(){ return mkt('NSE','Asia/Kolkata',555,930) + mkt('NYSE','America/New_York',570,960); }
+setInterval(paintSub, 30000);
+// date above the Overview title
+function paintDate(){
+  const el = $('#navDate'); if (!el) return;
+  el.textContent = activeView==='home' ? new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) : '';
+}
+paintDate();
+window.addEventListener('scroll', ()=>{ const n=$('.nav'); if(n) n.classList.toggle('mini', window.scrollY > 44); }, { passive:true });
 function schedule(){ clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') refresh(); }, REFRESH_MS); }
-setInterval(()=>{ if(D && !loading && $('#dot').className==='dot ') setStatus('Updated '+ago(Date.now()-D.at),''); }, 15000);
+setInterval(()=>{ if(D && !loading && navState.k==='') setStatus('Updated '+ago(Date.now()-D.at),''); }, 15000);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && D && Date.now()-D.at>STALE_MS) refresh(); });
 
 /* ==========================================================================
@@ -1831,7 +1881,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Centric',break:'Holdings',trend:'Trends',txn:'Activity'};
+const TITLES={home:'Overview',break:'Holdings',trend:'Trends',txn:'Activity'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
@@ -1966,7 +2016,7 @@ function show(v){
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   moveBlob(true);
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
-  $('#title').textContent=TITLES[v]; $('#fab').hidden = v!=='txn';
+  $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn';
   window.scrollTo(0,0);
   if(D){ if(v==='trend') renderTrends(D.data.daily,D.data.monthly); if(v==='home') renderHome(D.data); }
 }
@@ -2015,7 +2065,7 @@ async function loadOlderTxns(){
    from network time without any guesswork. */
 let lastTiming = null;
 (function(){
-  const el = $('#statusTxt'); if(!el) return;
+  const el = $('#navSub'); if(!el) return;
   let t;
   const show = ()=>{
     if(!lastTiming){ toast('Refresh first'); return; }
