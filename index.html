@@ -720,7 +720,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06p';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2149,7 +2149,7 @@ const IS_STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedi
 window.addEventListener('popstate', e=>{
   const want = (e.state && e.state.pg) || 0;
   const ours = backFromButton; backFromButton = false;
-  if (!IS_STANDALONE && !ours && pageStack.length > want){
+  if (!ours && pageStack.length > want){
     const el = $('#page');
     while (pageStack.length > want) popPageNow(true);
     if (!pageStack.length){ el.style.transition = 'none'; el.hidden = true; el.innerHTML = ''; }
@@ -2167,7 +2167,7 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
 (function edgeSwipe(){
   let x0 = null, y0 = 0, dx = 0, depth = 0, horiz = null;
   const el = () => $('#page');
-  if (!IS_STANDALONE) return;                    // Safari already has a back swipe
+  return;                                        // iOS (Safari and the home-screen app) has its own back swipe
   window.addEventListener('touchstart', e=>{
     if (!pageStack.length || e.touches.length !== 1) return;
     const t = e.touches[0];
