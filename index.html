@@ -74,8 +74,10 @@ button:active{transform:scale(.97)}
 .navbtns{display:flex;gap:18px;color:var(--blue);padding-bottom:4px;align-self:center}
 .nav .eyebrow{font-size:12px;font-weight:600;letter-spacing:.4px;color:var(--ink-3);text-transform:uppercase;line-height:1.3}
 .nav .eyebrow:empty{display:none}
-.navbtns .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0d5c4a,#0aa58a);color:#fff;
-  font-weight:600;font-size:15px;letter-spacing:0;display:grid;place-items:center;transition:width .2s,height .2s}
+.navbtns .avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--ink-2);
+  box-shadow:0 1px 4px rgba(0,0,0,.12),inset 0 0 0 .5px rgba(0,0,0,.08);display:grid;place-items:center;transition:width .2s,height .2s}
+.navbtns .avatar svg{width:20px;height:20px}
 .mk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .mk + .mk{margin-left:10px}
 .mk i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block}
@@ -86,7 +88,8 @@ button:active{transform:scale(.97)}
 .nav.mini .navl{flex:1;text-align:center;padding-left:34px}
 .nav.mini h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
 .nav.mini .eyebrow,.nav.mini .sub{display:none}
-.nav.mini .navbtns .avatar{width:30px;height:30px;font-size:13px}
+.nav.mini .navbtns .avatar{width:30px;height:30px}
+.nav.mini .navbtns .avatar svg{width:18px;height:18px}
 .navbtns button{width:24px;height:24px;display:grid;place-items:center}
 .navbtns svg{width:20px;height:20px}
 .spin svg{animation:spin 1s linear infinite}
@@ -594,7 +597,7 @@ body.paged{overflow:hidden}
       <div class="sub" id="navSub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
     </div>
     <div class="navbtns">
-      <button id="btnMore" class="avatar" aria-label="Menu" aria-haspopup="menu">M</button>
+      <button id="btnMore" class="avatar" aria-label="Menu" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.6" r="3.6"/><path d="M5.2 19.6c1.3-3.2 3.8-4.9 6.8-4.9s5.5 1.7 6.8 4.9"/></svg></button>
     </div>
     <div class="menu" id="moreMenu" role="menu" hidden></div>
   </header>
@@ -736,7 +739,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06s';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -837,7 +840,7 @@ setInterval(paintSub, 30000);
 // date above the Overview title
 function paintDate(){
   const el = $('#navDate'); if (!el) return;
-  el.textContent = activeView==='home' ? new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) : '';
+  el.textContent = '';                         // date line removed — the title stands alone
 }
 paintDate();
 window.addEventListener('scroll', ()=>{ const n=$('.nav'); if(n) n.classList.toggle('mini', window.scrollY > 44); }, { passive:true });
