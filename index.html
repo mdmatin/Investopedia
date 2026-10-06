@@ -514,6 +514,10 @@ body.paged{overflow:hidden}
 .hrow.tr2{align-items:center}
 .hrow.tr2 b{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
 .hrow.tr2 b em{font-style:normal;font-size:12.5px;font-weight:500}
+em .arrow{font-size:.8em;margin-right:1px;color:inherit}
+.kgrid.k2{grid-template-columns:auto auto;justify-content:space-between}
+.kgrid.k2 span{white-space:nowrap}
+.kgrid span em span.arrow{color:inherit;font-size:.8em;letter-spacing:0}
 .kgrid.k2 span em,.hrow span em{font-style:normal;font-size:12.5px}
 .kgrid.k2 b i{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:2px}
 .kgrid.kfit b{overflow:visible}
@@ -752,7 +756,7 @@ body.paged{overflow:hidden}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06aa';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-06ac';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2571,6 +2575,8 @@ function holdingBody(ticker){
 // Annualised return from the platform's orders: buys out, sells in, today's value in.
 // Rupee amount per order — column N, or the native amount (× rate for dollars).
 // short rupees for tight tiles: ₹850 · ₹34.6K · ₹2.07L · ₹1.36Cr
+// ▲12.30% / ▼4.10% — the sign carried by the arrow
+function arrowPct(p){ return p==null ? '—' : `${p?`<span class="arrow">${p>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(p),false)}`; }
 function kINR(v){ if (v==null) return '—'; const x=Math.abs(v), d=(n,k)=>String(+n.toFixed(k));
   return (v<0?'−':'') + '₹' + (x>=1e7 ? d(x/1e7,2)+'Cr' : x>=1e5 ? (x/1e5).toFixed(x>=1e6?1:2)+'L' : x>=1e3 ? d(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); }
 function skINR(v){ return v==null ? '—' : (v>0?'+':'') + kINR(v); }
@@ -2660,11 +2666,11 @@ function platformBody(name){
   const tp = inv ? (ret+rl)/inv : null;
   const stats = `<div class="card hstats num"><div class="kgrid k2">
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
-      <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${fPct(pct,false)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
+      <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.txns?'—':'…'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
-    <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">${fPct(tp,false)}</em>`:''}</b></div>
+    <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
     <div class="card tight">${rows.map(r=>{
