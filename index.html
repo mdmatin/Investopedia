@@ -517,6 +517,11 @@ body.paged{overflow:hidden}
 em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid.k2{grid-template-columns:auto auto;justify-content:space-between}
 .kgrid.k2 span{white-space:nowrap}
+.pg-id .grow{flex:1;min-width:0}
+.chart-tg{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--parchment);color:var(--ink-2);transition:background .2s,color .2s}
+.chart-tg svg{width:18px;height:18px}
+.chart-tg.on{background:rgba(0,102,204,.12);color:var(--blue)}
+.chart-tg:active{opacity:.6}
 .kgrid span em span.arrow{color:inherit;font-size:.8em;letter-spacing:0}
 .kgrid.k2 span em,.hrow span em{font-style:normal;font-size:12.5px}
 .kgrid.k2 b i{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:2px}
@@ -756,7 +761,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-06ac';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-07b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -819,8 +824,8 @@ async function refresh(manual){
     const j = await api(manual ? {action:'all', fresh:'1'} : {action:'all'});
     lastTiming = { ms: j.ms || null, round: Date.now() - t0, cached: !!j.cached };
     D = { data:j.data, at:Date.now() }; save(LS.data, D);
-    if (typeof histCache!=='undefined') Object.keys(histCache).forEach(k=>delete histCache[k]);
-    render(); setStatus('Updated just now','');
+    if (manual && typeof histCache!=='undefined') Object.keys(histCache).forEach(k=>delete histCache[k]);
+    render(manual); setStatus('Updated just now','');
   }catch(e){
     setStatus('Offline · ' + (D ? 'showing '+ago(Date.now()-D.at) : 'no data'), 'err');
     if(manual) toast(e.message);
@@ -861,14 +866,17 @@ function paintDate(){
 }
 paintDate();
 window.addEventListener('scroll', ()=>{ const n=$('.nav'); if(n) n.classList.toggle('mini', window.scrollY > 44); }, { passive:true });
-function schedule(){ clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') refresh(); }, REFRESH_MS); }
+// Background refreshes pause while a ticker or platform page is open, so the page
+// you're reading (and its chart) never redraws under you. Pull to refresh still works.
+const onDetail = () => typeof pageStack!=='undefined' && pageStack.length > 0;
+function schedule(){ clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible' && !onDetail()) refresh(); }, REFRESH_MS); }
 setInterval(()=>{ if(D && !loading && navState.k==='') setStatus('Updated '+ago(Date.now()-D.at),''); }, 15000);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && D && Date.now()-D.at>STALE_MS) refresh(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && D && Date.now()-D.at>STALE_MS && !onDetail()) refresh(); });
 
 /* ==========================================================================
    RENDER
    ========================================================================== */
-function render(){
+function render(redrawPage){
   if(!D) return;
   const d = D.data;
   renderHome(d);
@@ -877,7 +885,8 @@ function render(){
   renderTrends(d.daily, d.monthly);
   renderTxns(d.transactions);
   fillLists(d.lists);
-  if (typeof pageStack!=='undefined' && pageStack.length){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  // an open detail page only redraws when you pulled to refresh
+  if (redrawPage && typeof pageStack!=='undefined' && pageStack.length){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 
 const RANGES = {'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
@@ -2349,8 +2358,11 @@ function renderPage(){
     const list = ((p.kind==='platform' ? platCache[p.platform] : tkCache[p.ticker])||{}).txns || [];
     openSheet(list.find(t=>t.row==b.dataset.row));
   });
+  $$('#page [data-loadchart]').forEach(b=>b.onclick=()=>{ p.showChart = !p.showChart; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   if (p.kind==='platform'){
-    loadPlatform(p.platform);
+    // the platform call brings the chart and the full order list, so it waits
+    // until you ask for the chart or open Orders
+    if (p.showChart || p.tab==='orders') loadPlatform(p.platform);
     const vb = $('#page [data-vedit]');
     if (vb) vb.onclick = ()=>{ p.editVal = !p.editVal; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
     const ed = $('#page .pg-ed');
@@ -2377,15 +2389,16 @@ function renderPage(){
       ed.querySelector('.save').onclick = save;
       inp.onkeydown = e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') close(); };
     }
-    drawHist('P:'+p.platform, false);
+    if (p.showChart) drawHist('P:'+p.platform, false);
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
   if (p.kind==='holding'){
-    loadTickerTxns(p.ticker); loadTickerHistory(p.ticker);
+    loadTickerTxns(p.ticker);
+    if (p.showChart) loadTickerHistory(p.ticker);
     const h0 = (D.data.holdings||[]).find(x=>String(x.ticker).toUpperCase()===p.ticker.toUpperCase());
     const usdRow = (h0 && h0.category==='US Stocks');
-    drawHist(p.ticker, usdRow);
+    if (p.showChart) drawHist(p.ticker, usdRow);
     $$('#page [data-div]').forEach(b=>b.onclick=()=>pushPage({ kind:'dividends', ticker:p.ticker }));
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
@@ -2397,7 +2410,7 @@ let histRange = '3M';
 async function loadTickerHistory(ticker){
   const c = histCache[ticker];
   // Reuse a good result for 10 min; an empty or failed one is retried after 20 s.
-  if (c && (c.loading || (Date.now() - c.at) < ((c.pts && c.pts.length > 1) ? 6e5 : 2e4))) return;
+  if (c && (c.loading || (c.pts && c.pts.length > 1) || (Date.now() - c.at) < 2e4)) return;
   histCache[ticker] = { loading:true, pts: c && c.pts, at: Date.now() };
   try{
     const j = await api({ action:'history', ticker });
@@ -2414,7 +2427,11 @@ function histPts(ticker){
   const cut = new Date(all[all.length-1].date).getTime() - days*864e5;
   return all.filter(p=>new Date(p.date).getTime() >= cut);
 }
-function histInner(ticker){
+// small round button at the right of the title row: shows / hides the chart
+const chartToggle = on => `<button class="chart-tg ${on?'on':''}" data-loadchart aria-label="${on?'Hide':'Show'} chart" aria-pressed="${on?'true':'false'}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></button>`;
+function histInner(ticker, show){
+  if (!show) return '';
   const c = histCache[ticker] || {};
   const all = c.pts || [], pts = histPts(ticker);
   if (c.err) return `<div class="pg-load">${esc(c.err)}</div>`;
@@ -2518,10 +2535,11 @@ function holdingBody(ticker){
     // 1 · value, current returns under it, then the history chart — like the Overview hero
     card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
-        <div><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${m(h.ltp)}</span>`:''}</div></div></div>
+        <div class="grow"><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${m(h.ltp)}</span>`:''}</div></div>
+        ${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}</div>
       <div class="pg-big num money">${m(h.value)}</div>
       ${day!=null?`<div class="pg-sub num money"><span class="grp">${arrowAmt(day, m)}${h.dayPct!=null?` <span class="${cls(h.dayPct)}">(${fPct(h.dayPct,false)})</span>`:''} <span class="k">today</span></span></div>`:''}
-      ${histInner(ticker)}
+      ${histInner(ticker, (pageStack[pageStack.length-1]||{}).showChart)}
     </div>
 `;
     // Overview tiles — label over value, two per row
@@ -2634,14 +2652,15 @@ function platformBody(name){
   // 1 · hero — value, today, then the invested-vs-value chart, like a ticker
   const card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
-        <div><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div></div>
+        <div class="grow"><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div>
+        ${chartToggle(top0.showChart)}</div>
       ${canEdit ? `<button class="pg-big pg-edit num money" data-vedit aria-label="Edit current value">${fINR(val)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>` : `<div class="pg-big num money">${fINR(val)}</div>`}
       ${canEdit && top0.editVal ? `<div class="ed pg-ed">
         <div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${ca.current ?? 0}" aria-label="${esc(name)} current value"></div>
         <div class="hint">Saved to the Crypto tab · ${esc(ca.name)} current value</div>
         <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : ''}
       ${pd && pd.dayChange!=null ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(pd.dayChange, fINR)}${pd.dayChangePct!=null?` <span class="${cls(pd.dayChangePct)}">(${fPct(Math.abs(pd.dayChangePct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
-      ${histInner('P:'+name)}
+      ${histInner('P:'+name, top0.showChart)}
     </div>`;
 
   const c = platCache[name] || {}, txns = c.txns || [];
@@ -2668,7 +2687,7 @@ function platformBody(name){
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
       <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
-    <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.txns?'—':'…'}</b></div>
+    <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
     <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
