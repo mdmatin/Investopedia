@@ -522,6 +522,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .chart-tg svg{width:18px;height:18px}
 .chart-tg.on{background:rgba(0,102,204,.12);color:var(--blue)}
 .chart-tg:active{opacity:.6}
+.row.saving .v{opacity:.45;transition:opacity .2s}
 .kgrid span em span.arrow{color:inherit;font-size:.8em;letter-spacing:0}
 .kgrid.k2 span em,.hrow span em{font-style:normal;font-size:12.5px}
 .kgrid.k2 b i{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:2px}
@@ -764,7 +765,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-08a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-08c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -817,14 +818,22 @@ async function apiPost(action, data){
   if (action!=='setBank' && action!=='setWallet' && typeof tkCache!=='undefined') Object.keys(tkCache).forEach(k=>delete tkCache[k]);
   return j.data;
 }
-async function refresh(manual){
-  if(loading || !cfg) return; loading = true;
-  if (manual) ptrSpin(true); setStatus('Refreshing…','');
+// A balance save bumps editSeq. A refresh that was already in flight when the
+// save happened carries the old value, so its result is dropped and a fresh
+// read (past the server's 2-minute cache) follows instead.
+let editSeq = 0, wantFresh = false, pendingSaves = 0;
+async function refresh(manual, fresh){
+  if (!cfg) return;
+  if (loading){ if (fresh) wantFresh = true; return; }
+  loading = true;
+  if (manual) ptrSpin(true); if (!fresh) setStatus('Refreshing…','');
+  const seq = editSeq;
   try{
     const t0 = Date.now();
     // the refresh button wants the sheet as it is right now; everything else
     // (auto-refresh, reopening the app) is happy with a copy up to 2 min old
-    const j = await api(manual ? {action:'all', fresh:'1'} : {action:'all'});
+    const j = await api(manual || fresh ? {action:'all', fresh:'1'} : {action:'all'});
+    if (seq !== editSeq || pendingSaves){ wantFresh = true; return; }   // a save landed meanwhile
     lastTiming = { ms: j.ms || null, round: Date.now() - t0, cached: !!j.cached };
     D = { data:j.data, at:Date.now() }; save(LS.data, D);
     if (manual && typeof histCache!=='undefined') Object.keys(histCache).forEach(k=>delete histCache[k]);
@@ -832,7 +841,10 @@ async function refresh(manual){
   }catch(e){
     setStatus('Offline · ' + (D ? 'showing '+ago(Date.now()-D.at) : 'no data'), 'err');
     if(manual) toast(e.message);
-  }finally{ loading=false; ptrSpin(false); }
+  }finally{
+    loading=false; ptrSpin(false);
+    if (wantFresh && !pendingSaves){ wantFresh = false; setTimeout(()=>refresh(false, true), 0); }
+  }
 }
 // The line under the title shows the markets. Sync state takes its place only
 // when it matters: refreshing, offline, or data older than a few minutes.
@@ -945,8 +957,8 @@ function renderHome(d){
   const W = Object.fromEntries((nw.wallets||[]).filter(w=>w.ok).map(w=>[w.key,w]));
   EL.wal.rows = ['kite','indmoney'].filter(k=>W[k]).map(k=>{ const w=W[k];
     return w.ccy==='USD'
-      ? { name:w.name, wkey:k, wccy:'USD', usdVal:w.amount, amount:w.amount!=null&&fx?w.amount*fx:null, formula:w.formula }
-      : { name:w.name, wkey:k, wccy:'INR', amount:w.amount, formula:w.formula }; });
+      ? { name:w.name, wkey:k, wccy:'USD', usdVal:w.amount, amount:w.amount!=null&&fx?w.amount*fx:null, formula:w.formula, src:w, fx }
+      : { name:w.name, wkey:k, wccy:'INR', amount:w.amount, formula:w.formula, src:w }; });
   $('#walHead').hidden = $('#wallets').hidden = !EL.wal.rows.length;
   renderEditList(EL.wal);
 
@@ -954,7 +966,7 @@ function renderHome(d){
   // except INDwallet, whose dollar balance (C23) is edited instead
   const cons = nw.construction || {items:[], summary:[]};
   cons.items.forEach(it=>{ if (/indwallet/i.test(it.name) && W.construction && !W.construction.formula) {
-    it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; } });
+    it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; it.src = W.construction; it.fx = fx; } });
   $('#consHead').hidden = $('#construction').hidden = !cons.items.length;
   EL.cons.rows = cons.items;
   const sum = cons.summary||[], ctot = sum.find(x=>/^total$/i.test(x.name));
@@ -985,7 +997,7 @@ function renderEditList(L){
   el.innerHTML = L.rows.map((b,i)=>{
     const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
     const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
-    return `<div class="row ${can?'tap':''}" data-i="${i}">${bankMark(b.name)}
+    return `<div class="row ${can?'tap':''} ${b.saving?'saving':''}" data-i="${i}">${bankMark(b.name)}
       <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div>${meta?`<div class="m num money">${meta}</div>`:''}</div>
       <div class="r"><div class="v num money">${main}</div></div>
       ${can?`<span class="chev">${L.open===i?'⌄':'›'}</span>`:'<span class="chev"></span>'}</div>`
@@ -999,16 +1011,36 @@ function renderEditList(L){
     renderEditList(L);
   });
   const ed = el.querySelector('.ed'); if(!ed) return;
-  const inp = ed.querySelector('input');
+  const inp = ed.querySelector('input'), loc = L.rows[L.open] && L.rows[L.open].wccy==='USD' ? 'en-US' : 'en-IN';
+  commaInput(inp, loc);
   inp.focus(); inp.select();
   ed.querySelectorAll('[data-add]').forEach(q=>q.onclick=()=>{
     const by = Number(q.dataset.add);
-    inp.value = by===0 ? '0' : String(Math.round(((Number(inp.value)||0) + by) * 100) / 100);
+    inp.value = groupNum(by===0 ? '0' : String(Math.round(((Number(numPlain(inp.value))||0) + by) * 100) / 100), loc);
     inp.focus();
   });
   ed.querySelector('.cancel').onclick = ()=>{ L.open=-1; renderEditList(L); };
   ed.querySelector('.save').onclick  = ()=>saveEdit(L, L.rows[L.open], inp.value);
   inp.onkeydown = e=>{ if(e.key==='Enter') saveEdit(L, L.rows[L.open], inp.value); };
+}
+// Amount inputs show thousands separators while you type — Indian grouping
+// (1,00,000) for rupees, 100,000 for dollars. The caret stays after the same digit.
+const numPlain = v => String(v ?? '').replace(/[^0-9.\-]/g,'');
+function groupNum(raw, loc){
+  let t = numPlain(raw); const neg = t.startsWith('-'); t = t.replace(/-/g,'');
+  const dot = t.indexOf('.'); let int = dot<0 ? t : t.slice(0,dot), dec = dot<0 ? null : t.slice(dot+1).replace(/\./g,'').slice(0,2);
+  int = int.replace(/^0+(?=\d)/,'');
+  const g = int ? Number(int).toLocaleString(loc,{maximumFractionDigits:0}) : (dec!=null ? '0' : '');
+  return (neg?'-':'') + g + (dec!=null ? '.'+dec : '');
+}
+function commaInput(inp, loc){
+  inp.value = groupNum(inp.value, loc);
+  inp.addEventListener('input', ()=>{
+    const pos = inp.selectionStart, digitsBefore = numPlain(inp.value.slice(0,pos)).length;
+    inp.value = groupNum(inp.value, loc);
+    let i = 0, n = 0; while (i < inp.value.length && n < digitsBefore){ if (/[0-9.\-]/.test(inp.value[i])) n++; i++; }
+    inp.setSelectionRange(i, i);
+  });
 }
 function bankEditor(b){
   const $d = b.wccy==='USD';
@@ -1023,26 +1055,41 @@ function bankEditor(b){
     <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div>
   </div>`;
 }
+// Optimistic: the new value shows the moment you tap Save (dimmed while the
+// sheet write is in flight). If the write fails, the old value comes back and
+// the editor reopens with what you typed.
 async function saveEdit(L, b, raw){
   const amount = Number(String(raw).replace(/[,\s₹$]/g,''));
   if(!isFinite(amount)) { toast('That is not a number'); return; }
-  const btn = $(L.sel+' .ed .save'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  const keys = ['amount','usdVal','usd'], prev = {}, prevSrc = b.src ? b.src.amount : undefined;
+  keys.forEach(k=>prev[k]=b[k]);
+  const apply = v=>{
+    if (b.wkey && b.wccy==='USD'){
+      b.usdVal = v; if (b.usd!=null) b.usd = v;
+      if (b.fx) b.amount = Math.round(v * b.fx * 100) / 100;      // rupee side until the sheet recalculates
+      if (b.src) b.src.amount = v;
+    } else { b.amount = v; if (b.src) b.src.amount = v; }
+  };
+  apply(amount);
+  b.saving = true; L.open = -1; renderEditList(L);
+  editSeq++; pendingSaves++;
   try{
-    if (b.wkey) {
-      const res = await apiPost('setWallet', { key:b.wkey, amount });
-      const v = res && res.after!=null ? res.after : amount;
-      if (b.wccy==='USD') { b.usdVal = v; if (b.usd!=null) b.usd = v; } else b.amount = v;
-      L.open = -1; renderEditList(L);
-      toast(b.name + ' → ' + (b.wccy==='USD' ? fUSD(v) : fINR(v)));
-    } else {
-    const res = await apiPost('setBank', { row:b.row, col:b.col, name:b.name, amount });
-    b.amount = res && res.after!=null ? res.after : amount;
-    L.open = -1; renderEditList(L);
-    toast(b.name + ' → ' + fINR(b.amount));
-    }
-    refresh();                                        // totals below are sheet formulas
+    const res = b.wkey
+      ? await apiPost('setWallet', { key:b.wkey, amount })
+      : await apiPost('setBank', { row:b.row, col:b.col, name:b.name, amount });
+    const v = res && res.after!=null ? res.after : amount;
+    apply(v);
+    b.saving = false; renderEditList(L);
+    if (D) save(LS.data, D);
+    toast(b.name + ' → ' + (b.wccy==='USD' ? fUSD(v) : fINR(v)));
+    pendingSaves--; editSeq++;
+    refresh(false, true);                              // totals are sheet formulas — read them fresh
   }catch(e){
-    if(btn){ btn.disabled=false; btn.textContent='Save'; }
+    pendingSaves--;
+    keys.forEach(k=>b[k]=prev[k]); if (b.src) b.src.amount = prevSrc;
+    b.saving = false;
+    L.open = L.rows.indexOf(b); renderEditList(L);
+    const inp = $(L.sel+' .ed input'); if (inp){ inp.value = raw; }
     toast(e.message || 'Could not save');
   }
 }
@@ -2399,7 +2446,7 @@ function renderPage(){
     if (vb) vb.onclick = ()=>{ p.editVal = !p.editVal; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
     const ed = $('#page .pg-ed');
     if (ed){
-      const inp = ed.querySelector('input'); inp.focus(); inp.select();
+      const inp = ed.querySelector('input'); commaInput(inp, 'en-IN'); inp.focus(); inp.select();
       const close = ()=>{ p.editVal=false; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
       const save = async ()=>{
         const ca = cryptoApp(p.platform); if (!ca) return;
