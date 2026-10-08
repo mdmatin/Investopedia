@@ -643,6 +643,9 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
       <div class="card tight" id="assets"></div>
 
 
+      <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
+      <div class="card tight" id="wallets" hidden></div>
+
       <div class="sechead"><h2>Cash</h2></div>
       <div class="card tight" id="banks"></div>
 
@@ -761,7 +764,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-07b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-08a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -811,7 +814,7 @@ async function apiPost(action, data){
     body: JSON.stringify({key:cfg.key, action, data})});
   const j = await r.json(); noteScriptBuild(j);
   if(!j.ok) throw new Error(j.error||'Request failed');
-  if (action!=='setBank' && typeof tkCache!=='undefined') Object.keys(tkCache).forEach(k=>delete tkCache[k]);
+  if (action!=='setBank' && action!=='setWallet' && typeof tkCache!=='undefined') Object.keys(tkCache).forEach(k=>delete tkCache[k]);
   return j.data;
 }
 async function refresh(manual){
@@ -937,8 +940,21 @@ function renderHome(d){
     ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(h.runningBalance)}</span></div>` : '';
   renderEditList(EL.banks);
 
-  // construction fund (Net Worth AB/AC) — same editor; formula rows are read-only
+  // wallets (Net Worth C21 Kite ₹, C22 INDmoney $) — edits go through setWallet
+  const fx = h.usdInr || 0;
+  const W = Object.fromEntries((nw.wallets||[]).filter(w=>w.ok).map(w=>[w.key,w]));
+  EL.wal.rows = ['kite','indmoney'].filter(k=>W[k]).map(k=>{ const w=W[k];
+    return w.ccy==='USD'
+      ? { name:w.name, wkey:k, wccy:'USD', usdVal:w.amount, amount:w.amount!=null&&fx?w.amount*fx:null, formula:w.formula }
+      : { name:w.name, wkey:k, wccy:'INR', amount:w.amount, formula:w.formula }; });
+  $('#walHead').hidden = $('#wallets').hidden = !EL.wal.rows.length;
+  renderEditList(EL.wal);
+
+  // construction fund (Net Worth AB/AC) — same editor; formula rows are read-only,
+  // except INDwallet, whose dollar balance (C23) is edited instead
   const cons = nw.construction || {items:[], summary:[]};
+  cons.items.forEach(it=>{ if (/indwallet/i.test(it.name) && W.construction && !W.construction.formula) {
+    it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; } });
   $('#consHead').hidden = $('#construction').hidden = !cons.items.length;
   EL.cons.rows = cons.items;
   const sum = cons.summary||[], ctot = sum.find(x=>/^total$/i.test(x.name));
@@ -950,10 +966,14 @@ function renderHome(d){
 // that writes the cell back through setBank. Rows the sheet computes (formula)
 // aren't tappable — the server would refuse them anyway.
 const EL = {
+  wal:   { sel:'#wallets',      rows:[], open:-1, foot:'', empty:'No wallets' },
   banks: { sel:'#banks',        rows:[], open:-1, foot:'', empty:'No balances' },
   cons:  { sel:'#construction', rows:[], open:-1, foot:'', empty:'Nothing allocated' }
 };
+const fUSD = v => '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function editRowMeta(b){
+  // a dollar wallet in the Wallets list: its rupee value underneath
+  if (b.wccy==='USD' && b.usd==null && b.amount!=null) return '≈ ' + fINR(b.amount);
   // INDwallet: its dollar balance (Net Worth C23), not a gain
   if (b.usd!=null) return `$${b.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   // only the Invested row (it has a Current value) carries a real gain
@@ -963,10 +983,11 @@ function editRowMeta(b){
 function renderEditList(L){
   const el = $(L.sel); if(!el) return;
   el.innerHTML = L.rows.map((b,i)=>{
-    const meta = editRowMeta(b), can = !b.formula;
+    const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
+    const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
     return `<div class="row ${can?'tap':''}" data-i="${i}">${bankMark(b.name)}
       <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div>${meta?`<div class="m num money">${meta}</div>`:''}</div>
-      <div class="r"><div class="v num money">${fINR(b.amount)}</div></div>
+      <div class="r"><div class="v num money">${main}</div></div>
       ${can?`<span class="chev">${L.open===i?'⌄':'›'}</span>`:'<span class="chev"></span>'}</div>`
     + (L.open===i ? bankEditor(b) : '');
   }).join('') + L.foot || `<div class="empty">${L.empty}</div>`;
@@ -990,24 +1011,35 @@ function renderEditList(L){
   inp.onkeydown = e=>{ if(e.key==='Enter') saveEdit(L, L.rows[L.open], inp.value); };
 }
 function bankEditor(b){
+  const $d = b.wccy==='USD';
   return `<div class="ed">
-    <div class="inwrap"><span>₹</span>
-      <input type="text" inputmode="decimal" value="${b.amount ?? 0}" aria-label="${esc(b.name)} amount"></div>
-    <div class="quick">
-      <button data-add="1000">+1,000</button><button data-add="5000">+5,000</button>
-      <button data-add="-1000">−1,000</button><button data-add="0">Set 0</button></div>
+    <div class="inwrap"><span>${$d?'$':'₹'}</span>
+      <input type="text" inputmode="decimal" value="${($d ? b.usdVal : b.amount) ?? 0}" aria-label="${esc(b.name)} amount"></div>
+    <div class="quick">${$d
+      ? `<button data-add="100">+100</button><button data-add="500">+500</button>
+      <button data-add="-100">−100</button><button data-add="0">Set 0</button>`
+      : `<button data-add="1000">+1,000</button><button data-add="5000">+5,000</button>
+      <button data-add="-1000">−1,000</button><button data-add="0">Set 0</button>`}</div>
     <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div>
   </div>`;
 }
 async function saveEdit(L, b, raw){
-  const amount = Number(String(raw).replace(/[,\s₹]/g,''));
+  const amount = Number(String(raw).replace(/[,\s₹$]/g,''));
   if(!isFinite(amount)) { toast('That is not a number'); return; }
   const btn = $(L.sel+' .ed .save'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
   try{
+    if (b.wkey) {
+      const res = await apiPost('setWallet', { key:b.wkey, amount });
+      const v = res && res.after!=null ? res.after : amount;
+      if (b.wccy==='USD') { b.usdVal = v; if (b.usd!=null) b.usd = v; } else b.amount = v;
+      L.open = -1; renderEditList(L);
+      toast(b.name + ' → ' + (b.wccy==='USD' ? fUSD(v) : fINR(v)));
+    } else {
     const res = await apiPost('setBank', { row:b.row, col:b.col, name:b.name, amount });
     b.amount = res && res.after!=null ? res.after : amount;
     L.open = -1; renderEditList(L);
     toast(b.name + ' → ' + fINR(b.amount));
+    }
     refresh();                                        // totals below are sheet formulas
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent='Save'; }
