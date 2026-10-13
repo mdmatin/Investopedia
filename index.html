@@ -264,6 +264,14 @@ th.r,td.r{text-align:right}
 .search{display:flex;align-items:center;gap:8px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-pill);padding:10px 16px;margin:0 16px 12px}
 .search input{flex:1;border:0;background:none;outline:none;font-size:16px}
 .search svg{width:15px;height:15px;color:var(--ink-3);flex:none}
+.search .sx{display:none;width:18px;height:18px;border-radius:50%;background:var(--ink-3);color:#fff;place-items:center;flex:none;padding:0}
+.search .sx svg{width:9px;height:9px;color:#fff}
+.search.has .sx{display:grid}
+.search input::-webkit-search-cancel-button{display:none}
+.pg-srch{margin:0 16px 12px}
+.searching .listfoot{display:none}
+.searching .sfirst{border-top:0}
+.srch-none{padding:22px 16px;text-align:center;color:var(--ink-3);font-size:15px}
 .daygroup{font-size:11.5px;color:var(--ink-3);font-weight:600;margin:16px 24px 7px;text-transform:uppercase;letter-spacing:.04em}
 
 /* ---------- fab + tabs ---------- */
@@ -664,6 +672,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
       </div>
 
       <div class="hsec" id="s-assets">
+        <div class="search" id="assetSearch"></div>
         <div class="chips" id="assetChips"></div>
         <div class="card asum" id="assetSum" hidden></div>
         <div class="card tight" id="assetList"></div>
@@ -765,7 +774,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-08c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-13a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1198,7 +1207,7 @@ function txnRow(t, showDate, noPlatform){
     ? [t.bucket?esc(t.bucket):null, fDate(t.date)]
     : [esc(t.platform||'—'), showDate ? fDate(t.date) : (t.bucket?esc(t.bucket):null)]).filter(Boolean).join(' · ');
   const side = `<span class="bs ${buy?'buy':'sell'}" aria-label="${buy?'Buy':'Sell'}">${buy?'B':'S'}</span><span class="sep">·</span>`;
-  return `<button class="row" data-row="${t.row}">
+  return `<button class="row" data-row="${t.row}" data-q="${esc(qWords(t.ticker, t.bucket, t.platform, t.order, t.category))}">
     ${tickerTile(t)}
     <div class="l"><div class="n">${esc(t.ticker)}</div>
       <div class="m side">${side}<span class="mtxt">${meta}</span></div></div>
@@ -1227,6 +1236,41 @@ function openAssetCat(cat){
   renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
   const chip = $('#assetChips .chip.on'); if (chip) chip.scrollIntoView({inline:'center', block:'nearest'});
 }
+
+// Search fields filter the rows already on screen (hiding the rest) rather than
+// re-rendering, so typing never loses focus. Each row carries data-q, its
+// searchable words in lower case.
+const SRCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+const searchInner = (q, ph) => `${SRCH_ICON}<input type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="${esc(ph)}" value="${esc(q||'')}" aria-label="${esc(ph)}">
+  <button class="sx" aria-label="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
+const qWords = (...xs) => xs.filter(Boolean).join(' ').toLowerCase();
+function applySearch(list, q){
+  if (!list) return 0;
+  const terms = String(q||'').toLowerCase().trim().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  list.querySelectorAll('[data-q]').forEach(r=>{
+    const ok = terms.every(t=>r.dataset.q.includes(t));
+    r.hidden = !ok; r.classList.toggle('sfirst', ok && !shown && terms.length>0); if (ok) shown++;
+  });
+  let none = list.querySelector('.srch-none');
+  if (terms.length && !shown){
+    if (!none){ none = document.createElement('div'); none.className = 'srch-none'; list.appendChild(none); }
+    none.textContent = `No results for “${q.trim()}”`;
+  } else if (none) none.remove();
+  list.classList.toggle('searching', !!terms.length);
+  return shown;
+}
+function wireSearch(box, list, get, set){
+  if (!box) return;
+  const inp = box.querySelector('input'), x = box.querySelector('.sx');
+  const go = () => { set(inp.value); box.classList.toggle('has', !!inp.value); applySearch(list(), inp.value); };
+  inp.oninput = go;
+  inp.onkeydown = e => { if (e.key==='Enter') inp.blur(); if (e.key==='Escape'){ inp.value=''; go(); inp.blur(); } };
+  x.onclick = () => { inp.value=''; go(); inp.focus(); };
+  box.classList.toggle('has', !!get());
+  applySearch(list(), get());
+}
+let assetQuery = '';
 
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
@@ -1308,7 +1352,7 @@ function renderAssets(holdings, usdInr){
     const day = h.day==null ? null
               : isUSD(h) ? (haveFx ? h.day / fx : null)
               : h.day;
-    return `<div class="hcard tap" data-t="${esc(h.ticker)}">
+    return `<div class="hcard tap" data-t="${esc(h.ticker)}" data-q="${esc(qWords(h.ticker, h.category, CAT_LABEL[h.category], h.platform))}">
       <div class="hc-top">${tickerTile(h)}
         <div class="hc-name"><div class="n">${esc(h.ticker)}</div>
           <div class="sub">${m2(h.ltp)}</div></div>
@@ -1331,7 +1375,11 @@ function renderAssets(holdings, usdInr){
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
-  $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t, $$('#assetList .hcard[data-t]').map(x=>x.dataset.t)));
+  // the search box is drawn once; later renders only re-apply the query
+  const sb = $('#assetSearch');
+  if (!sb.firstChild) sb.innerHTML = searchInner(assetQuery, 'Search holdings');
+  wireSearch(sb, ()=>$('#assetList'), ()=>assetQuery, v=>assetQuery=v);
+  $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t, $$('#assetList .hcard[data-t]:not([hidden])').map(x=>x.dataset.t)));
 }
 
 // Two decimals on every figure is the default, but three money columns on a
@@ -2442,6 +2490,11 @@ function renderPage(){
     // the platform call brings the chart and the full order list, so it waits
     // until you ask for the chart or open Orders
     if (p.showChart || p.tab==='orders') loadPlatform(p.platform);
+    wireSearch($('#pgSearch'), ()=>$('#pgList'), ()=>p.q||'', v=>p.q=v);
+    { // orders arriving redraw the page — keep the cursor in the box if you were typing
+      const si = $('#pgSearch input');
+      if (si){ si.onfocus=()=>p.sf=true; si.onblur=()=>p.sf=false;
+        if (p.sf){ si.focus({preventScroll:true}); si.setSelectionRange(si.value.length, si.value.length); } } }
     const vb = $('#page [data-vedit]');
     if (vb) vb.onclick = ()=>{ p.editVal = !p.editVal; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
     const ed = $('#page .pg-ed');
@@ -2469,7 +2522,7 @@ function renderPage(){
       inp.onkeydown = e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') close(); };
     }
     if (p.showChart) drawHist('P:'+p.platform, false);
-    $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+    $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ if (p.tab!==b.dataset.ht){ p.q=''; p.sf=false; } p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
   if (p.kind==='holding'){
@@ -2755,7 +2808,8 @@ function platformBody(name){
                : !c.txns ? '<div class="pg-load">Loading orders…</div>'
                : txns.length ? txns.map(t=>txnRow(t,true,true)).join('')
                : '<div class="pg-load">No orders found on this platform</div>';
-    return card + seg + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight">${list}</div>`;
+    const srch = c.txns && txns.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search orders')}</div>` : '';
+    return card + seg + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>`;
   }
 
   // 2 · Overview — the same tiles as a ticker, then the holdings on this platform
@@ -2771,9 +2825,10 @@ function platformBody(name){
     <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
-    <div class="card tight">${rows.map(r=>{
+    ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
+    <div class="card tight" id="pgList">${rows.map(r=>{
       const g = r.value-r.invested, gp = r.invested ? g/r.invested : null;
-      return `<div class="row tap" data-t="${esc(r.ticker)}">${tickerTile(r)}
+      return `<div class="row tap" data-t="${esc(r.ticker)}" data-q="${esc(qWords(r.ticker, r.category, CAT_LABEL[r.category], r.buckets.join(' ')))}">${tickerTile(r)}
         <div class="l"><div class="n">${esc(r.ticker)}</div><div class="m">${qtyFmt(r.qty)} · ${r.buckets.map(esc).join(', ')||'—'}</div></div>
         <div class="r"><div class="v num money">${fINR(r.value)}</div>
           <div class="p"><span class="pill sm ${cls(g)} num money">${fPct(gp)}</span></div></div></div>`;
