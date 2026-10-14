@@ -774,7 +774,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-14b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-14d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -783,7 +783,9 @@ const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' 
 let cfg = load(LS.cfg) || null;
 let D = load(LS.data) || null;
 let timer = null, loading = false, activeView = 'home';
-let range = load(LS.range) || '3M', bucketFilter = 'All', openBucket = null, editing = null;
+let range = load(LS.range) || '3M';
+if (!['1W','1M','3M','6M','1Y','All'].includes(range)) range = '3M';   // 1D was dropped
+let bucketFilter = 'All', openBucket = null, editing = null;
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -913,13 +915,13 @@ function render(redrawPage){
   if (redrawPage && typeof pageStack!=='undefined' && pageStack.length){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 
-const RANGES = {'1D':1,'1W':7,'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
+const RANGES = {'1W':7,'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
 function inRange(daily, r){
   const a = (daily||[]).filter(p => p.netWorth!=null);
   if (!a.length) return a;
   // counted back from the latest logged day, so a day the sheet hasn't logged
-  // yet doesn't empty the short ranges. 1D is that day against the one before.
-  if (r==='1D') return a.slice(-2);
+  // yet doesn't empty the short ranges
+  if (!RANGES[r]) r = '3M';
   const cut = new Date(a[a.length-1].date+'T00:00:00').getTime() - RANGES[r]*864e5;
   const out = a.filter(p => new Date(p.date+'T00:00:00') >= cut);
   return out.length >= 2 ? out : a.slice(-2);
@@ -1575,10 +1577,11 @@ function areaChart(el, pts){
   hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>${fINR(p.netWorth)}`);
 }
 
-function lineChart(el, pts){
+function lineChart(el, pts, perDay){
   const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
   if(pts.length<2){ svg.innerHTML=`<text class="axis" x="${W/2}" y="${H/2}" text-anchor="middle">Not enough data yet</text>`; return; }
-  const P={t:8,r:8,b:20,l:40};
+  // day view labels every day on two lines (weekday, date), so it needs more room below
+  const P={t:8,r:perDay?14:8,b:perDay?34:20,l:40};
   const series=[{k:'netWorth',c:'var(--blue)'},{k:'investment',c:'var(--ink-3)'}];
   const all=pts.flatMap(p=>series.map(s=>p[s.k])).filter(v=>v!=null);
   let lo=Math.min(...all), hi=Math.max(...all); const pad=(hi-lo)*0.08||1; lo-=pad; hi+=pad;
@@ -1586,16 +1589,29 @@ function lineChart(el, pts){
   let g='';
   for(let i=0;i<=3;i++){ const v=lo+(hi-lo)*i/3, yy=y(v);
     g+=`<line class="gridline" x1="${P.l}" x2="${W-P.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${P.l-6}" y="${yy+3.5}" text-anchor="end">${fCompact(v).replace('₹','')}</text>`; }
+  if (perDay){
+    pts.forEach((p,i)=>{ const d=new Date(p.date+'T00:00:00');
+      g+=`<text class="axis" x="${x(i)}" y="${H-18}" text-anchor="middle">${d.toLocaleDateString('en-GB',{weekday:'short'})}</text>`
+       + `<text class="axis" x="${x(i)}" y="${H-4}" text-anchor="middle">${d.getDate()}${i===0||d.getDate()===1?' '+d.toLocaleDateString('en-GB',{month:'short'}):''}</text>`; });
+  } else {
   const n=Math.min(3,pts.length-1);
   for(let i=0;i<=n;i++){ const idx=Math.round(i*(pts.length-1)/n);
     g+=`<text class="axis" x="${x(idx)}" y="${H-4}" text-anchor="${i===0?'start':i===n?'end':'middle'}">${fDate(pts[idx].date)}</text>`; }
+  }
   const paths=series.map(s=>{ const d=pts.map((p,i)=>p[s.k]==null?null:`${i===0||pts[i-1][s.k]==null?'M':'L'}${x(i).toFixed(1)},${y(p[s.k]).toFixed(1)}`).filter(Boolean).join('');
     return `<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`; }).join('');
   const last=pts[pts.length-1];
-  const dots=series.map(s=>last[s.k]==null?'':`<circle cx="${x(pts.length-1)}" cy="${y(last[s.k])}" r="3.6" fill="${s.c}" stroke="#fff" stroke-width="2"/>`).join('');
+  const dots = perDay
+    // a dot on every day so each one reads as its own point
+    ? series.map(s=>pts.map((p,i)=>p[s.k]==null?'':`<circle cx="${x(i)}" cy="${y(p[s.k])}" r="${i===pts.length-1?3.6:2.6}" fill="${s.c}" stroke="#fff" stroke-width="1.5"/>`).join('')).join('')
+    : series.map(s=>last[s.k]==null?'':`<circle cx="${x(pts.length-1)}" cy="${y(last[s.k])}" r="3.6" fill="${s.c}" stroke="#fff" stroke-width="2"/>`).join('');
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.innerHTML = g + paths + dots + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
-  hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}<br>Investments ${fINR(p.investment)}`);
+  // day view: each day's move against the day before
+  const dayMove = p => { const i = pts.indexOf(p), q = pts[i-1]; if (!perDay || !q) return '';
+    const v = p.totalReturns!=null && q.totalReturns!=null ? p.totalReturns - q.totalReturns : p.netWorth - q.netWorth;
+    return `<br>Day change <span class="${cls(v)}">${fINRs(v)}</span>`; };
+  hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}<br>Investments ${fINR(p.investment)}${dayMove(p)}`);
 }
 
 function hoverable(el, svg, tip, pts, x, W, fmt){
@@ -2560,7 +2576,7 @@ async function loadTickerHistory(ticker){
 // Points inside the chosen range, counted back from the latest point. 'All' has no cut-off.
 function histPts(ticker){
   const all = (histCache[ticker] || {}).pts || [];
-  const days = {'1M':31,'3M':92,'6M':183,'1Y':366}[histRange];
+  const days = {'1W':7,'1M':31,'3M':92,'6M':183,'1Y':366}[histRange];
   if (!days || !all.length) return all;
   const cut = new Date(all[all.length-1].date).getTime() - days*864e5;
   return all.filter(p=>new Date(p.date).getTime() >= cut);
@@ -2578,7 +2594,7 @@ function histInner(ticker, show){
   // The range buttons stay put even if a short range holds too few points.
   return `${pts.length < 2 ? '<div class="pg-load">Not enough history for this range</div>' : '<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>'}
     <div class="hlg"><span class="cv"><i></i>Current value</span><span class="iv"><i></i>Invested</span><span class="since">since ${fDate(all[0].date)}</span></div>
-    <div class="ranges">${['1M','3M','6M','1Y','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
+    <div class="ranges">${['1W','1M','3M','6M','1Y','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
 }
 function drawHist(ticker, usdRow){
   const el = $('#histChart'); if(!el) return;
