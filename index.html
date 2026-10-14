@@ -774,7 +774,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-13a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-14b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -913,10 +913,16 @@ function render(redrawPage){
   if (redrawPage && typeof pageStack!=='undefined' && pageStack.length){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 
-const RANGES = {'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
+const RANGES = {'1D':1,'1W':7,'1M':30,'3M':91,'6M':182,'1Y':365,'All':1e9};
 function inRange(daily, r){
-  const cut = Date.now() - RANGES[r]*864e5;
-  return (daily||[]).filter(p => p.netWorth!=null && new Date(p.date+'T00:00:00') >= cut);
+  const a = (daily||[]).filter(p => p.netWorth!=null);
+  if (!a.length) return a;
+  // counted back from the latest logged day, so a day the sheet hasn't logged
+  // yet doesn't empty the short ranges. 1D is that day against the one before.
+  if (r==='1D') return a.slice(-2);
+  const cut = new Date(a[a.length-1].date+'T00:00:00').getTime() - RANGES[r]*864e5;
+  const out = a.filter(p => new Date(p.date+'T00:00:00') >= cut);
+  return out.length >= 2 ? out : a.slice(-2);
 }
 
 function renderHome(d){
