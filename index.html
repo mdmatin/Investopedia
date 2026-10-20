@@ -348,9 +348,13 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .iotabs button.on{color:var(--ink);border-bottom-color:var(--down)}
 .piecard{padding:10px 0}
 .pie{display:block;width:100%;height:auto}
-.pie .pl{font-size:12px;font-weight:600;fill:var(--ink)}
-.pie .pp{font-size:11px;fill:var(--ink-2)}
-.prow .pchip{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:#1d1d1f;padding:4px 6px;border-radius:7px;margin-right:2px}
+:root{--pc0:#007aff;--pc1:#5856d6;--pc2:#32ade6;--pc3:#34c759;--pc4:#ff9500;--pc5:#ff2d55;--pc6:#af52de;--pc7:#ffcc00;--pc8:#00c7be;--pc9:#ff3b30;--pc10:#a2845e;--pc11:#8e8e93}
+html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--pc4:#ff9f0a;--pc5:#ff375f;--pc6:#bf5af2;--pc7:#ffd60a;--pc8:#66d4cf;--pc9:#ff453a;--pc10:#ac8e68;--pc11:#8e8e93}
+.pie .pl{font-size:11.5px;font-weight:500;fill:var(--ink)}
+.pie .pp{font-size:10.5px;fill:var(--ink-3)}
+.prow .pchip{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.35);padding:4px 6px;border-radius:7px;margin-right:2px}
+.prow .pchip.neg{background:var(--hairline,#d2d2d7);color:var(--ink-2);text-shadow:none}
+.prow .v.neg{color:var(--ink-3)}
 .pbar.warn i{background:#c27c0e}
 .pbar.over i{background:var(--down)}
 .spstats{display:flex;margin-top:16px;padding-top:14px;border-top:1px solid var(--hairline)}
@@ -1103,7 +1107,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22z';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-23b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3387,7 +3391,7 @@ function spBudgetHtml(){
   const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
   const today = ym===ymNow() ? now.getDate()/dim : null;
   const all = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
-  const cats = all.filter(x=>!isInvest(x.c)), inv = all.filter(x=>isInvest(x.c));
+  const cats = all, inv = [];   // investments count as spending (they stay out of Saved only)
   const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
   const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
   const bud = budgeted.reduce((a,x)=>a+x.b,0), spent = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spent;
@@ -3410,47 +3414,46 @@ function spBudgetHtml(){
 
 /* Monthly — like Money Manager's Stats: a pie of the month by category (or,
    on the Income side, by type) with labelled slices, then the list. */
-const PIE_COL = ['#ef6f5e','#f39a57','#f6c94e','#f2e04b','#c5df52','#7fcf6b','#5fd3c4','#5aaef0','#7d8cf2','#b48cf0','#e58bd0','#f2a0a8','#a7b3c2','#c2a886','#8fc7a3','#d8c26a'];
+const PIE_N = 12, pieCol = i => `var(--pc${i % PIE_N})`;   // iOS system colours, per theme (CSS)
 let spIO = 'exp';
 function monthIncome(ym){
   const o = {}; ((xd()||{}).incomes||[]).forEach(i=>{ if (i.date.slice(0,7)===ym && i.type!=='Adjustment' && i.amount>0) o[i.type||'Other']=(o[i.type||'Other']||0)+i.amount; });
   return o;
 }
 function pieSvg(items, total){
-  const W = 361, cx = W/2, r = 74;
-  const side = { l:[], r:[] }; let a0 = -Math.PI/2, paths = '';
+  // labels around the pie with elbow leaders; the small slices are turned to
+  // face left so their labels have room
+  const W = 361, H = 270, cx = W/2, cy = H/2, R = 80, G = 27;
+  const tail = items.filter(x=>x.v/total<0.05).reduce((a,x)=>a+x.v,0)/total;
+  let a0 = -Math.PI + tail*Math.PI, s = '';
+  const labs = [], P = (a,rr) => [(cx+rr*Math.cos(a)).toFixed(1), (cy+rr*Math.sin(a)).toFixed(1)];
   items.forEach((it,i)=>{
-    const a1 = a0 + it.v/total*2*Math.PI, mid = (a0+a1)/2, large = a1-a0 > Math.PI ? 1 : 0;
-    it.mid = mid; it.col = PIE_COL[i % PIE_COL.length];
-    (Math.cos(mid) >= 0 ? side.r : side.l).push(it);
-    it.a0 = a0; it.a1 = a1; a0 = a1;
+    it.col = pieCol(i);
+    const a1 = a0 + it.v/total*2*Math.PI, mid = (a0+a1)/2;
+    if (items.length===1) s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${it.col}"/>`;
+    else { const [x0,y0] = P(a0,R), [x1,y1] = P(a1,R);
+      s += `<path d="M${cx},${cy}L${x0},${y0}A${R},${R} 0 ${a1-a0>Math.PI?1:0} 1 ${x1},${y1}Z" fill="${it.col}" stroke="var(--canvas)" stroke-width="1.5"/>`; }
+    const pct = it.v/total*100;
+    if (pct >= 2) labs.push({ mid, col:it.col, k:it.k, pct });
+    a0 = a1;
   });
-  const gap = 32, H = Math.max(230, Math.max(side.l.length, side.r.length)*gap + 30), cy = H/2;
-  items.forEach(it=>{
-    if (items.length===1){ paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${it.col}"/>`; return; }
-    const p = a => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
-    const [x0,y0] = p(it.a0), [x1,y1] = p(it.a1);
-    paths += `<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${it.a1-it.a0>Math.PI?1:0} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${it.col}" stroke="var(--canvas)" stroke-width="1.2"/>`;
+  labs.forEach(l=>{ l.right = Math.cos(l.mid) >= 0; l.y = cy + (R+10)*Math.sin(l.mid); l.ex = cx + (R+10)*Math.cos(l.mid); l.x = l.right ? cx+R+28 : cx-R-28; });
+  ['l','r'].forEach(sd=>{
+    const L = labs.filter(l=>(sd==='r')===l.right).sort((a,b)=>a.y-b.y);
+    for (let i=1;i<L.length;i++) if (L[i].y-L[i-1].y < G) L[i].y = L[i-1].y + G;
+    const over = L.length ? L[L.length-1].y - (H-14) : 0; if (over>0) L.forEach(l=>l.y -= over);
+    for (let i=L.length-2;i>=0;i--) if (L[i+1].y-L[i].y < G) L[i].y = L[i+1].y - G;
   });
-  // labels: each side sorted top to bottom, pushed apart so they never overlap
-  let labels = '';
-  ['l','r'].forEach(s=>{
-    const L = side[s].map(it=>({ it, y: cy + (r+18)*Math.sin(it.mid) })).sort((a,b)=>a.y-b.y);
-    for (let i=0;i<L.length;i++) L[i].y = Math.max(L[i].y, i ? L[i-1].y + gap : 22);
-    for (let i=L.length-1;i>=0;i--) L[i].y = Math.min(L[i].y, i<L.length-1 ? L[i+1].y - gap : H-22);
-    L.forEach(({it,y})=>{
-      const ex = cx + r*0.97*Math.cos(it.mid), ey = cy + r*0.97*Math.sin(it.mid);
-      const lx = s==='r' ? cx + r + 26 : cx - r - 26, tx = s==='r' ? lx + 4 : lx - 4, anc = s==='r' ? 'start' : 'end';
-      const name = it.k.length > 11 ? it.k.slice(0,10)+'…' : it.k, pct = (it.v/total*100);
-      labels += `<path d="M${ex.toFixed(1)},${ey.toFixed(1)} Q${(cx + (r+14)*Math.cos(it.mid)).toFixed(1)},${(cy + (r+14)*Math.sin(it.mid)).toFixed(1)} ${lx.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${it.col}" stroke-width="1.2"/>`
-        + `<text x="${tx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="${anc}" class="pl">${esc(name)}</text>`
-        + `<text x="${tx.toFixed(1)}" y="${(y+11).toFixed(1)}" text-anchor="${anc}" class="pp">${pct < 0.1 ? '<0.1' : pct.toFixed(1)} %</text>`;
-    });
+  labs.forEach(l=>{
+    const [sx,sy] = P(l.mid, R+1), anc = l.right ? 'start' : 'end', tx = (l.x + (l.right?5:-5)).toFixed(1), name = l.k.length>11 ? l.k.slice(0,9)+'…' : l.k;
+    s += `<path d="M${sx},${sy}L${l.ex.toFixed(1)},${l.y.toFixed(1)}L${l.x.toFixed(1)},${l.y.toFixed(1)}" stroke="${l.col}" stroke-width="1.2" fill="none" stroke-linejoin="round"/>`
+      + `<text x="${tx}" y="${(l.y-1).toFixed(1)}" text-anchor="${anc}" class="pl">${esc(name)}</text>`
+      + `<text x="${tx}" y="${(l.y+12).toFixed(1)}" text-anchor="${anc}" class="pp">${l.pct<10 ? l.pct.toFixed(1) : Math.round(l.pct)}%</text>`;
   });
-  return `<svg class="pie" viewBox="0 0 ${W} ${H}">${paths}${labels}</svg>`;
+  return `<svg class="pie" viewBox="0 0 ${W} ${H}">${s}</svg>`;
 }
 function spMonthlyHtml(){
-  const ym = spMonth, raw = xMonth(ym), exp = spendOnly(raw), invested = investOf(raw), inc = monthIncome(ym);
+  const ym = spMonth, raw = xMonth(ym), exp = raw, invested = 0, inc = monthIncome(ym);
   const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
   const src = spIO==='inc' ? inc : exp, total = spIO==='inc' ? tI : tE;
   const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
@@ -3466,7 +3469,12 @@ function spMonthlyHtml(){
     return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
       <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
-  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}</div>` + invRow;
+  // a category whose refunds outweigh its spending nets below zero: it can't be
+  // a slice, so it is listed under the others
+  const negRows = spIO==='exp' ? Object.entries(src).filter(([,v])=>v<0).sort((a,b)=>a[1]-b[1]).map(([k,v])=>
+    `<div class="row tap prow" data-xcat="${esc(k)}" data-ymc="${ym}"><span class="pchip neg">—</span>
+      <div class="l"><div class="n">${esc(k)}</div><div class="m">Refunds more than spent</div></div><div class="r"><div class="v num money neg">−${fINR2(-v)}</div></div></div>`).join('') : '';
+  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}${negRows}</div>` + invRow;
 }
 
 function xRow(e, showCat){
@@ -3516,14 +3524,13 @@ function txRow(x){
 }
 function spListHtml(){
   const all = txItems(spMonth);
-  const spent = all.filter(x=>x.k==='ex'||x.k==='rf').reduce((s,x)=>s+x.e.amount,0);
-  const invested = all.filter(x=>x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
+  const spent = all.filter(x=>x.k==='ex'||x.k==='rf'||x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
   const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
   const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
   const days = Object.keys(by).sort().reverse().map(dt=>{
-    const sp = by[dt].filter(x=>x.k==='ex'||x.k==='rf').reduce((s,x)=>s+x.e.amount,0);
+    const sp = by[dt].filter(x=>x.k==='ex'||x.k==='rf'||x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
     const ii = by[dt].filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
     return `<div class="daygroup tday"><span>${esc(fDate(dt))}</span><span class="num money">${ii?`<em class="up">+${fINR2(ii)}</em>`:''}${sp?fINR2(sp):''}</span></div>
       <div class="card tight">${by[dt].map(txRow).join('')}</div>`;
@@ -3532,7 +3539,6 @@ function spListHtml(){
     .map(([k,l])=>`<button data-txf="${k}" class="${txFilter===k?'on':''}">${l}</button>`).join('');
   return `<div class="tsum"><div><span>Income</span><b class="num money up">${fINR2(inn)}</b></div><div><span>Spent</span><b class="num money">${fINR2(spent)}</b></div>
       <div><span>Net</span><b class="num money ${inn-spent<0?'down':''}">${fINR2(inn-spent)}</b></div></div>
-    ${invested ? `<div class="tinv">Invested <b class="num money">${fINR2(invested)}</b> · not counted as spending</div>` : ''}
     <div class="tflt">${chipsHtml}</div>
     <div class="search" id="xSearch"></div>
     <div id="xList">${days || `<div class="empty">Nothing ${txFilter==='all'?'recorded':'here'} in ${esc(ymLabel(spMonth))}</div>`}</div>`;
@@ -3739,7 +3745,7 @@ function spAccountsHtml(){
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
   // balances are always today's; Income and Saved follow the month picked above
   const ym = spMonth, mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym && e.type!=='Adjustment').reduce((s,e)=>s+e.amount,0);
-  // saved = income this month minus what was spent (investments aren't spending; refunds reduce it)
+  // saved = income this month minus what was spent — leaving investments out (money invested is still saved); refunds reduce it
   const mOut = xTotal(spendOnly(xMonth(ym)));
   const saved = mIn - mOut;
   const cardLine = [cards.owed>0.004 ? fINR2(cards.owed)+' owed on cards' : '', cards.credit>0.004 ? fINR2(cards.credit)+' card credit' : '']
