@@ -1055,7 +1055,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3577,14 +3577,19 @@ const accIcon = a => {
 };
 function spAccountsHtml(){
   const acc = xAccounts(); if (!acc.length) return '<div class="empty">No accounts yet — add them to the Accounts tab in your sheet</div>';
-  const sum = { bank:0, card:0, wallet:0 }; acc.forEach(a=>sum[accKind(a)] += accBalance(a.name));
-  const ym = ymNow(), mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym).reduce((s,e)=>s+e.amount,0);
+  // each card on its own: one card in credit must not hide another card's dues
+  const sum = { bank:0, card:0, wallet:0 }, cards = { owed:0, credit:0 };
+  acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
+    if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
+  const ym = ymNow(), mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym && e.type!=='Adjustment').reduce((s,e)=>s+e.amount,0);
+  const cardLine = [cards.owed>0.004 ? fINR2(cards.owed)+' owed on cards' : '', cards.credit>0.004 ? fINR2(cards.credit)+' card credit' : '']
+    .filter(Boolean).join(' · ') || 'Nothing owed on cards';
   const head = `<div class="card spsum">
       <div class="k">Banks &amp; cash</div>
       <div class="big num money">${fINR2(sum.bank)}</div>
-      <div class="of num money">${sum.card<0 ? fINR2(-sum.card)+' owed on cards' : 'Nothing owed on cards'}</div>
+      <div class="of num money">${cardLine}</div>
       <div class="spstats">
-        <div><span>After card dues</span><b class="num money">${fINR2(sum.bank + Math.min(0,sum.card))}</b></div>
+        <div><span>After card dues</span><b class="num money">${fINR2(sum.bank - cards.owed)}</b></div>
         <div><span>Wallets</span><b class="num money">${fINR2(sum.wallet)}</b></div>
         <div><span>In this month</span><b class="num money">${fINR2(mIn)}</b></div>
       </div></div>`;
