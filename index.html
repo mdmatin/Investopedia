@@ -1107,7 +1107,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-23b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-23c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3450,7 +3450,11 @@ function pieSvg(items, total){
       + `<text x="${tx}" y="${(l.y-1).toFixed(1)}" text-anchor="${anc}" class="pl">${esc(name)}</text>`
       + `<text x="${tx}" y="${(l.y+12).toFixed(1)}" text-anchor="${anc}" class="pp">${l.pct<10 ? l.pct.toFixed(1) : Math.round(l.pct)}%</text>`;
   });
-  return `<svg class="pie" viewBox="0 0 ${W} ${H}">${s}</svg>`;
+  // crop to what's drawn so there's no empty band above or below
+  let y0 = cy - R - 2, y1 = cy + R + 2;
+  labs.forEach(l=>{ y0 = Math.min(y0, l.y - 14); y1 = Math.max(y1, l.y + 16); });
+  y0 = Math.max(0, Math.floor(y0) - 6); y1 = Math.min(H, Math.ceil(y1) + 6);
+  return `<svg class="pie" viewBox="0 ${y0} ${W} ${y1-y0}">${s}</svg>`;
 }
 function spMonthlyHtml(){
   const ym = spMonth, raw = xMonth(ym), exp = raw, invested = 0, inc = monthIncome(ym);
