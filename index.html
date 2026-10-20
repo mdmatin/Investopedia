@@ -1055,7 +1055,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2035,7 +2035,7 @@ $('#fTicker').oninput = ()=>{ const t=(D?.data.lists?.tickers||[]).find(x=>x.tic
   if(t&&t.category){ $('#fCategory').value=t.category; onCategory(); } };
 $('#btnClose').onclick = closeSheet;
 $('#backdrop').onclick = ()=>{ if ($('#xsheet').classList.contains('show')) closeXSheet(); else closeSheet(); };
-$('#fab').onclick = ()=> activeView==='spend' ? openXSheet(null, spSec==='accounts' ? (accSec==='income' ? 'income' : 'transfer') : 'expense') : openSheet(null);
+$('#fab').onclick = ()=> activeView==='spend' ? openXSheet(null, 'expense') : openSheet(null);
 
 /* ---------- scan a screenshot ---------- */
 $('#btnScan').onclick = ()=>{ $('#fileShot').value=''; $('#fileShot').click(); };
