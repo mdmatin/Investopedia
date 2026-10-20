@@ -338,6 +338,7 @@ th.r,td.r{text-align:right}
 .spstats span{font-size:12px;color:var(--ink-3)}
 .spstats b{font-size:16px;font-weight:600;letter-spacing:-.3px}
 .spstats b em{font-style:normal}
+.spstats em.rate{font-style:normal;font-size:11.5px;color:var(--ink-3)}
 .xsubs .hrow:first-child{border-top:0}
 .bcat .l .pbar{height:5px;margin-top:8px}
 .row .r .s.down,.spstats .down{color:var(--down)}
@@ -1056,7 +1057,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3587,6 +3588,9 @@ function spAccountsHtml(){
   acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
   const ym = ymNow(), mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym && e.type!=='Adjustment').reduce((s,e)=>s+e.amount,0);
+  // saved = income this month minus what was spent (investments aren't spending; refunds reduce it)
+  const mOut = ((xd().entries)||[]).filter(e=>e.date.slice(0,7)===ym && !isInvest(e.category)).reduce((s,e)=>s+(e.amount||0),0);
+  const saved = mIn - mOut;
   const cardLine = [cards.owed>0.004 ? fINR2(cards.owed)+' owed on cards' : '', cards.credit>0.004 ? fINR2(cards.credit)+' card credit' : '']
     .filter(Boolean).join(' · ') || 'Nothing owed on cards';
   const head = `<div class="card spsum">
@@ -3594,9 +3598,8 @@ function spAccountsHtml(){
       <div class="big num money">${fINR2(sum.bank)}</div>
       <div class="of num money">${cardLine}</div>
       <div class="spstats">
-        <div><span>After card dues</span><b class="num money">${fINR2(sum.bank - cards.owed)}</b></div>
-        <div><span>Wallets</span><b class="num money">${fINR2(sum.wallet)}</b></div>
         <div><span>Income · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mIn)}</b></div>
+        <div><span>Saved · ${esc(ymShort(ym))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}</b>${mIn>0?`<em class="rate">${Math.round(saved/mIn*100)}% of income</em>`:''}</div>
       </div></div>`;
   const seg = `<div class="seg accseg">${[['accounts','Accounts'],['transfers','Transfers'],['income','Income']]
     .map(([k,l])=>`<button data-accsec="${k}" class="${accSec===k?'on':''}">${l}</button>`).join('')}</div>`;
