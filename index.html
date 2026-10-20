@@ -321,15 +321,15 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
 /* budget (Money Manager style, compact) */
-.bset{display:flex;align-items:center;gap:4px;background:var(--sunken);border-radius:var(--r-pill);padding:7px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
-.bset svg{width:12px;height:12px;color:var(--ink-3)}
-.vb-sum{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px}
+.bset{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:var(--sunken);color:var(--ink-2)}
+.bset svg{width:18px;height:18px}
+.vb-sum{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px}
 .vb-sum .k{font-size:12px;color:var(--ink-2)}
 .vb-sum .big{font-family:var(--font-disp);font-size:24px;font-weight:600;letter-spacing:-.6px;margin-top:1px}
 .vb-sum .big.down{color:var(--down)}
-.vb-row{display:grid;grid-template-columns:30% 1fr;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--hairline)}
+.vb-row{display:grid;grid-template-columns:30% 1fr;gap:8px;align-items:center;padding:7px 12px;border-top:1px solid var(--hairline)}
 .vb-row:first-child{border-top:0}
-.vb-row.total{background:var(--parchment);padding-top:24px}
+.vb-row.total{background:var(--parchment);padding-top:20px}
 .vb-l span{display:block;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vb-l b{display:block;font-size:14px;font-weight:600;letter-spacing:-.2px}
 .vb-tr{position:relative;height:18px;border-radius:5px;background:var(--sunken)}
@@ -1082,7 +1082,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3376,7 +3376,7 @@ function spBudgetHtml(){
   const looseRows = loose.map(x=>`<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">No budget</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('');
   return `<div class="card tight"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
-      <button data-budgets class="bset">Budget setting ${chev('M9 5l7 7-7 7')}</button></div></div>
+      <button data-budgets class="bset" aria-label="Budget settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></div>
     <div class="card tight">${row('Monthly', spent, bud, true)}${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
     ${inv.length ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">Not counted as spending</div></div>
@@ -3678,7 +3678,7 @@ function accGroupsHtml(acc){
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0];
-      return `<div class="row tap" data-acc="${esc(a.name)}">${k==='bank' && !/cash/i.test(a.name) ? bankMark(a.name) : accIcon(a)}
+      return `<div class="row tap" data-acc="${esc(a.name)}">${(k==='bank' && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
         <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}</div>`;
@@ -3869,7 +3869,11 @@ const ADD_UI = 'flow';
 // income types come from the "Income types" list on the categories tab in the sheet;
 // Adjustment is only made by "Set actual balance", and Refund is always offered
 const IN_TYPES_DEF = ['Salary','Freelancing','Interest','Cashback','Dividends','Gift / transfer','Refund','Other'];
-const inTypesList = () => { const l = ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment'); return l.includes('Refund') ? l : l.concat('Refund'); };
+// "Refund" is the app's own option and always belongs to an expense: money back
+// for something you bought (or friends' share of a bill, or an ITR refund under
+// Taxes) — saved as a minus expense so it lowers that category, never as income.
+const XREFUND = 'Refund';
+const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment' && t!==XREFUND).concat(XREFUND);
 // the most recent Source used for a type (Salary → your employer, and so on)
 const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
@@ -3916,7 +3920,7 @@ function xCatsByUse(){
   const used = {}; ((xd()||{}).entries||[]).forEach(e=>used[e.category]=(used[e.category]||0)+1);
   return xCats().slice().sort((a,b)=>(used[b]||0)-(used[a]||0));
 }
-const xIsRefund = () => xMode==='income' && xType==='Refund';
+const xIsRefund = () => xMode==='income' && xType===XREFUND;
 const xTitle = () => (xEditing ? 'Edit ' : 'New ') + (xMode==='expense' ? 'expense' : xMode==='transfer' ? 'transfer' : 'income');
 const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money sheet.'
   : xMode==='transfer' ? 'Moves money between your accounts — not counted as spending. Paying a card bill is a transfer from the bank to the card.'
@@ -3935,7 +3939,7 @@ function openXSheet(e, mode){
   xCat = e && e.category || ''; xSub = e && e.sub || '';
   xAcc = e && e.account || (xMode==='income' ? first('bank') : 'Cash');
   xFrom = e && e.from || first('bank'); xTo = e && e.to || '';
-  xType = e && e.type || (e && e.amount < 0 && xMode==='income' ? 'Refund' : '');
+  xType = e && e.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : '');
   xOpenCat = ''; xErrMsg = '';
   xField = e ? null : 'amount'; xStep = e ? 3 : 1;
   paintXSheet();
@@ -4152,9 +4156,9 @@ async function saveXSheet(){
   }
   if (!xType) return xErr('Pick what kind of money this is.', 'type', 2);
   if (!xAcc) return xErr('Pick the account it went into.', 'account', 3);
-  if (xType==='Refund'){
+  if (xType===XREFUND){
     if (!xCat) return xErr('Pick the category this refund is for.', 'category', 3);
-    return saveMove('expense', { date, account:xAcc, category:xCat, sub:'', note: note || 'Refund', amount:-amount }, xEditing);
+    return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note: note || 'Refund', amount:-amount }, xEditing);
   }
   const tax = Number(numPlain(xTaxV)) || 0;
   return saveMove('income', { date, account:xAcc, type:xType, source:xSrcV.trim(), tax, remark:note, note, amount }, xEditing);
