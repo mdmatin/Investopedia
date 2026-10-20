@@ -361,6 +361,10 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .spstats b em{font-style:normal}
 .spstats em.rate{font-style:normal;font-size:11.5px;color:var(--ink-3)}
 .xsubs .hrow:first-child{border-top:0}
+.xsubs.hstats{padding-top:4px}
+.mb .mv{font-size:9.5px;font-weight:600;color:var(--ink-3);margin-bottom:3px;white-space:nowrap;letter-spacing:-.2px;font-variant-numeric:tabular-nums;min-height:12px}
+.mb.on .mv{color:var(--ink)} .mb.over .mv{color:var(--down)}
+.mbscroll .mbars{height:118px}
 .bcat .l .pbar{height:5px;margin-top:8px}
 .row .r .s.down,.spstats .down{color:var(--down)}
 .row .r .s.up{color:var(--up)}
@@ -1087,7 +1091,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22w';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22x';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3257,6 +3261,9 @@ function xMonth(ym){
   return (d.monthly||{})[ym] || {};
 }
 const xTotal = o => Object.values(o).reduce((a,v)=>a+v,0);
+// tiny graph labels: 950, 7.7k, 15k, 1.2L, 12L
+const fCmp = v => { v = Math.round(v||0); if (!v) return ''; const a = Math.abs(v), sg = v<0?'−':'';
+  return sg + (a>=1e5 ? (a/1e5).toFixed(a>=1e6?0:1).replace(/\.0$/,'')+'L' : a>=1e3 ? (a/1e3).toFixed(a>=1e4?0:1).replace(/\.0$/,'')+'k' : String(a)); };
 // money moved into investments is logged as an expense but isn't spending
 const NOT_SPEND = /^investments?$/i;
 const isInvest = cat => NOT_SPEND.test(String(cat||'').trim());
@@ -3529,7 +3536,7 @@ function expcatBody(p){
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
   const vals = months.map(m=>xMonth(m)[cat]||0), mx = Math.max(1, bud, ...vals);
   const BH = 84;                                            // bar area height, px
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
+  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><b class="mv">${fCmp(vals[i])}</b><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
   const line = bud ? `<div class="mbline" style="bottom:${(18 + bud/mx*BH).toFixed(1)}px"></div>` : '';
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
@@ -3566,7 +3573,7 @@ function inccatBody(p){
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
   const vals = months.map(m=>all.filter(i=>i.date.slice(0,7)===m).reduce((a,i)=>a+i.amount,0)), mx = Math.max(1, ...vals);
   const BH = 84;
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
+  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''}" data-mbym="${m}"><b class="mv">${fCmp(vals[i])}</b><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
   const bySrc = {}; list.forEach(i=>{ const k=i.source||i.account||'Other'; bySrc[k]=(bySrc[k]||0)+i.amount; });
   const srcRows = Object.keys(bySrc).length > 1 ? Object.keys(bySrc).sort((a,b)=>bySrc[b]-bySrc[a]).map(k=>`<div class="hrow"><span>${esc(k)}</span><b class="num money">${fINR2(bySrc[k])}</b></div>`).join('') : '';
   const yearTot = vals.slice(-12).reduce((a,v)=>a+v,0);
