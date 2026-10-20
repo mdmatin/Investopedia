@@ -389,7 +389,7 @@ th.r,td.r{text-align:right}
 .tarw svg{width:11px;height:11px}
 .tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .xfresh{background:rgba(0,102,204,.16);border-radius:6px;box-shadow:0 0 0 3px rgba(0,102,204,.16)}
 html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3px rgba(41,151,255,.28)}
-.tarw.rf{background:#fff3df;color:#9a5b00} .tarw.iv{background:#efeafc;color:#6b4fd8}
+.tarw.rf{background:#fff3df;color:#9a5b00} .tarw.adj{background:var(--sunken);color:var(--ink-2)} .tarw.iv{background:#efeafc;color:#6b4fd8}
 .tinv{margin:-4px 16px 10px;font-size:12.5px;color:var(--ink-2);text-align:center}
 .tinv b{font-weight:600;color:var(--ink)}
 .nsnote{font-size:12px;color:var(--ink-3);margin:6px 4px 0}
@@ -1056,7 +1056,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3286,8 +3286,8 @@ function renderSpend(){
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
     const [k,row] = r.dataset.tx.split(':'), d = xd();
-    const pool = k==='tr' ? d.transfers : k==='in' ? d.incomes : d.entries;
-    openXSheet((pool||[]).find(e=>String(e.row)===row), k==='tr' ? 'transfer' : k==='in' ? 'income' : 'expense');
+    const inc = k==='in' || k==='adj', pool = k==='tr' ? d.transfers : inc ? d.incomes : d.entries;
+    openXSheet((pool||[]).find(e=>String(e.row)===row), k==='tr' ? 'transfer' : inc ? 'income' : 'expense');
   });
   $$('#spBody [data-mvt]').forEach(r=>r.onclick=()=>openXSheet((xd().transfers||[]).find(e=>String(e.row)===r.dataset.mvt), 'transfer'));
   $$('#spBody [data-mvi]').forEach(r=>r.onclick=()=>openXSheet((xd().incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
@@ -3409,13 +3409,14 @@ function xDayGroups(list, showCat){
    A small badge says which: ↓ red money out, ↑ green money in, ⇄ blue transfer,
    ↑ amber refund. */
 let txFilter = 'all';
-const TX_ARW = { iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
-const TX_NAME = { iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund' };
+const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
+const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund' };
 function txItems(ym){
   const d = xd() || {}, out = [];
   (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? 'rf' : isInvest(e.category) ? 'iv' : 'ex', e }); });
   (d.transfers||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k:'tr', e }); });
-  (d.incomes||[]).forEach(e=>{ if (e.date.slice(0,7)===ym && e.type!=='Adjustment') out.push({ k:'in', e }); });
+  // a balance correction is listed too, but never counted as income
+  (d.incomes||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.type==='Adjustment' ? 'adj' : 'in', e }); });
   return out;
 }
 function txRow(x){
@@ -3427,6 +3428,9 @@ function txRow(x){
     amt = (x.k==='rf' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf' ? 'up' : ''; q = qWords(e.note, e.category, e.sub, e.account, TX_NAME[x.k]);
   } else if (x.k==='tr'){
     icon = moveTile('transfer'); title = `${e.from} → ${e.to}`; meta = e.note || 'Transfer'; amt = fINR2(e.amount); cls = 'tr'; q = qWords(e.from, e.to, e.note, 'transfer');
+  } else if (x.k==='adj'){
+    icon = moveTile('income'); title = 'Balance adjustment'; meta = [e.account, e.remark].filter(Boolean).join(' · ');
+    amt = (e.amount<0 ? '' : '+') + fINR2(e.amount); cls = 'tr'; q = qWords(e.account, e.remark, 'adjustment balance');
   } else {
     icon = moveTile('income'); title = e.source || e.type || 'Income'; meta = [e.source ? e.type : '', e.account, e.remark].filter(Boolean).join(' · ');
     amt = '+' + fINR2(e.amount); cls = 'up'; q = qWords(e.source, e.type, e.account, e.remark, 'money in income');
@@ -3625,7 +3629,7 @@ function monthCards(list, rowFn, empty){
   const by = {}; list.forEach(e=>(by[e.date.slice(0,7)] = by[e.date.slice(0,7)] || []).push(e));
   return Object.keys(by).sort().reverse().map(ym=>{
     const items = by[ym].sort((x,y)=>x.date<y.date?1:x.date>y.date?-1:0);
-    return `<div class="daygroup xday"><span>${esc(ymLabel(ym))}</span><span class="num money">${fINR2(items.reduce((s,e)=>s+(e.amount||0),0))}</span></div>
+    return `<div class="daygroup xday"><span>${esc(ymLabel(ym))}</span><span class="num money">${fINR2(items.reduce((s,e)=>s+(e.type==='Adjustment' ? 0 : (e.amount||0)),0))}</span></div>
       <div class="card tight">${items.map(rowFn).join('')}</div>`;
   }).join('');
 }
@@ -3636,7 +3640,7 @@ function accTransfersHtml(){
 }
 function accIncomeHtml(){
   return monthCards((xd().incomes||[]).slice(), e=>`<button class="row" data-mvi="${e.row}">${moveTile('income')}
-      <div class="l"><div class="n">${esc(e.source || e.type || 'Income')}</div><div class="m">${[e.source ? e.type : '', e.account, e.remark, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="l"><div class="n">${esc(e.type==='Adjustment' ? 'Balance adjustment' : (e.source || e.type || 'Income'))}</div><div class="m">${[e.source ? e.type : '', e.account, e.remark, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="r"><div class="v num money ${e.amount<0?'down':'up'}">${fINR2(e.amount)}</div>${e.tax?`<div class="s num money">tax ${fINR2(e.tax)}</div>`:''}</div></button>`, 'No income recorded yet.');
 }
 const ordinal = n => n + (['th','st','nd','rd'][((n%100)-20)%10] || ['th','st','nd','rd'][n%100] || 'th');
