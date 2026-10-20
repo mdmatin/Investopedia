@@ -378,6 +378,11 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .xscope{margin:10px 0 0}
 .xscope button{font-size:13.5px;padding:7px}
 .mbars{position:relative;display:flex;gap:8px;height:102px;margin-top:18px;align-items:flex-end}
+.mbscroll{margin:18px -6px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mbscroll::-webkit-scrollbar{display:none}
+.mbscroll .mbars{margin:0;padding:0 6px;gap:0}
+.mbscroll .mb{flex:0 0 52px}
+.mbscroll .mb span{white-space:nowrap}
 .mb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .mb i{display:block;width:100%;max-width:30px;border-radius:5px 5px 2px 2px;background:#d1d1d6}
 .mb i{background:var(--blue);opacity:.38}
@@ -1082,7 +1087,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2804,7 +2809,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? p.acc
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? p.acc
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -2836,13 +2841,13 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p)
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p)
     : p.kind==='accform' ? accFormBody(p) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
       <div class="pg-title">${esc(pageTitle(p))}</div>${stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
-  if (p.kind==='expcat' || p.kind==='budgets'){ wireXPage(p); return; }
+  if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
   if (p.kind==='acct'){ wireAccPage(p); return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
@@ -3230,7 +3235,7 @@ async function loadExpenses(fresh){
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
-    if (top && /^(expcat|budgets|acct)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+    if (top && /^(expcat|inccat|budgets|acct)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
   finally{ xLoading = false; }
 }
@@ -3344,6 +3349,7 @@ function renderSpend(){
   $$('#spBody [data-ym]').forEach(b=>b.onclick=()=>{ spMonth = ymAdd(spMonth, Number(b.dataset.ym)); renderSpend(); });
   $$('#spBody [data-mpick]').forEach(b=>b.onclick=()=>monthPicker(spMonth, m=>{ spMonth = m; renderSpend(); }));
   $$('#spBody [data-xcat]').forEach(r=>r.onclick=()=>pushPage({ kind:'expcat', cat:r.dataset.xcat, ym:r.dataset.ymc||spMonth }));
+  $$('#spBody [data-icat]').forEach(r=>r.onclick=()=>pushPage({ kind:'inccat', cat:r.dataset.icat, ym:r.dataset.ymc||spMonth }));
   $$('#spBody [data-budgets]').forEach(b=>b.onclick=()=>pushPage({ kind:'budgets', ym:spMonth }));
   $$('#spBody [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   $$('#spBody [data-io]').forEach(b=>b.onclick=()=>{ spIO = b.dataset.io; renderSpend(); });
@@ -3437,7 +3443,7 @@ function spMonthlyHtml(){
   const svg = pieSvg(items, total);
   const rows = items.map(it=>{
     const pct = Math.round(it.v/total*100);
-    const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : 'class="row prow"';
+    const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : `class="row tap prow" data-icat="${esc(it.k)}" data-ymc="${ym}"`;
     return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
       <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
@@ -3517,10 +3523,13 @@ function spListHtml(){
 function expcatBody(p){
   const cat = p.cat, ym = p.ym, o = xMonth(ym), spent = o[cat]||0, bud = xBudget(cat, ym);
   const list = xEntries(ym).filter(e=>e.category===cat);
-  const months = []; for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
+  // every month from the first with data up to now, scrolled sideways; a tap
+  // picks a month without moving the chart
+  const d0 = xd()||{}, firstYm = [ym].concat(Object.keys(d0.monthly||{}), (d0.entries||[]).map(e=>e.date.slice(0,7))).filter(Boolean).sort()[0];
+  const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
   const vals = months.map(m=>xMonth(m)[cat]||0), mx = Math.max(1, bud, ...vals);
   const BH = 84;                                            // bar area height, px
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}</span></div>`).join('');
+  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
   const line = bud ? `<div class="mbline" style="bottom:${(18 + bud/mx*BH).toFixed(1)}px"></div>` : '';
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
@@ -3540,11 +3549,43 @@ function expcatBody(p){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       ${ed}
       ${bud ? pbar(spent/bud) : ''}
-      <div class="mbars">${line}${bars}</div>
+      <div class="mbscroll"><div class="mbars" style="width:${months.length*52+12}px">${line}${bars}</div></div>
     </div>
     ${subRows ? `<div class="sechead"><h2>By subcategory</h2></div><div class="card hstats xsubs">${subRows}</div>` : ''}
     <div class="sechead"><h2>Expenses</h2></div>
     ${list.length ? xDayGroups(list, false) : '<div class="card tight"><div class="empty">Nothing in this category this month</div></div>'}`;
+}
+
+/* ---------- income type page (Monthly ▸ Income ▸ a type) ----------
+   Same layout as a category page: the month, a sideways-scrolling graph of
+   every month, and that month's entries. No budget. */
+function inccatBody(p){
+  const t = p.cat, ym = p.ym, all = ((xd()||{}).incomes||[]).filter(i=>(i.type||'Other')===t && i.type!=='Adjustment');
+  const list = all.filter(i=>i.date.slice(0,7)===ym), total = list.reduce((a,i)=>a+i.amount,0);
+  const firstYm = [ym, ymAdd(ymNow(),-11)].concat(all.map(i=>i.date.slice(0,7))).sort()[0];   // at least a year
+  const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
+  const vals = months.map(m=>all.filter(i=>i.date.slice(0,7)===m).reduce((a,i)=>a+i.amount,0)), mx = Math.max(1, ...vals);
+  const BH = 84;
+  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
+  const bySrc = {}; list.forEach(i=>{ const k=i.source||i.account||'Other'; bySrc[k]=(bySrc[k]||0)+i.amount; });
+  const srcRows = Object.keys(bySrc).length > 1 ? Object.keys(bySrc).sort((a,b)=>bySrc[b]-bySrc[a]).map(k=>`<div class="hrow"><span>${esc(k)}</span><b class="num money">${fINR2(bySrc[k])}</b></div>`).join('') : '';
+  const yearTot = vals.slice(-12).reduce((a,v)=>a+v,0);
+  const sw = `<div class="mswitch pg-mswitch">
+      <button data-pym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
+      <b data-mpick role="button">${esc(ymLabel(ym))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
+      <button data-pym="1" aria-label="Next month" ${ym>=ymNow()?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
+  const rows = list.slice().sort((a,b)=>a.date<b.date?1:-1).map(e=>`<button class="row" data-mvi="${e.row}">${moveTile('income')}
+      <div class="l"><div class="n">${esc(e.source || e.type || 'Income')}</div><div class="m">${[e.account, e.remark, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="r"><div class="v num money up">${fINR2(e.amount)}</div>${e.tax?`<div class="s num money">tax ${fINR2(e.tax)}</div>`:''}</div></button>`).join('');
+  return sw + `<div class="card pg-card pg-hero">
+      <div class="pg-id">${moveTile('income')}<div class="grow"><div class="t">${esc(t)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} entr${list.length===1?'y':'ies'}</div></div></div>
+      <div class="pg-big num money">${fINR2(total)}</div>
+      <div class="xbud num money" style="pointer-events:none">Last 12 months ${fINR2(yearTot)}</div>
+      <div class="mbscroll"><div class="mbars" style="width:${months.length*52+12}px">${bars}</div></div>
+    </div>
+    ${srcRows ? `<div class="sechead"><h2>By source</h2></div><div class="card hstats xsubs">${srcRows}</div>` : ''}
+    <div class="sechead"><h2>Entries</h2></div>
+    ${rows ? `<div class="card tight">${rows}</div>` : '<div class="card tight"><div class="empty">Nothing of this type this month</div></div>'}`;
 }
 
 /* ---------- budgets page ---------- */
@@ -3583,8 +3624,18 @@ async function saveBudget(cat, month, raw, after){
 function wireXPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
-  if (p.kind==='expcat'){
+  $$('#page [data-mvi]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
+  if (p.kind==='expcat' || p.kind==='inccat'){
     const b = $('#page [data-bedit]'); if (b) b.onclick = ()=>{ p.bEdit = !p.bEdit; rerender(); };
+    const gs = $('#page .mbscroll');
+    if (gs){
+      if (p.gx!=null) gs.scrollLeft = p.gx; else gs.scrollLeft = gs.scrollWidth;      // first open: newest months
+      const on = gs.querySelector('.mb.on');
+      if (on){ const l = on.offsetLeft, r = l + on.offsetWidth;
+        if (l < gs.scrollLeft) gs.scrollLeft = l - 8; else if (r > gs.scrollLeft + gs.clientWidth) gs.scrollLeft = r - gs.clientWidth + 8; }
+      p.gx = gs.scrollLeft;
+      gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true });
+    }
     const toMonth = m=>{ if (!m || m>ymNow() || m===p.ym) return; p.ym = m; p.bEdit = false; rerender(); };
     $$('#page [data-pym]').forEach(x=>x.onclick=()=>toMonth(ymAdd(p.ym, Number(x.dataset.pym))));
     $$('#page [data-mbym]').forEach(x=>x.onclick=()=>toMonth(x.dataset.mbym));
@@ -4137,7 +4188,7 @@ function xErr(m, field, step){
 function rerenderSpendViews(){
   if (activeView==='spend') renderSpend();
   const top = pageStack[pageStack.length-1];
-  if (top && /^(expcat|budgets|acct)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  if (top && /^(expcat|inccat|budgets|acct)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 async function saveXSheet(){
   const amount = xAmt();
