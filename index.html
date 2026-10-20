@@ -355,6 +355,10 @@ th.r,td.r{text-align:right}
 .xchips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .xchips[hidden],.xlbl[hidden]{display:none}
 .accseg{margin:14px 16px 4px}
+.addacc{display:block;margin:14px 16px 0;width:calc(100% - 32px);padding:13px;border-radius:var(--r-mid);background:var(--canvas);color:var(--blue);font-weight:600;font-size:16px;box-shadow:0 0 0 1px var(--card-edge)}
+.accbtns{display:flex;gap:18px;flex-wrap:wrap}
+.accform .seg{margin-bottom:14px}
+.accform .seg button{font-size:14px;padding:8px 4px}
 /* Transactions list */
 .tsum{display:grid;grid-template-columns:repeat(3,1fr);margin:0 16px 10px;background:var(--canvas);border-radius:var(--r-card);padding:12px 4px;box-shadow:0 0 0 1px var(--card-edge)}
 .tsum div{text-align:center;border-left:1px solid var(--hairline)} .tsum div:first-child{border-left:0}
@@ -950,7 +954,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-21c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-21d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2646,7 +2650,8 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? p.acc : p.platform; }
+  : p.kind==='expcat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? p.acc
+  : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
   const up = String(ticker).toUpperCase();
@@ -2677,13 +2682,15 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : platformBody(p.platform);
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p)
+    : p.kind==='accform' ? accFormBody(p) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
       <div class="pg-title">${esc(pageTitle(p))}</div>${stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
   if (p.kind==='expcat' || p.kind==='budgets'){ wireXPage(p); return; }
   if (p.kind==='acct'){ wireAccPage(p); return; }
+  if (p.kind==='accform'){ wireAccForm(p); return; }
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
   // prev / next swap the ticker in place, so Back still returns to the list
   $$('#page [data-step]').forEach(b=>b.onclick=()=>{
@@ -3141,6 +3148,7 @@ function renderSpend(){
   el.innerHTML = sw + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-accsec]').forEach(b=>b.onclick=()=>{ accSec = b.dataset.accsec; renderSpend(); });
+  $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
     const [k,row] = r.dataset.tx.split(':'), d = xd();
@@ -3444,7 +3452,10 @@ function spAccountsHtml(){
     .map(([k,l])=>`<button data-accsec="${k}" class="${accSec===k?'on':''}">${l}</button>`).join('')}</div>`;
   if (accSec==='transfers') return head + seg + accTransfersHtml();
   if (accSec==='income') return head + seg + accIncomeHtml();
-  return head + seg + ACC_GROUPS.map(([k,label])=>{
+  return head + seg + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
+}
+function accGroupsHtml(acc){
+  return ACC_GROUPS.map(([k,label])=>{
     const list = acc.filter(a=>accKind(a)===k); if (!list.length) return '';
     return `<div class="sechead"><h2>${label}</h2></div><div class="card tight">${list.map(a=>{
       const bal = accBalance(a.name);
@@ -3502,8 +3513,10 @@ function accBody(p){
   return `<div class="card pg-card pg-hero">
       <div class="pg-id">${accIcon(a)}<div class="grow"><div class="t">${esc(a.name)}</div><div class="s">${sub}</div></div></div>
       <div class="pg-big num money">${big}</div>
-      <button class="xbud" data-setbal>Set actual balance
+      <div class="accbtns"><button class="xbud" data-setbal>Set actual balance
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+        <button class="xbud" data-editacc>Edit account
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
       ${ed}
       ${card && a.limit ? pbar(Math.max(0,-bal)/a.limit) : ''}
       <div class="spstats"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
@@ -3519,6 +3532,7 @@ function moveTile(kind){
 function wireAccPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   const b = $('#page [data-setbal]'); if (b) b.onclick = ()=>{ p.setBal = !p.setBal; rerender(); };
+  const ea = $('#page [data-editacc]'); if (ea) ea.onclick = ()=>pushPage({ kind:'accform', acc:p.acc });
   $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
     const [kind,row] = r.dataset.mv.split(':'), d = xd();
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers;
@@ -3540,6 +3554,97 @@ function wireAccPage(p){
   }
 }
 const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+
+/* ---------- add / edit / remove an account ----------
+   Saved to the Accounts tab. A rename is carried into every expense, money-in
+   and transfer that names the account (the sheet does the same when you rename
+   it there). Removing an account that has entries only hides it. */
+const ACC_TYPES = ['Bank','Cash','Credit card','Wallet'];
+function accUses(name){
+  const d = xd() || {};
+  return (d.entries||[]).filter(e=>e.account===name).length + (d.incomes||[]).filter(e=>e.account===name).length
+    + (d.transfers||[]).filter(e=>e.from===name || e.to===name).length;
+}
+function accFormBody(p){
+  const a = p.acc ? accByName(p.acc) : null;
+  if (p.acc && !a) return '<div class="pg-load">Account not found</div>';
+  if (!p.f) p.f = a ? { name:a.name, type:a.type, opening:a.opening, openDate:a.openDate || todayISO(), limit:a.limit||'', dueDay:a.dueDay||'' }
+                    : { name:'', type:'Bank', opening:'', openDate:todayISO(), limit:'', dueDay:'' };
+  const f = p.f, card = f.type==='Credit card';
+  const openVal = f.opening==='' ? '' : groupNum(String(card ? Math.abs(Number(f.opening)||0) : f.opening), 'en-IN');
+  const uses = a ? accUses(a.name) : 0;
+  return `<div class="card pg-card accform">
+      ${p.err ? `<div class="err">${esc(p.err)}</div>` : ''}
+      <div class="fields">
+        <div class="f"><label>Name</label><input id="afName" value="${esc(f.name)}" placeholder="e.g. HDFC Bank" autocomplete="off"></div>
+      </div>
+      <div class="xlbl">Type</div>
+      <div class="seg afType">${ACC_TYPES.map(t=>`<button data-at="${t}" class="${f.type===t?'on':''}">${t==='Credit card'?'Card':t}</button>`).join('')}</div>
+      <div class="fields">
+        <div class="f"><label>${card ? 'Owed at start' : 'Opening balance'}</label><input id="afOpen" inputmode="decimal" value="${openVal}" placeholder="0"></div>
+        <div class="f"><label>Since</label><input id="afDate" type="date" value="${esc(f.openDate||'')}"></div>
+        ${card ? `<div class="f"><label>Credit limit</label><input id="afLimit" inputmode="decimal" value="${f.limit?groupNum(String(f.limit),'en-IN'):''}" placeholder="optional"></div>
+        <div class="f"><label>Bill due day</label><input id="afDue" inputmode="numeric" value="${esc(String(f.dueDay||''))}" placeholder="1–31"></div>` : ''}
+      </div>
+      <p class="hint" style="margin:0 4px 14px">${card ? 'What you owed on the card on the “Since” date.' : 'The balance on the “Since” date.'} Entries before that date don't count toward the balance.</p>
+      <button class="btn" data-afsave>${a ? 'Save' : 'Add account'}</button>
+      ${a ? `<button class="btn danger" data-afdel>${uses ? 'Hide account' : 'Remove account'}</button>
+        <p class="hint">${uses ? `It has ${uses} entr${uses===1?'y':'ies'}, so it's hidden rather than deleted — its history stays. Tick Active on the Accounts tab to bring it back.` : 'It has no entries, so it is removed from the Accounts tab.'}</p>` : ''}
+    </div>`;
+}
+function wireAccForm(p){
+  const f = p.f, rer = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  const keep = ()=>{ f.name = $('#afName').value; f.opening = numPlain($('#afOpen').value); f.openDate = $('#afDate').value;
+    if ($('#afLimit')) f.limit = numPlain($('#afLimit').value); if ($('#afDue')) f.dueDay = $('#afDue').value; };
+  commaInput($('#afOpen'), 'en-IN'); if ($('#afLimit')) commaInput($('#afLimit'), 'en-IN');
+  $$('#page [data-at]').forEach(b=>b.onclick=()=>{ keep(); f.type = b.dataset.at; rer(); });
+  $('#page [data-afsave]').onclick = ()=>{ keep(); saveAccount(p); };
+  const del = $('#page [data-afdel]'); if (del) del.onclick = ()=>{
+    if (del.dataset.arm!=='1'){ del.dataset.arm='1'; del.textContent='Tap again to confirm'; return; }
+    removeAccount(p);
+  };
+}
+async function saveAccount(p){
+  const f = p.f, name = String(f.name||'').trim(), oldName = p.acc, was = p.acc ? accByName(p.acc) : null;
+  if (!name){ p.err = 'Give the account a name.'; renderPage(); return; }
+  if (xAccounts().some(a=>a.name.toLowerCase()===name.toLowerCase() && a!==was)){ p.err = `There's already an account called “${name}”.`; renderPage(); return; }
+  const card = f.type==='Credit card', open = Number(f.opening)||0;
+  const rec = { name, type:f.type, opening: card ? -Math.abs(open) : open, openDate: f.openDate || todayISO(),
+    limit: card ? Number(f.limit)||null : null, dueDay: card ? Number(f.dueDay)||null : null, active:true };
+  const d = xd(); d.accounts = d.accounts || [];
+  const snap = JSON.stringify({ a:d.accounts, e:d.entries, i:d.incomes, t:d.transfers });
+  if (was){
+    const old = was.name; Object.assign(was, rec);
+    if (old!==name){       // carry the rename everywhere the app holds it
+      (d.entries||[]).forEach(e=>{ if (e.account===old) e.account = name; });
+      (d.incomes||[]).forEach(e=>{ if (e.account===old) e.account = name; });
+      (d.transfers||[]).forEach(e=>{ if (e.from===old) e.from = name; if (e.to===old) e.to = name; });
+      pageStack.forEach(q=>{ if (q.acc===old) q.acc = name; });
+    }
+  } else d.accounts.push(rec);
+  popPage(); rerenderSpendViews();
+  try{
+    const r = await apiPost(was ? 'editAccount' : 'addAccount', { ...rec, name: was ? oldName : name, newName: name });
+    toast(was ? (r && r.renamed ? `Renamed · ${r.renamed} entr${r.renamed===1?'y':'ies'} updated` : 'Account saved') : `Added ${name}`);
+    save('inv.exp', X); loadExpenses(true);
+  }catch(e){
+    const o = JSON.parse(snap); d.accounts = o.a; d.entries = o.e; d.incomes = o.i; d.transfers = o.t;
+    rerenderSpendViews(); toast(e.message || 'Could not save the account');
+  }
+}
+async function removeAccount(p){
+  const a = accByName(p.acc); if (!a) return;
+  const d = xd(), uses = accUses(a.name), i = d.accounts.indexOf(a);
+  if (uses) a.active = false; else d.accounts.splice(i,1);
+  popPage(); setTimeout(()=>{ const top = pageStack[pageStack.length-1]; if (top && top.kind==='acct' && top.acc===a.name) popPage(); rerenderSpendViews(); }, 320);
+  try{
+    const r = await apiPost('removeAccount', { name:a.name });
+    toast(r && r.hidden ? `${a.name} hidden` : `${a.name} removed`); loadExpenses(true);
+  }catch(e){
+    if (uses) a.active = true; else d.accounts.splice(i,0,a);
+    rerenderSpendViews(); toast(e.message || 'Could not remove the account');
+  }
+}
 
 /* ---------- add / edit: expense · transfer · money in ----------
    Two layouts share everything below except how the sheet is drawn:
