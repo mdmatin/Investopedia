@@ -296,6 +296,7 @@ th.r,td.r{text-align:right}
 .spsum .k{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
 .spsum .big{font-family:var(--font-disp);font-size:36px;font-weight:600;letter-spacing:-1px;margin-top:2px;line-height:1.1}
 .spsum .of{font-size:15px;color:var(--ink-2);margin-top:2px}
+.row .m.cardm{white-space:normal;overflow:visible}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
 /* budget (Money Manager style, compact) */
@@ -1055,7 +1056,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3607,8 +3608,8 @@ function accGroupsHtml(acc){
       if (k==='card'){
         const owed = Math.max(0,-bal), lim = a.limit||0;
         return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
-          <div class="l"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m">${lim?`Limit ${fINR2(lim)}`:''}${a.dueDay?`${lim?' · ':''}due ${ordinal(a.dueDay)}`:''}</div></div>
-          <div class="r"><div class="v num money">${bal>0 ? fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
+          <div class="l"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m cardm">${lim?`Available ${fINR2(lim + bal)}`:''}${a.dueDay?`${lim?' · ':''}<span style="white-space:nowrap">due ${ordinal(a.dueDay)}</span>`:''}</div></div>
+          <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0];
       return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
@@ -3645,8 +3646,9 @@ function accBody(p){
   const bal = accBalance(a.name), card = accKind(a)==='card', moves = accMoves(a.name);
   const ym = ymNow(), mm = moves.filter(m=>m.date.slice(0,7)===ym);
   const mIn = mm.filter(m=>m.amt>0).reduce((s,m)=>s+m.amt,0), mOut = -mm.filter(m=>m.amt<0).reduce((s,m)=>s+m.amt,0);
-  const big = card ? (bal>0 ? fINR2(bal) : fINR2(-bal)) : fINR2(bal);
-  const sub = card ? `${bal>0 ? 'In credit' : 'Owed'}${a.limit?` · ${fINR2(a.limit)} limit`:''}${a.dueDay?` · due ${ordinal(a.dueDay)}`:''}` : esc(a.type);
+  // a card reads like its statement: what you owe is positive, credit is negative
+  const big = card ? (bal>0 ? '−'+fINR2(bal) : fINR2(-bal)) : fINR2(bal);
+  const sub = card ? `${bal>0 ? 'In credit' : 'Owed'}${a.limit?` · ${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}`:''}${a.dueDay?` · due ${ordinal(a.dueDay)}`:''}` : esc(a.type);
   const ed = p.setBal ? `<div class="ed xbed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${card?Math.max(0,-bal):bal}" aria-label="Actual balance"></div>
       <div class="hint" style="margin:8px 2px 0">${card?'What the card app says you owe.':'What the bank app shows right now.'} The difference is recorded as an adjustment.</div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Set balance</button></div></div>` : '';
