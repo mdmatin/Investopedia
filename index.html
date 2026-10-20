@@ -60,6 +60,7 @@
   --up:         #008a3e;
   --up-bg:      #e8f5ec;
   --down:       #d13b30;
+  --over:       #c4483f;   /* over budget — a softer red than --down */
   --down-bg:    #fdecea;
 
   /* shape */
@@ -326,7 +327,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-sum{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px}
 .vb-sum .k{font-size:12px;color:var(--ink-2)}
 .vb-sum .big{font-family:var(--font-disp);font-size:24px;font-weight:600;letter-spacing:-.6px;margin-top:1px}
-.vb-sum .big.down{color:var(--down)}
+.vb-sum .big.down{color:var(--over)}
 .vb-row{display:grid;grid-template-columns:30% 1fr;gap:8px;align-items:center;padding:7px 12px;border-top:1px solid var(--hairline)}
 .vb-row:first-child{border-top:0}
 .vb-row.total{padding-top:22px;padding-bottom:10px}
@@ -340,13 +341,13 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-l b{display:block;font-size:14px;font-weight:600;letter-spacing:-.2px}
 .vb-tr{position:relative;height:18px;border-radius:5px;background:var(--sunken)}
 .vb-tr i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--blue);opacity:.85}
-.vb-tr.over i{background:var(--down)}
+.vb-tr.over i{background:var(--over)}
 .vb-tr span{position:absolute;right:6px;top:0;line-height:18px;font-size:11px;font-weight:700;color:var(--ink)}
 .vb-tr.full span{color:#fff}
 .vb-tr em{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink-2);border-radius:1px}
 .vb-tr em b{position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);background:var(--ink-2);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:var(--r-pill);white-space:nowrap}
 .vb-n{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-top:3px}
-.vb-n .sp{color:var(--blue)} .vb-n .down{color:var(--down)}
+.vb-n .sp{color:var(--blue)} .vb-n .down{color:var(--over)}
 /* monthly pie (Money Manager style) */
 .iotabs{display:grid;grid-template-columns:1fr 1fr;margin:0 16px 12px;border-bottom:1px solid var(--hairline)}
 .iotabs button{padding:10px 4px 11px;font-size:15px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px}
@@ -574,6 +575,7 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
     inset 0 -2px 2px rgba(255,255,255,.5),
     inset 0 0 0 1px rgba(255,255,255,.34),
     0 8px 22px rgba(0,0,0,.14)}
+.tabblob.track{transition:height .3s cubic-bezier(.32,.72,0,1), border-radius .3s cubic-bezier(.32,.72,0,1)}
 .tabs.pressing .tabblob{--sx:.93;--sy:.93}
 .tabs.dragging{touch-action:none}
 /* under the finger the position is driven frame by frame, so no easing on
@@ -643,7 +645,7 @@ html[data-theme=dark]{
   color-scheme: dark;
   --canvas:#1c1c1e; --parchment:#000000; --sunken:#2c2c2e; --hairline:#38383a; --card-edge:rgba(255,255,255,.07);
   --ink:#f5f5f7; --ink-2:#a1a1a6; --ink-3:#6e6e73;
-  --blue:#2997ff; --blue-focus:#0a84ff; --up:#32d74b; --up-bg:rgba(50,215,75,.16); --down:#ff453a; --down-bg:rgba(255,69,58,.16);
+  --blue:#2997ff; --blue-focus:#0a84ff; --up:#32d74b; --up-bg:rgba(50,215,75,.16); --down:#ff453a; --down-bg:rgba(255,69,58,.16); --over:#ec5f57;
 }
 html[data-theme=dark] body{background:var(--parchment);color:var(--ink)}
 html[data-theme=dark] .nav{background:rgba(0,0,0,.72)}
@@ -1113,7 +1115,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-23g-preview';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-23k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2487,7 +2489,18 @@ function moveBlob(animate){
   tabBlob.style.setProperty('--bx', s.x + 'px');
   tabBlob.style.width = s.w + 'px';
 }
-addEventListener('resize', moveBlob);
+// keep the capsule glued to its tab while the bar itself changes size (minimise,
+// restore, phone rotation) — no spring, no lens, it just follows frame by frame
+let blobFollow = 0;
+function followBlob(ms){
+  const until = performance.now() + ms;
+  tabBlob.classList.add('track'); cancelAnimationFrame(blobFollow);
+  const step = ()=>{ moveBlob(false);
+    if (performance.now() < until) blobFollow = requestAnimationFrame(step);
+    else tabBlob.classList.remove('track'); };
+  step();
+}
+addEventListener('resize', ()=>followBlob(60));
 
 // Labels are bare text nodes; wrap them so they can collapse when minimised.
 $$('.tabs button').forEach(b=>{
@@ -2581,12 +2594,12 @@ function endNavDrag(e){
 let navLastY = 0, navSettle = null;
 addEventListener('scroll', ()=>{
   const y = Math.max(0, window.scrollY);
-  if (Math.abs(y - navLastY) < 6) return;
+  if (Math.abs(y - navLastY) < 12) return;
   const down = y > navLastY; navLastY = y;
   const bar = $('.tabs'), want = down && y > 90;
   if (want === bar.classList.contains('min')) return;
   bar.classList.toggle('min', want);
-  clearTimeout(navSettle); navSettle = setTimeout(moveBlob, 320);
+  followBlob(360);
 }, {passive:true});
 
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
