@@ -880,7 +880,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
     <!-- ACTIVITY -->
     <section class="view" id="v-spend">
       <div class="seg segwide" id="spSeg">
-        <button data-s="list" class="on">Transactions</button>
+        <button data-s="list" class="on">Activity</button>
         <button data-s="monthly">Monthly</button>
         <button data-s="budget">Budget</button>
         <button data-s="accounts">Accounts</button>
@@ -901,7 +901,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
     <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Holdings</button>
     <button data-v="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Trends</button>
     <button data-v="spend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5"/><path d="M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1z"/><path d="M16 14.25h.01"/></svg>Spend</button>
-    <button data-v="txn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</button>
+    <button data-v="txn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Trades</button>
   </nav>
 </div>
 
@@ -963,7 +963,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-21e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-21g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2285,7 +2285,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Overview',break:'Holdings',trend:'Trends',spend:'Spend',txn:'Activity'};
+const TITLES={home:'Overview',break:'Holdings',trend:'Trends',spend:'Spend',txn:'Trades'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
@@ -3172,7 +3172,7 @@ function renderSpend(){
   $$('#spBody [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   $$('#spBody [data-io]').forEach(b=>b.onclick=()=>{ spIO = b.dataset.io; renderSpend(); });
   if (spSec==='list'){
-    const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner(xQuery, 'Search transactions');
+    const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner(xQuery, 'Search activity');
     wireSearch(sb, ()=>$('#xList'), ()=>xQuery, v=>xQuery=v);
   }
 }
