@@ -365,6 +365,18 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .mb .mv{font-size:9.5px;font-weight:600;color:var(--ink-3);margin-bottom:3px;white-space:nowrap;letter-spacing:-.2px;font-variant-numeric:tabular-nums;min-height:12px}
 .mb.on .mv{color:var(--ink)} .mb.over .mv{color:var(--down)}
 .mbscroll .mbars{height:118px}
+.lscroll{margin:16px -20px 0}
+.lchart{display:block}
+.lchart text{font-variant-numeric:tabular-nums}
+.lchart .lv{font-size:10px;fill:var(--ink-3);font-weight:600}.lchart .lv.on{fill:var(--ink)}.lchart .lv.over{fill:var(--down)}
+.lchart .lm{font-size:11.5px;fill:var(--ink-3)}.lchart .lm.on{fill:var(--blue);font-weight:600}
+.lchart .grid{stroke:var(--hairline);stroke-width:1}
+.lchart .bud{stroke:var(--ink-3);stroke-dasharray:4 4;stroke-width:1.2;opacity:.7}
+.lchart .ln{fill:none;stroke:var(--blue);stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+.lchart .ar{fill:var(--blue);opacity:.10}
+.lchart .pt{fill:var(--blue);stroke:var(--canvas);stroke-width:2}.lchart .pt.over{fill:var(--down)}
+.lchart .pt.on{fill:var(--canvas);stroke:var(--blue);stroke-width:3}.lchart .pt.on.over{stroke:var(--down)}
+.lchart .hit{fill:transparent;cursor:pointer}
 .bcat .l .pbar{height:5px;margin-top:8px}
 .row .r .s.down,.spstats .down{color:var(--down)}
 .row .r .s.up{color:var(--up)}
@@ -1091,7 +1103,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22x';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22y';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3536,8 +3548,7 @@ function expcatBody(p){
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
   const vals = months.map(m=>xMonth(m)[cat]||0), mx = Math.max(1, bud, ...vals);
   const BH = 84;                                            // bar area height, px
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><b class="mv">${fCmp(vals[i])}</b><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
-  const line = bud ? `<div class="mbline" style="bottom:${(18 + bud/mx*BH).toFixed(1)}px"></div>` : '';
+  const chart = lineChart(months, vals, ym, m=>xBudget(cat,m), bud);
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
   const hasOverride = (((xd()||{}).budgets||{}).by||{})[ym] && xd().budgets.by[ym][cat]!=null;
@@ -3556,11 +3567,34 @@ function expcatBody(p){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       ${ed}
       ${bud ? pbar(spent/bud) : ''}
-      <div class="mbscroll"><div class="mbars" style="width:${months.length*52+12}px">${line}${bars}</div></div>
+      ${chart}
     </div>
     ${subRows ? `<div class="sechead"><h2>By subcategory</h2></div><div class="card hstats xsubs">${subRows}</div>` : ''}
     <div class="sechead"><h2>Expenses</h2></div>
     ${list.length ? xDayGroups(list, false) : '<div class="card tight"><div class="empty">Nothing in this category this month</div></div>'}`;
+}
+
+/* Line graph for a category / income type: one point per month, its value in k
+   above it, the picked month as a ring. Scrolls sideways; each month's column
+   is a tap target (data-mbym). Over-budget months turn red when budFn is given. */
+function lineChart(months, vals, sel, budFn, bud){
+  const K = v => { v = Math.round(v||0); return v ? (v/1000).toFixed(Math.abs(v)>=1e4?0:1).replace(/\.0$/,'')+'k' : '0'; };
+  const W = 64, H = 170, top = 26, bot = 34, ph = H - top - bot, w = months.length * W;
+  const mx = Math.max(1, bud||0, ...vals), mn = Math.min(0, ...vals);
+  const x = i => i*W + W/2, y = v => top + ph - ((v-mn)/(mx-mn))*ph;
+  let g = ''; for (let k=0;k<=3;k++){ const yy = (top + ph*k/3).toFixed(1); g += `<line class="grid" x1="0" x2="${w}" y1="${yy}" y2="${yy}"/>`; }
+  const pts = vals.map((v,i)=>[x(i), y(v)]);
+  const path = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
+  const area = path + `L${pts[pts.length-1][0]},${top+ph}L${pts[0][0]},${top+ph}Z`;
+  const budL = bud ? `<line class="bud" x1="0" x2="${w}" y1="${y(bud).toFixed(1)}" y2="${y(bud).toFixed(1)}"/>` : '';
+  let si = -1;
+  const marks = months.map((m,i)=>{ const on = m===sel, b = budFn ? budFn(m) : 0, over = b && vals[i] > b; if (on) si = i;
+    const c = `${on?'on':''} ${over?'over':''}`;
+    return `<circle class="pt ${c}" cx="${pts[i][0]}" cy="${pts[i][1].toFixed(1)}" r="${on?6:4.5}"/>
+      <text class="lv ${c}" x="${pts[i][0]}" y="${(pts[i][1]-11).toFixed(1)}" text-anchor="middle">${K(vals[i])}</text>
+      <text class="lm ${on?'on':''}" x="${pts[i][0]}" y="${H-10}" text-anchor="middle">${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</text>
+      <rect class="hit" data-mbym="${m}" x="${i*W}" y="0" width="${W}" height="${H}"/>`; }).join('');
+  return `<div class="mbscroll lscroll" data-sel="${si}" data-w="${W}"><svg class="lchart" width="${w}" height="${H}" viewBox="0 0 ${w} ${H}">${g}${budL}<path class="ar" d="${area}"/><path class="ln" d="${path}"/>${marks}</svg></div>`;
 }
 
 /* ---------- income type page (Monthly ▸ Income ▸ a type) ----------
@@ -3573,7 +3607,7 @@ function inccatBody(p){
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
   const vals = months.map(m=>all.filter(i=>i.date.slice(0,7)===m).reduce((a,i)=>a+i.amount,0)), mx = Math.max(1, ...vals);
   const BH = 84;
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''}" data-mbym="${m}"><b class="mv">${fCmp(vals[i])}</b><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}${m.slice(5)==='01'||i===0?` ’${m.slice(2,4)}`:''}</span></div>`).join('');
+  const chart = lineChart(months, vals, ym, null, 0);
   const bySrc = {}; list.forEach(i=>{ const k=i.source||i.account||'Other'; bySrc[k]=(bySrc[k]||0)+i.amount; });
   const srcRows = Object.keys(bySrc).length > 1 ? Object.keys(bySrc).sort((a,b)=>bySrc[b]-bySrc[a]).map(k=>`<div class="hrow"><span>${esc(k)}</span><b class="num money">${fINR2(bySrc[k])}</b></div>`).join('') : '';
   const yearTot = vals.slice(-12).reduce((a,v)=>a+v,0);
@@ -3588,7 +3622,7 @@ function inccatBody(p){
       <div class="pg-id">${moveTile('income')}<div class="grow"><div class="t">${esc(t)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} entr${list.length===1?'y':'ies'}</div></div></div>
       <div class="pg-big num money">${fINR2(total)}</div>
       <div class="xbud num money" style="pointer-events:none">Last 12 months ${fINR2(yearTot)}</div>
-      <div class="mbscroll"><div class="mbars" style="width:${months.length*52+12}px">${bars}</div></div>
+      ${chart}
     </div>
     ${srcRows ? `<div class="sechead"><h2>By source</h2></div><div class="card hstats xsubs">${srcRows}</div>` : ''}
     <div class="sechead"><h2>Entries</h2></div>
@@ -3637,8 +3671,8 @@ function wireXPage(p){
     const gs = $('#page .mbscroll');
     if (gs){
       if (p.gx!=null) gs.scrollLeft = p.gx; else gs.scrollLeft = gs.scrollWidth;      // first open: newest months
-      const on = gs.querySelector('.mb.on');
-      if (on){ const l = on.offsetLeft, r = l + on.offsetWidth;
+      const si = Number(gs.dataset.sel), cw = Number(gs.dataset.w);
+      if (si >= 0){ const l = si*cw, r = l + cw;
         if (l < gs.scrollLeft) gs.scrollLeft = l - 8; else if (r > gs.scrollLeft + gs.clientWidth) gs.scrollLeft = r - gs.clientWidth + 8; }
       p.gx = gs.scrollLeft;
       gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true });
