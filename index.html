@@ -386,7 +386,10 @@ th.r,td.r{text-align:right}
 .tflt button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tarw{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;vertical-align:-3px;margin-right:6px;flex:none}
 .tarw svg{width:11px;height:11px}
-.tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .tarw.rf{background:#fff3df;color:#9a5b00}
+.tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .tarw.rf{background:#fff3df;color:#9a5b00} .tarw.iv{background:#efeafc;color:#6b4fd8}
+.tinv{margin:-4px 16px 10px;font-size:12.5px;color:var(--ink-2);text-align:center}
+.tinv b{font-weight:600;color:var(--ink)}
+.nsnote{font-size:12px;color:var(--ink-3);margin:6px 4px 0}
 .trow .v.up{color:var(--up)} .trow .v.tr{color:var(--ink-2)}
 .tday{display:flex;justify-content:space-between}
 .tday span:last-child{text-transform:none;letter-spacing:0}
@@ -609,6 +612,7 @@ html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
 html[data-theme=dark] .xamt input::placeholder,html[data-theme=dark] .xbig .a em{color:#48484a}
 html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
 html[data-theme=dark] .tarw.rf{background:rgba(255,159,10,.18);color:#ffb340}
+html[data-theme=dark] .tarw.iv{background:rgba(191,90,242,.2);color:#d08bff}
 html[data-theme=dark] .xkp button.op{background:#2c2c2e}
 html[data-theme=dark] .xgrid > button.on,html[data-theme=dark] .xgrid.tiles > button.on{background:rgba(41,151,255,.16)}
 html[data-theme=dark] .xsubrow{background:#111113}
@@ -1044,7 +1048,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-21h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1201,9 +1205,20 @@ function inRange(daily, r){
   return out.length >= 2 ? out : a.slice(-2);
 }
 
+// Cash on Overview comes from Money › Accounts, worked out live in the app, so
+// an expense moves it (and net worth) at once. The sheet's Running accounts
+// table catches up nightly. Until the money data is here, the sheet's numbers show.
+function liveCash(){
+  if (!xd() || !(xd().accounts||[]).length) return null;
+  const rows = (xd().accounts||[]).map(a=>({ name:a.name, amount:Math.round(accBalance(a.name)*100)/100, live:true, hidden:a.active===false }))
+    .filter(r=>!r.hidden || Math.abs(r.amount) > 0.004);
+  return { rows, total: rows.reduce((s,r)=>s+r.amount,0) };
+}
 function renderHome(d){
-  const nw = d.netWorth, h = nw.head||{};
-  $('#nw').textContent = fINR(h.netWorth);
+  const nw = d.netWorth, h = nw.head||{}, cash = liveCash();
+  if (!cash && cfg && !xLoading) loadExpenses();
+  const nwVal = cash && h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance + cash.total : h.netWorth;
+  $('#nw').textContent = fINR(nwVal);
   $('#nwSub').innerHTML = `<span class="pill ${cls(h.netWorthDay)} num money">${fINRs(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>`;
 
   // hero chart + ranges
@@ -1238,10 +1253,13 @@ function renderHome(d){
   // (the Recent list was removed from Overview — Activity has every order)
 
   // banks — tappable, each opening an editor that writes the cell back
-  EL.banks.rows = (nw.banks||[]).filter(b=>b.amount);
-  EL.banks.foot = h.runningBalance!=null
-    ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(h.runningBalance)}</span></div>` : '';
+  EL.banks.rows = cash ? cash.rows.filter(b=>b.amount) : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
+  const rbal = cash ? cash.total : h.runningBalance;
+  EL.banks.foot = rbal!=null
+    ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(rbal)}</span></div>` : '';
   renderEditList(EL.banks);
+  // a live balance opens its account (set the actual balance there)
+  $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
 
   // wallets (Net Worth C21 Kite ₹, C22 INDmoney $) — edits go through setWallet
   const fx = h.usdInr || 0;
@@ -1286,6 +1304,9 @@ function editRowMeta(b){
 function renderEditList(L){
   const el = $(L.sel); if(!el) return;
   el.innerHTML = L.rows.map((b,i)=>{
+    if (b.live) return `<div class="row tap" data-acc="${esc(b.name)}">${bankMark(b.name)}
+      <div class="l"><div class="n">${esc(b.name)}</div></div>
+      <div class="r"><div class="v num money ${b.amount<0?'down':''}">${fINR(b.amount)}</div></div><span class="chev">›</span></div>`;
     const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
     const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
     return `<div class="row ${can?'tap':''} ${b.saving?'saving':''}" data-i="${i}">${bankMark(b.name)}
@@ -1295,7 +1316,7 @@ function renderEditList(L){
     + (L.open===i ? bankEditor(b) : '');
   }).join('') + L.foot || `<div class="empty">${L.empty}</div>`;
 
-  el.querySelectorAll('.row.tap').forEach(r=>r.onclick=e=>{
+  el.querySelectorAll('.row.tap:not([data-acc])').forEach(r=>r.onclick=e=>{
     if(e.target.closest('.ed')) return;              // taps inside the editor aren't a toggle
     const i = Number(r.dataset.i);
     L.open = L.open===i ? -1 : i;
@@ -3164,6 +3185,7 @@ async function loadExpenses(fresh){
     const j = await api(fresh ? {action:'expenses', fresh:'1'} : {action:'expenses'});
     X = { at: Date.now(), data: j.data }; save('inv.exp', X);
     if (activeView==='spend') renderSpend();
+    if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
     if (top && /^(expcat|budgets|acct)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
@@ -3187,6 +3209,11 @@ function xMonth(ym){
   return (d.monthly||{})[ym] || {};
 }
 const xTotal = o => Object.values(o).reduce((a,v)=>a+v,0);
+// money moved into investments is logged as an expense but isn't spending
+const NOT_SPEND = /^investments?$/i;
+const isInvest = cat => NOT_SPEND.test(String(cat||'').trim());
+const spendOnly = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isInvest(k)));
+const investOf = o => Object.entries(o).filter(([k])=>isInvest(k)).reduce((a,[,v])=>a+v,0);
 function xBudget(cat, ym){
   const b = (xd()||{}).budgets || {}, m = (b.by||{})[ym]||{};
   return m[cat]!=null ? m[cat] : (b.def||{})[cat] || 0;
@@ -3266,7 +3293,8 @@ function spBudgetHtml(){
   const ym = spMonth, o = xMonth(ym), now = new Date();
   const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
   const today = ym===ymNow() ? now.getDate()/dim : null;
-  const cats = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
+  const all = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
+  const cats = all.filter(x=>!isInvest(x.c)), inv = all.filter(x=>isInvest(x.c));
   const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
   const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
   const bud = budgeted.reduce((a,x)=>a+x.b,0), spent = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spent;
@@ -3282,7 +3310,9 @@ function spBudgetHtml(){
   return `<div class="card tight"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
       <button data-budgets class="bset">Budget setting ${chev('M9 5l7 7-7 7')}</button></div></div>
     <div class="card tight">${row('Monthly', spent, bud, true)}${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
-    ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}`;
+    ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
+    ${inv.length ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">Not counted as spending</div></div>
+      <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('')}</div>` : ''}`;
 }
 
 /* Monthly — like Money Manager's Stats: a pie of the month by category (or,
@@ -3327,13 +3357,15 @@ function pieSvg(items, total){
   return `<svg class="pie" viewBox="0 0 ${W} ${H}">${paths}${labels}</svg>`;
 }
 function spMonthlyHtml(){
-  const ym = spMonth, exp = xMonth(ym), inc = monthIncome(ym);
+  const ym = spMonth, raw = xMonth(ym), exp = spendOnly(raw), invested = investOf(raw), inc = monthIncome(ym);
   const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
   const src = spIO==='inc' ? inc : exp, total = spIO==='inc' ? tI : tE;
   const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
   const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR2(tI)}</b></button>
       <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR2(tE)}</b></button></div>`;
-  if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>`;
+  const invRow = spIO==='exp' && invested>0 ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight"><div class="row tap" data-xcat="${esc(Object.keys(raw).find(isInvest))}" data-ymc="${ym}">${xTile('Investment')}
+      <div class="l"><div class="n">Investment</div><div class="m">Not counted as spending</div></div><div class="r"><div class="v num money">${fINR2(invested)}</div></div></div></div>` : '';
+  if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
   const svg = pieSvg(items, total);
   const rows = items.map(it=>{
     const pct = Math.round(it.v/total*100);
@@ -3341,7 +3373,7 @@ function spMonthlyHtml(){
     return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
       <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
-  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}</div>`;
+  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}</div>` + invRow;
 }
 
 function xRow(e, showCat){
@@ -3360,11 +3392,11 @@ function xDayGroups(list, showCat){
    A small badge says which: ↓ red money out, ↑ green money in, ⇄ blue transfer,
    ↑ amber refund. */
 let txFilter = 'all';
-const TX_ARW = { ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
-const TX_NAME = { ex:'Expense', tr:'Transfer', in:'Money in', rf:'Refund' };
+const TX_ARW = { iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
+const TX_NAME = { iv:'Investment', ex:'Expense', tr:'Transfer', in:'Money in', rf:'Refund' };
 function txItems(ym){
   const d = xd() || {}, out = [];
-  (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? 'rf' : 'ex', e }); });
+  (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? 'rf' : isInvest(e.category) ? 'iv' : 'ex', e }); });
   (d.transfers||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k:'tr', e }); });
   (d.incomes||[]).forEach(e=>{ if (e.date.slice(0,7)===ym && e.type!=='Adjustment') out.push({ k:'in', e }); });
   return out;
@@ -3372,7 +3404,7 @@ function txItems(ym){
 function txRow(x){
   const e = x.e, badge = `<span class="tarw ${x.k}" aria-label="${TX_NAME[x.k]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${TX_ARW[x.k]}"/></svg></span>`;
   let icon, title, meta, amt, cls = '', q;
-  if (x.k==='ex' || x.k==='rf'){
+  if (x.k==='ex' || x.k==='rf' || x.k==='iv'){
     icon = xTile(e.category); title = e.note || e.sub || e.category;
     meta = [e.category!==title ? e.category : null, e.sub && e.sub!==title ? e.sub : null, e.account].filter(Boolean).join(' · ');
     amt = (x.k==='rf' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf' ? 'up' : ''; q = qWords(e.note, e.category, e.sub, e.account, TX_NAME[x.k]);
@@ -3388,8 +3420,9 @@ function txRow(x){
 function spListHtml(){
   const all = txItems(spMonth);
   const spent = all.filter(x=>x.k==='ex'||x.k==='rf').reduce((s,x)=>s+x.e.amount,0);
+  const invested = all.filter(x=>x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
   const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
-  const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
+  const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
   const days = Object.keys(by).sort().reverse().map(dt=>{
@@ -3402,6 +3435,7 @@ function spListHtml(){
     .map(([k,l])=>`<button data-txf="${k}" class="${txFilter===k?'on':''}">${l}</button>`).join('');
   return `<div class="tsum"><div><span>Money in</span><b class="num money up">${fINR2(inn)}</b></div><div><span>Spent</span><b class="num money">${fINR2(spent)}</b></div>
       <div><span>Net</span><b class="num money ${inn-spent<0?'down':''}">${fINR2(inn-spent)}</b></div></div>
+    ${invested ? `<div class="tinv">Invested <b class="num money">${fINR2(invested)}</b> · not counted as spending</div>` : ''}
     <div class="tflt">${chipsHtml}</div>
     <div class="search" id="xSearch"></div>
     <div id="xList">${days || `<div class="empty">Nothing ${txFilter==='all'?'recorded':'here'} in ${esc(ymLabel(spMonth))}</div>`}</div>`;
