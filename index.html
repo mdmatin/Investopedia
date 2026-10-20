@@ -281,6 +281,40 @@ th.r,td.r{text-align:right}
 .spsum .of{font-size:15px;color:var(--ink-2);margin-top:2px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
+/* budget bars (Money Manager style) */
+.bsum{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.bsum .k{font-size:13px;color:var(--ink-2)}
+.bsum .big{font-family:var(--font-disp);font-size:32px;font-weight:600;letter-spacing:-1px;margin-top:4px;line-height:1.1}
+.bsum .big.down{color:var(--down)}
+.bset{display:flex;align-items:center;gap:4px;background:var(--sunken);border-radius:var(--r-pill);padding:8px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
+.bset svg{width:12px;height:12px;color:var(--ink-3)}
+.bcard{padding:4px 0}
+.brow{display:grid;grid-template-columns:34% 1fr;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--hairline)}
+.brow:first-child{border-top:0}
+.brow.total{padding-top:34px;border-bottom:6px solid var(--parchment)}
+.brow.total + .brow{border-top:0}
+.bl span{display:block;font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bl b{display:block;font-size:16px;font-weight:600;margin-top:3px;letter-spacing:-.2px}
+.bbar .track{position:relative;height:26px;border-radius:7px;background:var(--sunken)}
+.bbar .track i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--blue);opacity:.85}
+.bbar .track.over i{background:var(--down);opacity:.85}
+.bbar .track span{position:absolute;right:8px;top:0;line-height:26px;font-size:14px;font-weight:600;color:var(--ink)}
+.bbar .track.over span,.bbar .track.full span{color:#fff}
+.bbar .today{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink-2);border-radius:1px}
+.bbar .today b{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink-2);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r-pill);white-space:nowrap}
+.bbar .nums{display:flex;justify-content:space-between;margin-top:5px;font-size:14px;font-weight:600}
+.bbar .nums .sp{color:var(--blue)}
+.bbar .nums .down{color:var(--down)}
+/* monthly pie (Money Manager style) */
+.iotabs{display:grid;grid-template-columns:1fr 1fr;margin:0 16px 12px;border-bottom:1px solid var(--hairline)}
+.iotabs button{padding:10px 4px 11px;font-size:15px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px}
+.iotabs button b{font-weight:600}
+.iotabs button.on{color:var(--ink);border-bottom-color:var(--down)}
+.piecard{padding:10px 0}
+.pie{display:block;width:100%;height:auto}
+.pie .pl{font-size:12px;font-weight:600;fill:var(--ink)}
+.pie .pp{font-size:11px;fill:var(--ink-2)}
+.prow .pchip{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:#1d1d1f;padding:4px 6px;border-radius:7px;margin-right:2px}
 .pbar.warn i{background:#c27c0e}
 .pbar.over i{background:var(--down)}
 .spstats{display:flex;margin-top:16px;padding-top:14px;border-top:1px solid var(--hairline)}
@@ -871,7 +905,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-20a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-20b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3051,7 +3085,7 @@ function renderSpend(){
   $$('#spSeg button').forEach(b=>b.classList.toggle('on', b.dataset.s===spSec));
   if (!xd()){ el.innerHTML = '<div class="empty">Loading expenses…</div>'; loadExpenses(); return; }
   const cur = ymNow();
-  const sw = spSec==='monthly' || spSec==='accounts' ? '' : `<div class="mswitch">
+  const sw = spSec==='accounts' ? '' : `<div class="mswitch">
       <button data-ym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
       <b>${esc(ymLabel(spMonth))}</b>
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
@@ -3061,7 +3095,7 @@ function renderSpend(){
   $$('#spBody [data-xcat]').forEach(r=>r.onclick=()=>pushPage({ kind:'expcat', cat:r.dataset.xcat, ym:r.dataset.ymc||spMonth }));
   $$('#spBody [data-budgets]').forEach(b=>b.onclick=()=>pushPage({ kind:'budgets', ym:spMonth }));
   $$('#spBody [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
-  $$('#spBody [data-bar]').forEach(b=>b.onclick=()=>{ spMonth = b.dataset.bar; renderSpend(); });
+  $$('#spBody [data-io]').forEach(b=>b.onclick=()=>{ spIO = b.dataset.io; renderSpend(); });
   if (spSec==='list'){
     const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner(xQuery, 'Search expenses');
     wireSearch(sb, ()=>$('#xList'), ()=>xQuery, v=>xQuery=v);
@@ -3069,74 +3103,92 @@ function renderSpend(){
 }
 let xQuery = '';
 
+/* Budget — like Money Manager: what's left this month, then one bar per
+   category. The bar fills with what's been spent; past 100% it turns red. The
+   thin line is today, so you can see if spending is ahead of the month. */
+function bbar(spent, bud, todayFrac, pill){
+  const used = bud ? spent/bud : null, over = bud && spent > bud;
+  const w = used==null ? 0 : Math.min(1, used)*100;
+  const pct = used==null ? '' : Math.round(used*100)+'%';
+  const tl = todayFrac==null ? '' : `<em class="today" style="left:${(todayFrac*100).toFixed(1)}%">${pill?'<b>Today</b>':''}</em>`;
+  return `<div class="bbar"><div class="track ${over?'over':''} ${used!=null && used>=0.82?'full':''}"><i style="width:${w.toFixed(1)}%"></i>${tl}<span>${pct}</span></div>
+    <div class="nums"><span class="num money ${over?'down':'sp'}">${fINR(spent)}</span><span class="num money">${bud?fINR(bud-spent):'no budget'}</span></div></div>`;
+}
 function spBudgetHtml(){
-  const ym = spMonth, o = xMonth(ym), spent = xTotal(o), bud = xBudgetTotal(ym);
-  const cur = ym===ymNow(), now = new Date(), dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const daysLeft = cur ? dim - now.getDate() + 1 : 0, left = bud - spent;
-  const prev = xTotal(xMonth(ymAdd(ym,-1)));
-  const stats = [
-    [left>=0 ? 'Left' : 'Over', `<em class="${left<0?'down':''}">${fINR(Math.abs(left))}</em>`],
-    cur ? ['Per day left', daysLeft>0 && left>0 ? fINR(left/daysLeft) : '—'] : ['Budget used', bud ? Math.round(spent/bud*100)+'%' : '—'],
-    ['Last month', fINR(prev)]
-  ];
-  const sum = `<div class="card spsum">
-      <div class="k">Spent${cur?` · ${daysLeft} day${daysLeft===1?'':'s'} to go`:''}</div>
-      <div class="big num money">${fINR(spent)}</div>
-      <div class="of num money">of ${fINR(bud)} budget</div>
-      ${pbar(bud ? spent/bud : null)}
-      <div class="spstats">${stats.map(([k,v])=>`<div><span>${k}</span><b class="num money">${v}</b></div>`).join('')}</div>
-    </div>`;
-  const cats = xCats().map(c=>({ c, s:o[c]||0, b:xBudget(c,ym) }))
-    .filter(x=>x.s || x.b)
-    .sort((a,b)=> (b.s - a.s) || (b.b - a.b));
-  const rows = cats.map(x=>{
-    const used = x.b ? x.s/x.b : (x.s ? 2 : null), over = x.b && x.s > x.b;
-    return `<div class="row tap bcat" data-xcat="${esc(x.c)}">${xTile(x.c)}
-      <div class="l"><div class="n">${esc(x.c)}</div>${pbar(used)}</div>
-      <div class="r"><div class="v num money">${fINR(x.s)}</div>
-        <div class="s num money ${over?'down':''}">${!x.b ? 'no budget' : over ? fINR(x.s-x.b)+' over' : 'of '+fINR(x.b)}</div></div></div>`;
-  }).join('');
-  return sum + `<div class="sechead"><h2>Categories</h2><button data-budgets>Edit budgets</button></div>
-    <div class="card tight">${rows || '<div class="empty">Nothing spent yet</div>'}</div>`;
+  const ym = spMonth, o = xMonth(ym), cur = ym===ymNow(), now = new Date();
+  const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const today = cur ? now.getDate()/dim : ym < ymNow() ? null : null;
+  const cats = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
+  const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
+  const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
+  const bud = budgeted.reduce((a,x)=>a+x.b,0), spentB = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spentB;
+  const row = (x, total) => `<div class="brow ${total?'total':'tap'}" ${total?'':`data-xcat="${esc(x.c)}"`}>
+      <div class="bl"><span>${esc(total?'Monthly':x.c)}</span><b class="num money">${fINR(x.b)}</b></div>${bbar(x.s, x.b, today, total)}</div>`;
+  const looseRows = loose.map(x=>`<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">No budget</div></div>
+      <div class="r"><div class="v num money">${fINR(x.s)}</div></div></div>`).join('');
+  return `<div class="card bsum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR(left)}</div></div>
+      <button data-budgets class="bset">Budget setting ${chev('M9 5l7 7-7 7')}</button></div>
+    <div class="card tight bcard">${row({ s:spentB, b:bud }, true)}${budgeted.map(x=>row(x)).join('') || '<div class="empty">No budgets set</div>'}</div>
+    ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}`;
 }
 
-// last 12 months ending at the chosen one, biggest categories coloured, the rest grey
-const XCOL = ['#0066cc','#e8833a','#2a9d8f','#b5179e','#e9c46a','#6c63ff','#8d99ae'];
-function spMonthlyHtml(){
-  const end = spMonth > ymNow() ? ymNow() : spMonth, months = [];
-  for (let k=11;k>=0;k--) months.push(ymAdd(end,-k));
-  const per = months.map(ym=>({ ym, o:xMonth(ym) }));
-  const tot = {}; per.forEach(p=>Object.entries(p.o).forEach(([c,v])=>tot[c]=(tot[c]||0)+v));
-  const top = Object.keys(tot).sort((a,b)=>tot[b]-tot[a]).slice(0,6);
-  const W = 361, H = 190, P = {t:10,r:4,b:22,l:38}, bw = (W-P.l-P.r)/12;
-  const totals = per.map(p=>xTotal(p.o)), mx = Math.max(1, ...totals);
-  const y = v => P.t + (1 - v/mx) * (H-P.t-P.b);
-  let g = '';
-  [0, mx/2, mx].forEach(v=>{ g += `<line class="gridline" x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${P.l-6}" y="${y(v)+3.5}" text-anchor="end">${fCompact(v).replace('₹','')}</text>`; });
-  per.forEach((p,i)=>{
-    const x = P.l + i*bw + bw*.18, w = bw*.64; let acc = 0;
-    const parts = top.map((c,k)=>[p.o[c]||0, XCOL[k]]).concat([[xTotal(p.o) - top.reduce((a,c)=>a+(p.o[c]||0),0), '#c7c7cc']]);
-    parts.forEach(([v,col])=>{ if (v<=0) return; const y1=y(acc+v), y0=y(acc); acc+=v;
-      g += `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(.5,y0-y1).toFixed(1)}" fill="${col}"/>`; });
-    const on = p.ym===spMonth;
-    g += `<text class="axis${on?' on':''}" x="${(x+w/2).toFixed(1)}" y="${H-6}" text-anchor="middle">${ymShort(p.ym).slice(0,3)}</text>`
-      + `<rect data-bar="${p.ym}" x="${(P.l+i*bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${H}" fill="${on?'rgba(0,102,204,.07)':'transparent'}"/>`;
+/* Monthly — like Money Manager's Stats: a pie of the month by category (or,
+   on the Income side, by type) with labelled slices, then the list. */
+const PIE_COL = ['#ef6f5e','#f39a57','#f6c94e','#f2e04b','#c5df52','#7fcf6b','#5fd3c4','#5aaef0','#7d8cf2','#b48cf0','#e58bd0','#f2a0a8','#a7b3c2','#c2a886','#8fc7a3','#d8c26a'];
+let spIO = 'exp';
+function monthIncome(ym){
+  const o = {}; ((xd()||{}).incomes||[]).forEach(i=>{ if (i.date.slice(0,7)===ym && i.type!=='Adjustment' && i.amount>0) o[i.type||'Other']=(o[i.type||'Other']||0)+i.amount; });
+  return o;
+}
+function pieSvg(items, total){
+  const W = 361, cx = W/2, r = 74;
+  const side = { l:[], r:[] }; let a0 = -Math.PI/2, paths = '';
+  items.forEach((it,i)=>{
+    const a1 = a0 + it.v/total*2*Math.PI, mid = (a0+a1)/2, large = a1-a0 > Math.PI ? 1 : 0;
+    it.mid = mid; it.col = PIE_COL[i % PIE_COL.length];
+    (Math.cos(mid) >= 0 ? side.r : side.l).push(it);
+    it.a0 = a0; it.a1 = a1; a0 = a1;
   });
-  const legend = top.map((c,k)=>`<span><i style="background:${XCOL[k]}"></i>${esc(c)}</span>`).join('') + (Object.keys(tot).length>top.length?'<span><i style="background:#c7c7cc"></i>Other</span>':'');
-  // the chosen month against its own 12-month average
-  const sel = xMonth(spMonth), avg = {};
-  Object.keys(tot).forEach(c=>avg[c]=tot[c]/12);
-  const rows = Object.keys({...sel, ...avg}).filter(c=>(sel[c]||0)>0).sort((a,b)=>(sel[b]||0)-(sel[a]||0)).map(c=>{
-    const v = sel[c]||0, a = avg[c]||0, d = a ? (v-a)/a : null;
-    return `<div class="row tap" data-xcat="${esc(c)}" data-ymc="${spMonth}">${xTile(c)}
-      <div class="l"><div class="n">${esc(c)}</div><div class="m num money">12-mo avg ${fINR(a)}</div></div>
-      <div class="r"><div class="v num money">${fINR(v)}</div>${d==null?'':`<div class="s ${d>0?'down':'up'}"><span class="arrow">${d>0?'▲':'▼'}</span>${Math.abs(Math.round(d*100))}%</div>`}</div></div>`;
+  const gap = 32, H = Math.max(230, Math.max(side.l.length, side.r.length)*gap + 30), cy = H/2;
+  items.forEach(it=>{
+    if (items.length===1){ paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${it.col}"/>`; return; }
+    const p = a => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+    const [x0,y0] = p(it.a0), [x1,y1] = p(it.a1);
+    paths += `<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${it.a1-it.a0>Math.PI?1:0} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${it.col}" stroke="#fff" stroke-width="1.2"/>`;
+  });
+  // labels: each side sorted top to bottom, pushed apart so they never overlap
+  let labels = '';
+  ['l','r'].forEach(s=>{
+    const L = side[s].map(it=>({ it, y: cy + (r+18)*Math.sin(it.mid) })).sort((a,b)=>a.y-b.y);
+    for (let i=0;i<L.length;i++) L[i].y = Math.max(L[i].y, i ? L[i-1].y + gap : 22);
+    for (let i=L.length-1;i>=0;i--) L[i].y = Math.min(L[i].y, i<L.length-1 ? L[i+1].y - gap : H-22);
+    L.forEach(({it,y})=>{
+      const ex = cx + r*0.97*Math.cos(it.mid), ey = cy + r*0.97*Math.sin(it.mid);
+      const lx = s==='r' ? cx + r + 26 : cx - r - 26, tx = s==='r' ? lx + 4 : lx - 4, anc = s==='r' ? 'start' : 'end';
+      const name = it.k.length > 11 ? it.k.slice(0,10)+'…' : it.k, pct = (it.v/total*100);
+      labels += `<path d="M${ex.toFixed(1)},${ey.toFixed(1)} Q${(cx + (r+14)*Math.cos(it.mid)).toFixed(1)},${(cy + (r+14)*Math.sin(it.mid)).toFixed(1)} ${lx.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${it.col}" stroke-width="1.2"/>`
+        + `<text x="${tx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="${anc}" class="pl">${esc(name)}</text>`
+        + `<text x="${tx.toFixed(1)}" y="${(y+11).toFixed(1)}" text-anchor="${anc}" class="pp">${pct < 0.1 ? '<0.1' : pct.toFixed(1)} %</text>`;
+    });
+  });
+  return `<svg class="pie" viewBox="0 0 ${W} ${H}">${paths}${labels}</svg>`;
+}
+function spMonthlyHtml(){
+  const ym = spMonth, exp = xMonth(ym), inc = monthIncome(ym);
+  const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
+  const src = spIO==='inc' ? inc : exp, total = spIO==='inc' ? tI : tE;
+  const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR(tI)}</b></button>
+      <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR(tE)}</b></button></div>`;
+  if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>`;
+  const svg = pieSvg(items, total);
+  const rows = items.map(it=>{
+    const pct = Math.round(it.v/total*100);
+    const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : 'class="row prow"';
+    return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
+      <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR(it.v)}</div></div></div>`;
   }).join('');
-  return `<div class="card"><div class="mhead"><span>Last 12 months</span><b class="num money">${fINR(totals.reduce((a,v)=>a+v,0))}</b></div>
-      <svg class="mchart" viewBox="0 0 ${W} ${H}">${g}</svg>
-      <div class="legend xleg">${legend}</div></div>
-    <div class="sechead"><h2>${esc(ymLabel(spMonth))}</h2><span class="cnt num money">${fINR(xTotal(sel))}</span></div>
-    <div class="card tight">${rows || '<div class="empty">Nothing spent</div>'}</div>`;
+  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}</div>`;
 }
 
 function xRow(e, showCat){
