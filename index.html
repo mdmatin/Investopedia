@@ -933,7 +933,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-21a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-21a-steps';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3451,7 +3451,7 @@ const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset()*6e4)
                changes with the row you're on (calculator, category grid, …)
      'steps' — amount → what it was for → details, one screen each
    The amount is typed on a calculator: 450+120 saves as 570.00. */
-const ADD_UI = 'flow';
+const ADD_UI = 'steps';
 const IN_TYPES = ['Salary','Freelancing','Interest','Cashback','Dividends','Gift / transfer','Refund','Other'];
 // the most recent Source used for a type (Salary → your employer, and so on)
 const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
