@@ -281,30 +281,27 @@ th.r,td.r{text-align:right}
 .spsum .of{font-size:15px;color:var(--ink-2);margin-top:2px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
-/* budget bars (Money Manager style) */
-.bsum{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.bsum .k{font-size:13px;color:var(--ink-2)}
-.bsum .big{font-family:var(--font-disp);font-size:32px;font-weight:600;letter-spacing:-1px;margin-top:4px;line-height:1.1}
-.bsum .big.down{color:var(--down)}
-.bset{display:flex;align-items:center;gap:4px;background:var(--sunken);border-radius:var(--r-pill);padding:8px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
+/* budget (Money Manager style, compact) */
+.bset{display:flex;align-items:center;gap:4px;background:var(--sunken);border-radius:var(--r-pill);padding:7px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
 .bset svg{width:12px;height:12px;color:var(--ink-3)}
-.bcard{padding:4px 0}
-.brow{display:grid;grid-template-columns:34% 1fr;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--hairline)}
-.brow:first-child{border-top:0}
-.brow.total{padding-top:34px;border-bottom:6px solid var(--parchment)}
-.brow.total + .brow{border-top:0}
-.bl span{display:block;font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bl b{display:block;font-size:16px;font-weight:600;margin-top:3px;letter-spacing:-.2px}
-.bbar .track{position:relative;height:26px;border-radius:7px;background:var(--sunken)}
-.bbar .track i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--blue);opacity:.85}
-.bbar .track.over i{background:var(--down);opacity:.85}
-.bbar .track span{position:absolute;right:8px;top:0;line-height:26px;font-size:14px;font-weight:600;color:var(--ink)}
-.bbar .track.over span,.bbar .track.full span{color:#fff}
-.bbar .today{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink-2);border-radius:1px}
-.bbar .today b{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink-2);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r-pill);white-space:nowrap}
-.bbar .nums{display:flex;justify-content:space-between;margin-top:5px;font-size:14px;font-weight:600}
-.bbar .nums .sp{color:var(--blue)}
-.bbar .nums .down{color:var(--down)}
+.vb-sum{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px}
+.vb-sum .k{font-size:12px;color:var(--ink-2)}
+.vb-sum .big{font-family:var(--font-disp);font-size:24px;font-weight:600;letter-spacing:-.6px;margin-top:1px}
+.vb-sum .big.down{color:var(--down)}
+.vb-row{display:grid;grid-template-columns:30% 1fr;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid var(--hairline)}
+.vb-row:first-child{border-top:0}
+.vb-row.total{background:var(--parchment);padding-top:24px}
+.vb-l span{display:block;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vb-l b{display:block;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.vb-tr{position:relative;height:18px;border-radius:5px;background:var(--sunken)}
+.vb-tr i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--blue);opacity:.85}
+.vb-tr.over i{background:var(--down)}
+.vb-tr span{position:absolute;right:6px;top:0;line-height:18px;font-size:11px;font-weight:700;color:var(--ink)}
+.vb-tr.full span{color:#fff}
+.vb-tr em{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink-2);border-radius:1px}
+.vb-tr em b{position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);background:var(--ink-2);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:var(--r-pill);white-space:nowrap}
+.vb-n{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-top:3px}
+.vb-n .sp{color:var(--blue)} .vb-n .down{color:var(--down)}
 /* monthly pie (Money Manager style) */
 .iotabs{display:grid;grid-template-columns:1fr 1fr;margin:0 16px 12px;border-bottom:1px solid var(--hairline)}
 .iotabs button{padding:10px 4px 11px;font-size:15px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px}
@@ -795,9 +792,9 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
     <!-- ACTIVITY -->
     <section class="view" id="v-spend">
       <div class="seg segwide" id="spSeg">
-        <button data-s="budget" class="on">Budget</button>
+        <button data-s="list" class="on">Expenses</button>
         <button data-s="monthly">Monthly</button>
-        <button data-s="list">Expenses</button>
+        <button data-s="budget">Budget</button>
         <button data-s="accounts">Accounts</button>
       </div>
       <div id="spBody"></div>
@@ -905,7 +902,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-20b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-20d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -928,6 +925,9 @@ const inr  = new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
 const inr2 = new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
 const usd  = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
 const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inr.format(Math.abs(v));
+const inrP = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Spend tab: rupees with paise, like Money Manager
+const fINR2 = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrP.format(Math.abs(v));
 const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inr.format(Math.abs(v));
 const fCompact = v => { if(v==null) return '—'; const a=Math.abs(v), s=v<0?'−':'';
   if(a>=1e7) return s+'₹'+(a/1e7).toFixed(2)+'Cr'; if(a>=1e5) return s+'₹'+(a/1e5).toFixed(1)+'L';
@@ -3003,7 +3003,7 @@ function platformBody(name){
    investment refresh stays as light as it was.
    ========================================================================== */
 let X = load('inv.exp') || null;          // { at, data }
-let xLoading = false, spSec = 'budget', spMonth = ymNow(), xEditing = null;
+let xLoading = false, spSec = 'list', spMonth = ymNow(), xEditing = null;
 const X_STALE = 2 * 60 * 1000;
 
 function ymNow(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
@@ -3103,33 +3103,30 @@ function renderSpend(){
 }
 let xQuery = '';
 
-/* Budget — like Money Manager: what's left this month, then one bar per
-   category. The bar fills with what's been spent; past 100% it turns red. The
-   thin line is today, so you can see if spending is ahead of the month. */
-function bbar(spent, bud, todayFrac, pill){
-  const used = bud ? spent/bud : null, over = bud && spent > bud;
-  const w = used==null ? 0 : Math.min(1, used)*100;
-  const pct = used==null ? '' : Math.round(used*100)+'%';
-  const tl = todayFrac==null ? '' : `<em class="today" style="left:${(todayFrac*100).toFixed(1)}%">${pill?'<b>Today</b>':''}</em>`;
-  return `<div class="bbar"><div class="track ${over?'over':''} ${used!=null && used>=0.82?'full':''}"><i style="width:${w.toFixed(1)}%"></i>${tl}<span>${pct}</span></div>
-    <div class="nums"><span class="num money ${over?'down':'sp'}">${fINR(spent)}</span><span class="num money">${bud?fINR(bud-spent):'no budget'}</span></div></div>`;
-}
+/* Budget — like Money Manager, compact: what's left this month, then one row
+   per category: budget on the left, a bar that fills with what's been spent
+   (red past 100%), spent and left under it. The thin line is today. */
 function spBudgetHtml(){
-  const ym = spMonth, o = xMonth(ym), cur = ym===ymNow(), now = new Date();
+  const ym = spMonth, o = xMonth(ym), now = new Date();
   const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const today = cur ? now.getDate()/dim : ym < ymNow() ? null : null;
+  const today = ym===ymNow() ? now.getDate()/dim : null;
   const cats = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
   const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
   const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
-  const bud = budgeted.reduce((a,x)=>a+x.b,0), spentB = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spentB;
-  const row = (x, total) => `<div class="brow ${total?'total':'tap'}" ${total?'':`data-xcat="${esc(x.c)}"`}>
-      <div class="bl"><span>${esc(total?'Monthly':x.c)}</span><b class="num money">${fINR(x.b)}</b></div>${bbar(x.s, x.b, today, total)}</div>`;
+  const bud = budgeted.reduce((a,x)=>a+x.b,0), spent = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spent;
+  const row = (lbl, s, b, total) => {
+    const u = b ? s/b : 0, over = s > b;
+    return `<div class="vb-row ${total?'total':'tap'}" ${total?'':`data-xcat="${esc(lbl)}"`}>
+      <div class="vb-l"><span>${esc(lbl)}</span><b class="num money">${fINR2(b)}</b></div>
+      <div><div class="vb-tr ${over?'over':''} ${u>=0.97?'full':''}"><i style="width:${Math.min(100,u*100).toFixed(1)}%"></i>${today!=null?`<em style="left:${(today*100).toFixed(1)}%">${total?'<b>Today</b>':''}</em>`:''}<span>${Math.round(u*100)}%</span></div>
+      <div class="vb-n"><span class="num money ${over?'down':'sp'}">${fINR2(s)}</span><span class="num money">${fINR2(b-s)}</span></div></div></div>`;
+  };
   const looseRows = loose.map(x=>`<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">No budget</div></div>
-      <div class="r"><div class="v num money">${fINR(x.s)}</div></div></div>`).join('');
-  return `<div class="card bsum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR(left)}</div></div>
-      <button data-budgets class="bset">Budget setting ${chev('M9 5l7 7-7 7')}</button></div>
-    <div class="card tight bcard">${row({ s:spentB, b:bud }, true)}${budgeted.map(x=>row(x)).join('') || '<div class="empty">No budgets set</div>'}</div>
-    ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}`;
+      <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('');
+  return `<div class="card tight"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
+      <button data-budgets class="bset">Budget setting ${chev('M9 5l7 7-7 7')}</button></div></div>
+    <div class="card tight">${row('Monthly', spent, bud, true)}${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
+    ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}`;
 }
 
 /* Monthly — like Money Manager's Stats: a pie of the month by category (or,
@@ -3178,15 +3175,15 @@ function spMonthlyHtml(){
   const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
   const src = spIO==='inc' ? inc : exp, total = spIO==='inc' ? tI : tE;
   const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
-  const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR(tI)}</b></button>
-      <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR(tE)}</b></button></div>`;
+  const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR2(tI)}</b></button>
+      <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR2(tE)}</b></button></div>`;
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>`;
   const svg = pieSvg(items, total);
   const rows = items.map(it=>{
     const pct = Math.round(it.v/total*100);
     const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : 'class="row prow"';
     return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
-      <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR(it.v)}</div></div></div>`;
+      <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
   return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}</div>`;
 }
@@ -3196,11 +3193,11 @@ function xRow(e, showCat){
   const meta = [showCat && e.category!==title ? e.category : null, e.sub && e.sub!==title ? e.sub : null, e.account||null].filter(Boolean).map(esc).join(' · ');
   return `<button class="row" data-xrow="${e.row}" data-q="${esc(qWords(e.note, e.category, e.sub, e.account))}">${xTile(e.category)}
     <div class="l"><div class="n">${esc(title)}</div>${meta?`<div class="m">${meta}</div>`:''}</div>
-    <div class="r"><div class="v num money">${fINR(e.amount)}</div></div></button>`;
+    <div class="r"><div class="v num money">${fINR2(e.amount)}</div></div></button>`;
 }
 function xDayGroups(list, showCat){
   const by = {}; list.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
-  return Object.keys(by).sort().reverse().map(d=>`<div class="daygroup xday"><span>${esc(fDate(d))}</span><span class="num money">${fINR(by[d].reduce((a,e)=>a+e.amount,0))}</span></div>
+  return Object.keys(by).sort().reverse().map(d=>`<div class="daygroup xday"><span>${esc(fDate(d))}</span><span class="num money">${fINR2(by[d].reduce((a,e)=>a+e.amount,0))}</span></div>
     <div class="card tight">${by[d].map(e=>xRow(e, showCat)).join('')}</div>`).join('');
 }
 function spListHtml(){
@@ -3219,7 +3216,7 @@ function expcatBody(p){
   const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${bud && vals[i]>bud?'over':''}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}</span></div>`).join('');
   const line = bud ? `<div class="mbline" style="bottom:${(18 + bud/mx*BH).toFixed(1)}px"></div>` : '';
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
-  const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR(subs[s])}</b></div>`).join('');
+  const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
   const hasOverride = (((xd()||{}).budgets||{}).by||{})[ym] && xd().budgets.by[ym][cat]!=null;
   const ed = p.bEdit ? `<div class="ed xbed">
       <div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${bud}" aria-label="${esc(cat)} budget"></div>
@@ -3227,8 +3224,8 @@ function expcatBody(p){
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : '';
   return `<div class="card pg-card pg-hero">
       <div class="pg-id">${xTile(cat)}<div class="grow"><div class="t">${esc(cat)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} expense${list.length===1?'':'s'}</div></div></div>
-      <div class="pg-big num money">${fINR(spent)}</div>
-      <button class="xbud num money" data-bedit>${bud ? `of ${fINR(bud)} budget${hasOverride?' (this month)':''}` : 'Set a budget'}
+      <div class="pg-big num money">${fINR2(spent)}</div>
+      <button class="xbud num money" data-bedit>${bud ? `of ${fINR2(bud)} budget${hasOverride?' (this month)':''}` : 'Set a budget'}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       ${ed}
       ${bud ? pbar(spent/bud) : ''}
@@ -3246,14 +3243,14 @@ function budgetsBody(p){
   const rows = cats.map(c=>{
     const open = p.open===c, ov = xBudget(c, ym) !== (def[c]||0);
     return `<div class="row tap" data-bcat="${esc(c)}">${xTile(c)}
-        <div class="l"><div class="n">${esc(c)}</div>${ov?`<div class="m num money">${esc(ymShort(ym))}: ${fINR(xBudget(c,ym))}</div>`:''}</div>
-        <div class="r"><div class="v num money">${def[c] ? fINR(def[c]) : '—'}</div></div><span class="chev">${open?'⌄':'›'}</span></div>`
+        <div class="l"><div class="n">${esc(c)}</div>${ov?`<div class="m num money">${esc(ymShort(ym))}: ${fINR2(xBudget(c,ym))}</div>`:''}</div>
+        <div class="r"><div class="v num money">${def[c] ? fINR2(def[c]) : '—'}</div></div><span class="chev">${open?'⌄':'›'}</span></div>`
       + (open ? `<div class="ed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${def[c]||0}" aria-label="${esc(c)} monthly budget"></div>
           <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : '');
   }).join('');
-  return `<div class="card pg-card"><div class="k">Monthly budget</div><div class="pg-big num money">${fINR(total)}</div>
+  return `<div class="card pg-card"><div class="k">Monthly budget</div><div class="pg-big num money">${fINR2(total)}</div>
       <div class="pg-sub">The same every month unless you set a month on its own from a category's page.</div></div>
-    <div class="card tight">${rows}<div class="rowtotal num money"><span>Total</span><span>${fINR(total)}</span></div></div>`;
+    <div class="card tight">${rows}<div class="rowtotal num money"><span>Total</span><span>${fINR2(total)}</span></div></div>`;
 }
 
 async function saveBudget(cat, month, raw, after){
@@ -3265,7 +3262,7 @@ async function saveBudget(cat, month, raw, after){
   after(); renderSpend();
   try{
     await apiPost('setBudget', { category:cat, month:month||'', amount });
-    save('inv.exp', X); toast(`${cat} budget → ${fINR(amount)}${month?' for '+ymShort(month):''}`);
+    save('inv.exp', X); toast(`${cat} budget → ${fINR2(amount)}${month?' for '+ymShort(month):''}`);
   }catch(e){
     if (month){ if (prevM==null) delete b.by[month][cat]; else b.by[month][cat]=prevM; } else { if (prevDef==null) delete b.def[cat]; else b.def[cat]=prevDef; }
     after(); renderSpend(); toast(e.message || 'Could not save the budget');
@@ -3333,12 +3330,12 @@ function spAccountsHtml(){
   const ym = ymNow(), mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym).reduce((s,e)=>s+e.amount,0);
   const head = `<div class="card spsum">
       <div class="k">Banks &amp; cash</div>
-      <div class="big num money">${fINR(sum.bank)}</div>
-      <div class="of num money">${sum.card<0 ? fINR(-sum.card)+' owed on cards' : 'Nothing owed on cards'}</div>
+      <div class="big num money">${fINR2(sum.bank)}</div>
+      <div class="of num money">${sum.card<0 ? fINR2(-sum.card)+' owed on cards' : 'Nothing owed on cards'}</div>
       <div class="spstats">
-        <div><span>After card dues</span><b class="num money">${fINR(sum.bank + Math.min(0,sum.card))}</b></div>
-        <div><span>Wallets</span><b class="num money">${fINR(sum.wallet)}</b></div>
-        <div><span>In this month</span><b class="num money">${fINR(mIn)}</b></div>
+        <div><span>After card dues</span><b class="num money">${fINR2(sum.bank + Math.min(0,sum.card))}</b></div>
+        <div><span>Wallets</span><b class="num money">${fINR2(sum.wallet)}</b></div>
+        <div><span>In this month</span><b class="num money">${fINR2(mIn)}</b></div>
       </div></div>`;
   return head + ACC_GROUPS.map(([k,label])=>{
     const list = acc.filter(a=>accKind(a)===k); if (!list.length) return '';
@@ -3347,13 +3344,13 @@ function spAccountsHtml(){
       if (k==='card'){
         const owed = Math.max(0,-bal), lim = a.limit||0;
         return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
-          <div class="l"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m">${lim?`Limit ${fINR(lim)}`:''}${a.dueDay?`${lim?' · ':''}due ${ordinal(a.dueDay)}`:''}</div></div>
-          <div class="r"><div class="v num money">${bal>0 ? fINR(bal) : fINR(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
+          <div class="l"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m">${lim?`Limit ${fINR2(lim)}`:''}${a.dueDay?`${lim?' · ':''}due ${ordinal(a.dueDay)}`:''}</div></div>
+          <div class="r"><div class="v num money">${bal>0 ? fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0];
       return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
         <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
-        <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR(bal)}</div></div></div>`;
+        <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}</div>`;
   }).join('');
 }
@@ -3364,8 +3361,8 @@ function accBody(p){
   const bal = accBalance(a.name), card = accKind(a)==='card', moves = accMoves(a.name);
   const ym = ymNow(), mm = moves.filter(m=>m.date.slice(0,7)===ym);
   const mIn = mm.filter(m=>m.amt>0).reduce((s,m)=>s+m.amt,0), mOut = -mm.filter(m=>m.amt<0).reduce((s,m)=>s+m.amt,0);
-  const big = card ? (bal>0 ? fINR(bal) : fINR(-bal)) : fINR(bal);
-  const sub = card ? `${bal>0 ? 'In credit' : 'Owed'}${a.limit?` · ${fINR(a.limit)} limit`:''}${a.dueDay?` · due ${ordinal(a.dueDay)}`:''}` : esc(a.type);
+  const big = card ? (bal>0 ? fINR2(bal) : fINR2(-bal)) : fINR2(bal);
+  const sub = card ? `${bal>0 ? 'In credit' : 'Owed'}${a.limit?` · ${fINR2(a.limit)} limit`:''}${a.dueDay?` · due ${ordinal(a.dueDay)}`:''}` : esc(a.type);
   const ed = p.setBal ? `<div class="ed xbed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${card?Math.max(0,-bal):bal}" aria-label="Actual balance"></div>
       <div class="hint" style="margin:8px 2px 0">${card?'What the card app says you owe.':'What the bank app shows right now.'} The difference is recorded as an adjustment.</div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Set balance</button></div></div>` : '';
@@ -3373,7 +3370,7 @@ function accBody(p){
   const list = Object.keys(by).sort().reverse().slice(0,40).map(d=>`<div class="daygroup">${esc(fDate(d))}</div>
     <div class="card tight">${by[d].map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
       <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
-      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
+      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
   return `<div class="card pg-card pg-hero">
       <div class="pg-id">${accIcon(a)}<div class="grow"><div class="t">${esc(a.name)}</div><div class="s">${sub}</div></div></div>
       <div class="pg-big num money">${big}</div>
@@ -3381,8 +3378,8 @@ function accBody(p){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       ${ed}
       ${card && a.limit ? pbar(Math.max(0,-bal)/a.limit) : ''}
-      <div class="spstats"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR(mIn)}</b></div>
-        <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR(mOut)}</b></div>
+      <div class="spstats"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
+        <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
     </div>
     ${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}`;
@@ -3409,7 +3406,7 @@ function wireAccPage(p){
       const target = card ? -want : want, diff = Math.round((target - accBalance(p.acc))*100)/100;
       p.setBal = false;
       if (!diff){ rerender(); toast('Already matches'); return; }
-      saveMove('income', { date: todayISO(), account:p.acc, type:'Adjustment', note:'Balance set to '+fINR(want), amount:diff }, null);
+      saveMove('income', { date: todayISO(), account:p.acc, type:'Adjustment', note:'Balance set to '+fINR2(want), amount:diff }, null);
     };
     ed.querySelector('.save').onclick = go; inp.onkeydown = e=>{ if (e.key==='Enter') go(); };
   }
@@ -3534,7 +3531,7 @@ async function saveMove(kind, rec, was){
     if (was) await apiPost(act[1], { row:was.row, before:{ date:prev.date, amount:prev.amount }, ...rec });
     else { const r = await apiPost(act[0], rec); if (r && r.row) tmp.row = r.row; }
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
-    toast(`${was?'Updated':'Saved'} · ${what} ${fINR(Math.abs(rec.amount))}`);
+    toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}`);
     loadExpenses(true);                        // rows below an insert have moved; re-read them
   }catch(e){
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
