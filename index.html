@@ -386,7 +386,9 @@ th.r,td.r{text-align:right}
 .tflt button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tarw{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;vertical-align:-3px;margin-right:6px;flex:none}
 .tarw svg{width:11px;height:11px}
-.tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .tarw.rf{background:#fff3df;color:#9a5b00} .tarw.iv{background:#efeafc;color:#6b4fd8}
+.tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .xfresh{background:rgba(0,102,204,.16);border-radius:6px;box-shadow:0 0 0 3px rgba(0,102,204,.16)}
+html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3px rgba(41,151,255,.28)}
+.tarw.rf{background:#fff3df;color:#9a5b00} .tarw.iv{background:#efeafc;color:#6b4fd8}
 .tinv{margin:-4px 16px 10px;font-size:12.5px;color:var(--ink-2);text-align:center}
 .tinv b{font-weight:600;color:var(--ink)}
 .nsnote{font-size:12px;color:var(--ink-3);margin:6px 4px 0}
@@ -427,7 +429,8 @@ th.r,td.r{text-align:right}
 .xfr .v{min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .xfr .v small{font-weight:400;color:var(--ink-3);font-size:13px}
 .xfr .v .ph{color:var(--ink-3);font-weight:400}
-.xfr.on{border-bottom:2px solid var(--blue)}
+.xfr{position:relative}
+.xfr.on::after{content:'';position:absolute;left:92px;right:0;bottom:-1px;height:2px;border-radius:1px;background:var(--blue)}
 .xfr input{width:100%;border:0;background:none;outline:none;font-size:16px;font-weight:500;padding:0;color:var(--ink)}
 .xfr input::placeholder{color:var(--ink-3);font-weight:400}
 /* layout 3: steps */
@@ -915,7 +918,8 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
       <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
       <div class="card tight" id="wallets" hidden></div>
 
-      <div class="sechead"><h2>Cash</h2></div>
+      <div class="sechead"><h2>Accounts</h2></div>
+      <div class="tflt" id="accFlt" hidden></div>
       <div class="card tight" id="banks"></div>
 
       <div class="sechead" id="consHead" hidden><h2>Construction fund</h2></div>
@@ -1048,7 +1052,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1208,9 +1212,11 @@ function inRange(daily, r){
 // Cash on Overview comes from Money › Accounts, worked out live in the app, so
 // an expense moves it (and net worth) at once. The sheet's Running accounts
 // table catches up nightly. Until the money data is here, the sheet's numbers show.
+const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Credit card']];
+let accFilt = load('inv.accFilt') || 'all';
 function liveCash(){
   if (!xd() || !(xd().accounts||[]).length) return null;
-  const rows = (xd().accounts||[]).map(a=>({ name:a.name, amount:Math.round(accBalance(a.name)*100)/100, live:true, hidden:a.active===false }))
+  const rows = (xd().accounts||[]).map(a=>({ name:a.name, kind:accKind(a), amount:Math.round(accBalance(a.name)*100)/100, live:true, hidden:a.active===false }))
     .filter(r=>!r.hidden || Math.abs(r.amount) > 0.004);
   return { rows, total: rows.reduce((s,r)=>s+r.amount,0) };
 }
@@ -1253,10 +1259,17 @@ function renderHome(d){
   // (the Recent list was removed from Overview — Activity has every order)
 
   // banks — tappable, each opening an editor that writes the cell back
-  EL.banks.rows = cash ? cash.rows.filter(b=>b.amount) : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
-  const rbal = cash ? cash.total : h.runningBalance;
+  // every account, zero balances too; filter by kind (remembered on this device)
+  const kinds = cash ? ACC_FILT.filter(([k])=>k==='all' || cash.rows.some(r=>r.kind===k)) : [];
+  if (!kinds.some(([k])=>k===accFilt)) accFilt = 'all';
+  const fl = $('#accFlt'); fl.hidden = kinds.length < 3;
+  fl.innerHTML = kinds.map(([k,l])=>`<button data-af="${k}" class="${accFilt===k?'on':''}">${l}</button>`).join('');
+  $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); });
+  const shown = cash ? cash.rows.filter(r=>accFilt==='all' || r.kind===accFilt) : null;
+  EL.banks.rows = cash ? shown : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
+  const rbal = cash ? shown.reduce((a,r)=>a+r.amount,0) : h.runningBalance;
   EL.banks.foot = rbal!=null
-    ? `<div class="rowtotal num money"><span>Running balance</span><span>${fINR(rbal)}</span></div>` : '';
+    ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Running balance' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
   renderEditList(EL.banks);
   // a live balance opens its account (set the actual balance there)
   $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
@@ -3800,6 +3813,7 @@ function xEval(s){
 }
 function xKey(k){
   let s = xExpr;
+  if (xAmtFresh){ xAmtFresh = false; if (/^\d+$/.test(k) || k==='.') s = ''; }
   if (/^\d+$/.test(k)){ const cur = s.split(/[+−×÷]/).pop(); if (/\.\d\d$/.test(cur)) return; if (cur==='0' && k!=='.') s = s.slice(0,-1); s += k; }
   else if (k==='.'){ const cur = s.split(/[+−×÷]/).pop(); if (!cur.includes('.')) s += cur==='' ? '0.' : '.'; }
   else if (X_OPS.includes(k)){ if (!s) return; s = X_OPS.includes(s.slice(-1)) ? s.slice(0,-1)+k : s+k; }
@@ -3850,9 +3864,22 @@ function openXSheet(e, mode){
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#xsheet').classList.add('show'); });
 }
 function closeXSheet(){ $('#backdrop').classList.remove('show'); $('#xsheet').classList.remove('show');
-  setTimeout(()=>{ $('#backdrop').hidden=true; $('#xsheet').hidden=true; },280); }
+  setTimeout(()=>{ if ($('#xsheet').classList.contains('show')) return; $('#backdrop').hidden=true; $('#xsheet').hidden=true; },280); }
 const chips = (list, on, attr) => list.map(v=>`<button class="${v===on?'on':''}" data-${attr}="${esc(v)}">${esc(v)}</button>`).join('');
-function paintXSheet(){ ADD_UI==='steps' ? paintSteps() : paintFlow(); }
+// The amount already there (an edit, or what you typed before leaving the
+// keypad) shows selected: the first digit you type replaces it, while + − × ÷
+// carry on from it. Any key ends the selection.
+let xAmtFresh = false;
+function paintXSheet(){
+  ADD_UI==='steps' ? paintSteps() : paintFlow();
+  const kp = $('#xsheet .xkp');
+  xAmtFresh = !!(kp && xExpr);
+  xFreshMark();
+}
+function xFreshMark(){
+  const t = $('#xsheet .xfr[data-f="amount"] .v b') || $('#xsheet .xbig .a');
+  if (t) t.classList.toggle('xfresh', xAmtFresh && !!xExpr);
+}
 
 /* shared bits */
 const xModeSeg = () => xEditing ? '' : `<div class="seg xseg">${[['expense','Expense'],['transfer','Transfer'],['income','Money in']]
@@ -3949,7 +3976,7 @@ function paintFlow(){
   const hide = $('[data-hide]', el); if (hide) hide.onclick = ()=>{ xField=null; paintXSheet(); };
   $$('.xkp button', el).forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
     if (k==='OK'){ if (xHasOp(xExpr)) xExpr = String(xAmt()); xNext(); return; }
-    xKey(k); const v = $('.xfr[data-f="amount"] .v', el); if (v) v.innerHTML = xValue('amount'); });
+    xKey(k); const v = $('.xfr[data-f="amount"] .v', el); if (v) v.innerHTML = xValue('amount'); xFreshMark(); });
   $$('.xgrid [data-c]', el).forEach(b=>b.onclick=()=>pickCat(b.dataset.c, xNext));
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; xNext(); });
   $$('.xgrid [data-a]', el).forEach(b=>b.onclick=()=>{ const v=b.dataset.a;
@@ -4008,7 +4035,7 @@ function paintSteps(){
     if (k==='OK'){ if (!(xAmt()>0)){ xErrMsg='Enter an amount.'; paintXSheet(); return; } xExpr = String(xAmt()); go(2); return; }
     xKey(k); const box = $('.xbig', el);
     box.querySelector('.e').innerHTML = xHasOp(xExpr) ? xExprHtml() : '&nbsp;';
-    box.querySelector('.a').innerHTML = `<span>₹</span>${xExpr ? esc(inrP.format(xAmt())) : '<em>0.00</em>'}`; });
+    box.querySelector('.a').innerHTML = `<span>₹</span>${xExpr ? esc(inrP.format(xAmt())) : '<em>0.00</em>'}`; xFreshMark(); });
   $$('.xgrid [data-c]', el).forEach(b=>b.onclick=()=>pickCat(b.dataset.c, ()=>go(3)));
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; go(3); });
   $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (!xSrcV) xSrcV = lastSource(xType); go(3); });
