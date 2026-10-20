@@ -293,6 +293,27 @@ th.r,td.r{text-align:right}
 .mswitch button{width:34px;height:34px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;color:var(--ink-2)}
 .mswitch button:disabled{opacity:.3}
 .mswitch svg{width:15px;height:15px}
+.mswitch b[data-mpick]{cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.mswitch b svg.mcaret{width:13px;height:13px;color:var(--ink-3)}
+.mpick{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.28);display:flex;justify-content:center;align-items:flex-start;padding-top:calc(env(safe-area-inset-top) + 110px);opacity:0;transition:opacity .18s}
+.mpick.show{opacity:1}
+html[data-theme=dark] .mpick{background:rgba(0,0,0,.55)}
+html[data-theme=dark] .mpick-card{background:#2c2c2e;box-shadow:0 0 0 1px #3a3a3c,0 18px 50px rgba(0,0,0,.5)}
+html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{background:#3a3a3c}
+.mpick-card{width:min(340px,calc(100vw - 32px));background:var(--canvas);border-radius:22px;padding:14px 14px 12px;box-shadow:0 18px 50px rgba(0,0,0,.25);transform:translateY(-6px) scale(.98);transition:transform .18s}
+.mpick.show .mpick-card{transform:none}
+.mpick-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mpick-h b{font-size:17px;font-weight:600}
+.mpick-h button{width:34px;height:34px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;color:var(--ink-2)}
+.mpick-h button:disabled{opacity:.3}
+.mpick-h svg{width:15px;height:15px}
+.mpick-g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mpick-g button{height:44px;border-radius:12px;background:var(--sunken);font-size:15px;color:var(--ink)}
+.mpick-g button.on{background:var(--blue);color:#fff;font-weight:600}
+.mpick-g button.now:not(.on){box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue)}
+.mpick-g button:disabled{opacity:.3}
+.mpick-f{display:flex;justify-content:flex-end;margin-top:10px}
+.mpick-f button{font-size:15px;color:var(--blue);padding:6px 4px}
 .spsum .k{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
 .spsum .big{font-family:var(--font-disp);font-size:36px;font-weight:600;letter-spacing:-1px;margin-top:2px;line-height:1.1}
 .spsum .of{font-size:15px;color:var(--ink-2);margin-top:2px}
@@ -359,8 +380,11 @@ th.r,td.r{text-align:right}
 .mbars{position:relative;display:flex;gap:8px;height:102px;margin-top:18px;align-items:flex-end}
 .mb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .mb i{display:block;width:100%;max-width:30px;border-radius:5px 5px 2px 2px;background:#d1d1d6}
-.mb.on i{background:var(--blue)}
+.mb i{background:var(--blue);opacity:.38}
 .mb.over i{background:var(--down)}
+.mb.on i{opacity:1}
+.mb{cursor:pointer}
+.pg-mswitch{margin:0 16px 12px}
 .mb span{font-size:11px;color:var(--ink-3);margin-top:5px;height:13px}
 .mb.on span{color:var(--blue);font-weight:600}
 .mbline{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(0,0,0,.25)}
@@ -612,7 +636,8 @@ html[data-theme=dark] .tile.lq{--tile:rgba(100,210,255,.16);--tileink:#64d2ff}
 html[data-theme=dark] .tile.rt{--tile:rgba(94,92,230,.22);--tileink:#a5a3ff}
 html[data-theme=dark] .tile.bk{--tile:rgba(48,176,140,.18);--tileink:#63d1b0}
 html[data-theme=dark] .tile.bu{--tile:#2c2c2e;--tileink:#aeb4c2}
-html[data-theme=dark] .mb i{background:#48484a}
+html[data-theme=dark] .mb i{opacity:.45}
+html[data-theme=dark] .mb.on i{opacity:1}
 html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
 html[data-theme=dark] .xamt input::placeholder,html[data-theme=dark] .xbig .a em{color:#48484a}
 html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
@@ -1057,7 +1082,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-22k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-22q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3270,15 +3295,39 @@ const pbar = (used) => {
 };
 const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 
+/* Month picker: tap the month name in any switcher to jump straight to a month. */
+function monthPicker(cur, pick){
+  const max = ymNow(), maxY = Number(max.slice(0,4));
+  const d = xd() || {}, seen = Object.keys(d.monthly||{}).concat((d.incomes||[]).map(i=>i.date.slice(0,7))).filter(Boolean).sort();
+  const minY = Math.min(maxY, Number((seen[0]||'2019').slice(0,4)));
+  let y = Number(cur.slice(0,4));
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const el = document.createElement('div'); el.className = 'mpick';
+  const close = ()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(), 180); };
+  const paint = ()=>{
+    el.innerHTML = `<div class="mpick-card" role="dialog" aria-label="Pick a month">
+      <div class="mpick-h"><button data-y="-1" ${y<=minY?'disabled':''} aria-label="Previous year">${chev('M15 5l-7 7 7 7')}</button><b>${y}</b>
+        <button data-y="1" ${y>=maxY?'disabled':''} aria-label="Next year">${chev('M9 5l7 7-7 7')}</button></div>
+      <div class="mpick-g">${names.map((n,i)=>{ const m = y+'-'+String(i+1).padStart(2,'0');
+        return `<button data-m="${m}" class="${m===cur?'on':''} ${m===max?'now':''}" ${m>max?'disabled':''}>${n}</button>`; }).join('')}</div>
+      <div class="mpick-f"><button data-today>This month</button></div></div>`;
+    el.querySelectorAll('[data-y]').forEach(b=>b.onclick=()=>{ y += Number(b.dataset.y); paint(); });
+    el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ close(); if (b.dataset.m!==cur) pick(b.dataset.m); });
+    el.querySelector('[data-today]').onclick = ()=>{ close(); if (max!==cur) pick(max); };
+  };
+  el.onclick = e=>{ if (e.target===el) close(); };
+  paint(); document.body.appendChild(el); requestAnimationFrame(()=>el.classList.add('show'));
+}
+
 /* ---------- the tab ---------- */
 function renderSpend(){
   const el = $('#spBody'); if (!el) return;
   $$('#spSeg button').forEach(b=>b.classList.toggle('on', b.dataset.s===spSec));
   if (!xd()){ el.innerHTML = '<div class="empty">Loading expenses…</div>'; loadExpenses(); return; }
   const cur = ymNow();
-  const sw = spSec==='accounts' ? '' : `<div class="mswitch">
+  const sw = `<div class="mswitch">
       <button data-ym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
-      <b>${esc(ymLabel(spMonth))}</b>
+      <b data-mpick role="button">${esc(ymLabel(spMonth))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   el.innerHTML = sw + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
@@ -3293,6 +3342,7 @@ function renderSpend(){
   $$('#spBody [data-mvt]').forEach(r=>r.onclick=()=>openXSheet((xd().transfers||[]).find(e=>String(e.row)===r.dataset.mvt), 'transfer'));
   $$('#spBody [data-mvi]').forEach(r=>r.onclick=()=>openXSheet((xd().incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
   $$('#spBody [data-ym]').forEach(b=>b.onclick=()=>{ spMonth = ymAdd(spMonth, Number(b.dataset.ym)); renderSpend(); });
+  $$('#spBody [data-mpick]').forEach(b=>b.onclick=()=>monthPicker(spMonth, m=>{ spMonth = m; renderSpend(); }));
   $$('#spBody [data-xcat]').forEach(r=>r.onclick=()=>pushPage({ kind:'expcat', cat:r.dataset.xcat, ym:r.dataset.ymc||spMonth }));
   $$('#spBody [data-budgets]').forEach(b=>b.onclick=()=>pushPage({ kind:'budgets', ym:spMonth }));
   $$('#spBody [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
@@ -3409,7 +3459,7 @@ function xDayGroups(list, showCat){
 /* Transactions — expenses, transfers and money in for the month, newest first.
    A small badge says which: ↓ red money out, ↑ green money in, ⇄ blue transfer,
    ↑ amber refund. */
-let txFilter = 'all';
+let txFilter = 'ex';                 // Activity opens on Expenses
 const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
 const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund' };
 function txItems(ym){
@@ -3470,7 +3520,7 @@ function expcatBody(p){
   const months = []; for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
   const vals = months.map(m=>xMonth(m)[cat]||0), mx = Math.max(1, bud, ...vals);
   const BH = 84;                                            // bar area height, px
-  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${bud && vals[i]>bud?'over':''}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}</span></div>`).join('');
+  const bars = months.map((m,i)=>`<div class="mb ${m===ym?'on':''} ${xBudget(cat,m) && vals[i]>xBudget(cat,m)?'over':''}" data-mbym="${m}"><i style="height:${Math.max(vals[i]?2:0, vals[i]/mx*BH).toFixed(1)}px"></i><span>${ymShort(m).slice(0,3)}</span></div>`).join('');
   const line = bud ? `<div class="mbline" style="bottom:${(18 + bud/mx*BH).toFixed(1)}px"></div>` : '';
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
@@ -3479,7 +3529,11 @@ function expcatBody(p){
       <div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${bud}" aria-label="${esc(cat)} budget"></div>
       <div class="seg xscope"><button data-scope="all" class="${p.scope!=='month'?'on':''}">Every month</button><button data-scope="month" class="${p.scope==='month'?'on':''}">Only ${esc(ymShort(ym))}</button></div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : '';
-  return `<div class="card pg-card pg-hero">
+  const sw = `<div class="mswitch pg-mswitch">
+      <button data-pym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
+      <b data-mpick role="button">${esc(ymLabel(ym))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
+      <button data-pym="1" aria-label="Next month" ${ym>=ymNow()?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
+  return sw + `<div class="card pg-card pg-hero">
       <div class="pg-id">${xTile(cat)}<div class="grow"><div class="t">${esc(cat)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} expense${list.length===1?'':'s'}</div></div></div>
       <div class="pg-big num money">${fINR2(spent)}</div>
       <button class="xbud num money" data-bedit>${bud ? `of ${fINR2(bud)} budget${hasOverride?' (this month)':''}` : 'Set a budget'}
@@ -3531,6 +3585,10 @@ function wireXPage(p){
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   if (p.kind==='expcat'){
     const b = $('#page [data-bedit]'); if (b) b.onclick = ()=>{ p.bEdit = !p.bEdit; rerender(); };
+    const toMonth = m=>{ if (!m || m>ymNow() || m===p.ym) return; p.ym = m; p.bEdit = false; rerender(); };
+    $$('#page [data-pym]').forEach(x=>x.onclick=()=>toMonth(ymAdd(p.ym, Number(x.dataset.pym))));
+    $$('#page [data-mbym]').forEach(x=>x.onclick=()=>toMonth(x.dataset.mbym));
+    $$('#page [data-mpick]').forEach(x=>x.onclick=()=>monthPicker(p.ym, toMonth));
     const ed = $('#page .xbed');
     if (ed){
       const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus(); inp.select();
@@ -3587,9 +3645,10 @@ function spAccountsHtml(){
   const sum = { bank:0, card:0, wallet:0 }, cards = { owed:0, credit:0 };
   acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
-  const ym = ymNow(), mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym && e.type!=='Adjustment').reduce((s,e)=>s+e.amount,0);
+  // balances are always today's; Income and Saved follow the month picked above
+  const ym = spMonth, mIn = (xd().incomes||[]).filter(e=>e.date.slice(0,7)===ym && e.type!=='Adjustment').reduce((s,e)=>s+e.amount,0);
   // saved = income this month minus what was spent (investments aren't spending; refunds reduce it)
-  const mOut = ((xd().entries)||[]).filter(e=>e.date.slice(0,7)===ym && !isInvest(e.category)).reduce((s,e)=>s+(e.amount||0),0);
+  const mOut = xTotal(spendOnly(xMonth(ym)));
   const saved = mIn - mOut;
   const cardLine = [cards.owed>0.004 ? fINR2(cards.owed)+' owed on cards' : '', cards.credit>0.004 ? fINR2(cards.credit)+' card credit' : '']
     .filter(Boolean).join(' · ') || 'Nothing owed on cards';
@@ -3598,8 +3657,8 @@ function spAccountsHtml(){
       <div class="big num money">${fINR2(sum.bank)}</div>
       <div class="of num money">${cardLine}</div>
       <div class="spstats">
-        <div><span>Income · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mIn)}</b></div>
-        <div><span>Saved · ${esc(ymShort(ym))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}</b>${mIn>0?`<em class="rate">${Math.round(saved/mIn*100)}% of income</em>`:''}</div>
+        <div><span>Income · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money">${fINR2(mIn)}</b></div>
+        <div><span>Saved · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}</b>${mIn>0?`<em class="rate">${Math.round(saved/mIn*100)}% of income</em>`:''}</div>
       </div></div>`;
   const seg = `<div class="seg accseg">${[['accounts','Accounts'],['transfers','Transfers'],['income','Income']]
     .map(([k,l])=>`<button data-accsec="${k}" class="${accSec===k?'on':''}">${l}</button>`).join('')}</div>`;
@@ -3619,7 +3678,7 @@ function accGroupsHtml(acc){
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0];
-      return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
+      return `<div class="row tap" data-acc="${esc(a.name)}">${k==='bank' && !/cash/i.test(a.name) ? bankMark(a.name) : accIcon(a)}
         <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}</div>`;
@@ -3807,7 +3866,10 @@ async function removeAccount(p){
      'steps' — amount → what it was for → details, one screen each
    The amount is typed on a calculator: 450+120 saves as 570.00. */
 const ADD_UI = 'flow';
-const IN_TYPES = ['Salary','Freelancing','Interest','Cashback','Dividends','Gift / transfer','Refund','Other'];
+// income types come from the "Income types" list on the categories tab in the sheet;
+// Adjustment is only made by "Set actual balance", and Refund is always offered
+const IN_TYPES_DEF = ['Salary','Freelancing','Interest','Cashback','Dividends','Gift / transfer','Refund','Other'];
+const inTypesList = () => { const l = ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment'); return l.includes('Refund') ? l : l.concat('Refund'); };
 // the most recent Source used for a type (Salary → your employer, and so on)
 const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
@@ -3977,7 +4039,7 @@ function flowPanel(){
   else if (f==='account') body = xGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc, 'a');
   else if (f==='from') body = xGrid(xAllAcc(), xFrom, 'a');
   else if (f==='to') body = xGrid(xAllAcc().filter(n=>n!==xFrom), xTo, 'a');
-  else if (f==='type') body = xGrid(IN_TYPES, xType, 't');
+  else if (f==='type') body = xGrid(inTypesList(), xType, 't');
   return `<div class="xpanel"><div class="xph"><span>${esc(head)}</span><button data-hide>Done</button></div><div class="xpb">${body}</div></div>`;
 }
 function paintFlow(){
@@ -4023,7 +4085,7 @@ function paintSteps(){
     if (xMode==='expense') body = xGrid(xCatsByUse(), xCat, 'c', { subs:true, icons:true });
     else if (xMode==='transfer') body = `<div class="xlbl">From</div><div class="xchips">${chips(xAllAcc(), xFrom, 'f')}</div>
       <div class="xlbl">To</div><div class="xchips">${chips(xAllAcc().filter(n=>n!==xFrom), xTo, 'o')}</div>`;
-    else body = xGrid(IN_TYPES, xType, 't');
+    else body = xGrid(inTypesList(), xType, 't');
     body = stepsSummary() + xErrHtml() + body;
     foot = `<div class="xfoot"><button class="btn2" data-back>Back</button><button class="btn" data-fwd ${xMode==='transfer' && !(xFrom&&xTo) ? 'disabled' : ''}>Next</button></div>`;
   } else {
