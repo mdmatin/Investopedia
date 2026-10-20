@@ -1107,7 +1107,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-23c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-23e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2592,7 +2592,8 @@ function show(v){
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend';
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
-  if (v==='spend'){ renderSpend(); if (!X || Date.now() - X.at > X_STALE) loadExpenses(); }
+  if (v==='spend'){ spSec = 'list'; renderSpend();   // Spend always opens on Activity
+    if (!X || Date.now() - X.at > X_STALE) loadExpenses(); }
   window.scrollTo(0,0);
   if(D){ if(v==='trend') renderTrends(D.data.daily,D.data.monthly); if(v==='home') renderHome(D.data); }
 }
@@ -4330,7 +4331,9 @@ function paintMenu(){
     + (lockCfg ? item('lock','lock','Lock now') + item('lockoff','unlock','Turn off Face ID lock','dim')
                : item('lockon','lock','Turn on Face ID lock'))
     + `<div class="appear" role="group" aria-label="Appearance"><span>Appearance</span><div class="seg">${[['light','Light'],['dark','Dark'],['auto','Automatic']]
-        .map(([k,l])=>`<button data-theme-pick="${k}" class="${themePick()===k?'on':''}">${l}</button>`).join('')}</div></div>`;
+        .map(([k,l])=>`<button data-theme-pick="${k}" class="${themePick()===k?'on':''}">${l}</button>`).join('')}</div></div>`
+    + `<div class="appear" role="group" aria-label="Open on"><span>Open on</span><div class="seg">${[['home','Overview'],['spend','Spend']]
+        .map(([k,l])=>`<button data-start-pick="${k}" class="${(load('inv.start')||'home')===k?'on':''}">${l}</button>`).join('')}</div></div>`;
 }
 async function enrollLock(){
   if (!window.PublicKeyCredential || !navigator.credentials){ toast('Face ID isn\'t available in this browser'); return; }
@@ -4387,6 +4390,8 @@ $('#btnLockPass').onclick = ()=>{
   m.onclick = async e=>{
     const t = e.target.closest('[data-theme-pick]');
     if (t){ e.stopPropagation(); save('inv.theme', applyTheme(t.dataset.themePick)); paintMenu(); return; }
+    const sp = e.target.closest('[data-start-pick]');
+    if (sp){ e.stopPropagation(); save('inv.start', sp.dataset.startPick); paintMenu(); return; }
     const a = e.target.closest('[data-act]'); if(!a) return;
     const act = a.dataset.act; close();
     if (act==='eye'){ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); }
@@ -4439,6 +4444,7 @@ function start(){
   $('#setup').hidden=true; $('#app').hidden=false;
   if(D){ render(); setStatus('Updated '+ago(Date.now()-D.at),'stale'); }
   refresh(); schedule();
+  if (load('inv.start')==='spend') show('spend');     // "Open on" in the profile menu
 }
 if(cfg) start(); else $('#setup').hidden=false;
 </script>
