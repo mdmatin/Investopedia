@@ -8,6 +8,23 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Centric">
 <meta name="theme-color" content="#f5f5f7">
+<script>
+// Appearance, before first paint: 'light' | 'dark' | 'auto' (follows the phone)
+(function(){
+  var pick = 'auto'; try{ pick = JSON.parse(localStorage.getItem('inv.theme')) || 'auto'; }catch(e){}
+  var mq = window.matchMedia && matchMedia('(prefers-color-scheme: dark)');
+  window.applyTheme = function(p){
+    if (p) pick = p;
+    var dark = pick==='dark' || (pick==='auto' && mq && mq.matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', dark ? '#000000' : '#f5f5f7');
+    return pick;
+  };
+  window.themePick = function(){ return pick; };
+  if (mq && mq.addEventListener) mq.addEventListener('change', function(){ if (pick==='auto') applyTheme(); });
+  applyTheme();
+})();
+</script>
 <meta name="color-scheme" content="light">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -555,6 +572,70 @@ th.r,td.r{text-align:right}
   .tabs,.tabs button,.tabs .tl,.tabblob{transition:none}
 }
 
+
+/* ============================ DARK MODE ============================
+   html[data-theme=dark] is set before first paint (script in <head>) from the
+   choice in the profile menu: Light, Dark or Automatic (follows the phone). */
+html[data-theme=dark]{
+  color-scheme: dark;
+  --canvas:#1c1c1e; --parchment:#000000; --sunken:#2c2c2e; --hairline:#38383a; --card-edge:rgba(255,255,255,.07);
+  --ink:#f5f5f7; --ink-2:#a1a1a6; --ink-3:#6e6e73;
+  --blue:#2997ff; --blue-focus:#0a84ff; --up:#32d74b; --up-bg:rgba(50,215,75,.16); --down:#ff453a; --down-bg:rgba(255,69,58,.16);
+}
+html[data-theme=dark] body{background:var(--parchment);color:var(--ink)}
+html[data-theme=dark] .nav{background:rgba(0,0,0,.72)}
+html[data-theme=dark] .nav.mini{box-shadow:0 1px 0 rgba(255,255,255,.08)}
+html[data-theme=dark] .pg-head{background:rgba(0,0,0,.78)}
+html[data-theme=dark] .navbtns .avatar{background:rgba(58,58,60,.8);box-shadow:0 1px 4px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.1)}
+html[data-theme=dark] #ptr{background:#2c2c2e}
+/* light text on the light "selected" pills turns dark */
+html[data-theme=dark] .ranges button.on,html[data-theme=dark] .chip.on,html[data-theme=dark] .xchips button.on,
+html[data-theme=dark] .tflt button.on,html[data-theme=dark] .tip,html[data-theme=dark] .toast{color:#1c1c1e}
+html[data-theme=dark] .seg button.on{background:#3a3a3c;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+/* icon tiles: tinted glass instead of pastel */
+html[data-theme=dark] .tile{--tile:#2c2c2e;--tileink:#a1a1a6}
+html[data-theme=dark] .tile.us{--tile:rgba(41,151,255,.18);--tileink:#64b5ff}
+html[data-theme=dark] .tile.in{--tile:rgba(50,215,75,.16);--tileink:#5fe07a}
+html[data-theme=dark] .tile.cr{--tile:rgba(160,120,255,.2);--tileink:#b9a2ff}
+html[data-theme=dark] .tile.mf{--tile:rgba(255,159,10,.18);--tileink:#ffb340}
+html[data-theme=dark] .tile.gd{--tile:rgba(255,214,10,.16);--tileink:#ffd60a}
+html[data-theme=dark] .tile.ch{--tile:#2c2c2e;--tileink:#a1a1a6}
+html[data-theme=dark] .tile.lq{--tile:rgba(100,210,255,.16);--tileink:#64d2ff}
+html[data-theme=dark] .tile.rt{--tile:rgba(94,92,230,.22);--tileink:#a5a3ff}
+html[data-theme=dark] .tile.bk{--tile:rgba(48,176,140,.18);--tileink:#63d1b0}
+html[data-theme=dark] .tile.bu{--tile:#2c2c2e;--tileink:#aeb4c2}
+html[data-theme=dark] .mb i{background:#48484a}
+html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
+html[data-theme=dark] .xamt input::placeholder,html[data-theme=dark] .xbig .a em{color:#48484a}
+html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
+html[data-theme=dark] .tarw.rf{background:rgba(255,159,10,.18);color:#ffb340}
+html[data-theme=dark] .xkp button.op{background:#2c2c2e}
+html[data-theme=dark] .xgrid > button.on,html[data-theme=dark] .xgrid.tiles > button.on{background:rgba(41,151,255,.16)}
+html[data-theme=dark] .xsubrow{background:#111113}
+html[data-theme=dark] .grab{background:#48484a}
+html[data-theme=dark] .note{background:rgba(255,159,10,.14);color:#ffb340}
+html[data-theme=dark] .note.ok{background:rgba(41,151,255,.14);color:#64b5ff}
+html[data-theme=dark] .qrow{background:var(--canvas)}
+html[data-theme=dark] .backdrop{background:rgba(0,0,0,.6)}
+html[data-theme=dark] .menu{box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}
+html[data-theme=dark] .lock img{box-shadow:0 6px 20px rgba(0,0,0,.6)}
+html[data-theme=dark] .vb-row.total{background:#111113}
+html[data-theme=dark] .pbar.warn i{background:#ff9f0a}
+/* the floating tab bar: dark glass */
+html[data-theme=dark] .tabs{background:rgba(28,28,30,.55);
+  box-shadow:inset 0 1px .5px rgba(255,255,255,.22),inset 0 0 0 .5px rgba(255,255,255,.12),
+    inset 0 -10px 18px -14px rgba(0,0,0,.6),0 14px 34px rgba(0,0,0,.55),0 3px 10px rgba(0,0,0,.4)}
+html[data-theme=dark] .tabs::after{background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 34%)}
+html[data-theme=dark] .tabblob{background:rgba(120,120,128,.28)}
+html[data-theme=dark] .tabblob.moving{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04) 55%,rgba(255,255,255,.08));
+  box-shadow:inset 0 2px 1.5px rgba(255,255,255,.35),inset 0 0 0 1px rgba(255,255,255,.18),0 8px 22px rgba(0,0,0,.5)}
+@media (prefers-reduced-transparency: reduce){ html[data-theme=dark] .tabs{background:rgba(28,28,30,.98)} }
+/* the appearance switch in the profile menu */
+.menu .appear{padding:10px 12px 8px;border-top:1px solid var(--hairline)}
+.menu .appear span{display:block;font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}
+.menu .appear .seg{margin:0}
+.menu .appear .seg button{font-size:13.5px;padding:6px 4px;border-top:0;border-radius:9px;justify-content:center}
+
 /* ---------- sheet ---------- */
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:20;opacity:0;transition:opacity .22s}
 .backdrop.show{opacity:1}
@@ -963,7 +1044,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-21g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-21h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1765,7 +1846,7 @@ function areaChart(el, pts){
       <stop offset="0" stop-color="var(--blue)" stop-opacity=".14"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>
     <path d="${line}L${x(pts.length-1)},${H} L${x(0)},${H} Z" fill="url(#ag)"/>
     <path d="${line}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${x(pts.length-1)}" cy="${y(pts[pts.length-1].netWorth)}" r="3.6" fill="var(--blue)" stroke="#fff" stroke-width="2"/>
+    <circle cx="${x(pts.length-1)}" cy="${y(pts[pts.length-1].netWorth)}" r="3.6" fill="var(--blue)" stroke="var(--canvas)" stroke-width="2"/>
     <line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
   hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>${fINR(p.netWorth)}`);
 }
@@ -1796,8 +1877,8 @@ function lineChart(el, pts, perDay){
   const last=pts[pts.length-1];
   const dots = perDay
     // a dot on every day so each one reads as its own point
-    ? series.map(s=>pts.map((p,i)=>p[s.k]==null?'':`<circle cx="${x(i)}" cy="${y(p[s.k])}" r="${i===pts.length-1?3.6:2.6}" fill="${s.c}" stroke="#fff" stroke-width="1.5"/>`).join('')).join('')
-    : series.map(s=>last[s.k]==null?'':`<circle cx="${x(pts.length-1)}" cy="${y(last[s.k])}" r="3.6" fill="${s.c}" stroke="#fff" stroke-width="2"/>`).join('');
+    ? series.map(s=>pts.map((p,i)=>p[s.k]==null?'':`<circle cx="${x(i)}" cy="${y(p[s.k])}" r="${i===pts.length-1?3.6:2.6}" fill="${s.c}" stroke="var(--canvas)" stroke-width="1.5"/>`).join('')).join('')
+    : series.map(s=>last[s.k]==null?'':`<circle cx="${x(pts.length-1)}" cy="${y(last[s.k])}" r="3.6" fill="${s.c}" stroke="var(--canvas)" stroke-width="2"/>`).join('');
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.innerHTML = g + paths + dots + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
   // day view: each day's move against the day before
@@ -2824,7 +2905,7 @@ function drawHist(ticker, usdRow){
     + `<path d="${path('value')}L${x(pts.length-1)},${H-P.b} L${x(0)},${H-P.b} Z" fill="url(#hg)"/>`
     + `<path d="${path('invested')}" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round"/>`
     + `<path d="${path('value')}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
-    + `<circle cx="${x(pts.length-1)}" cy="${y(last.value)}" r="4" fill="var(--blue)" stroke="#fff" stroke-width="2"/>`
+    + `<circle cx="${x(pts.length-1)}" cy="${y(last.value)}" r="4" fill="var(--blue)" stroke="var(--canvas)" stroke-width="2"/>`
     + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
   hoverable(el, svg, tip, pts, x, W, p=>{ const g=p.value-p.invested;
     return `<b>${fDate(p.date)}</b><br>Current ${m(p.value)}<br>Invested ${m(p.invested)}<br>${g>=0?'Gain':'Loss'} ${m(Math.abs(g))}`; });
@@ -3226,7 +3307,7 @@ function pieSvg(items, total){
     if (items.length===1){ paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${it.col}"/>`; return; }
     const p = a => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
     const [x0,y0] = p(it.a0), [x1,y1] = p(it.a1);
-    paths += `<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${it.a1-it.a0>Math.PI?1:0} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${it.col}" stroke="#fff" stroke-width="1.2"/>`;
+    paths += `<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${it.a1-it.a0>Math.PI?1:0} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${it.col}" stroke="var(--canvas)" stroke-width="1.2"/>`;
   });
   // labels: each side sorted top to bottom, pushed apart so they never overlap
   let labels = '';
@@ -4001,7 +4082,9 @@ function paintMenu(){
   const item = (act, ic, label, cls='') => `<button role="menuitem" data-act="${act}" class="${cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICON[ic]}</svg><span>${label}</span></button>`;
   m.innerHTML = item('eye', hid?'eye':'eyeOff', hid?'Show amounts':'Hide amounts')
     + (lockCfg ? item('lock','lock','Lock now') + item('lockoff','unlock','Turn off Face ID lock','dim')
-               : item('lockon','lock','Turn on Face ID lock'));
+               : item('lockon','lock','Turn on Face ID lock'))
+    + `<div class="appear" role="group" aria-label="Appearance"><span>Appearance</span><div class="seg">${[['light','Light'],['dark','Dark'],['auto','Automatic']]
+        .map(([k,l])=>`<button data-theme-pick="${k}" class="${themePick()===k?'on':''}">${l}</button>`).join('')}</div></div>`;
 }
 async function enrollLock(){
   if (!window.PublicKeyCredential || !navigator.credentials){ toast('Face ID isn\'t available in this browser'); return; }
@@ -4056,6 +4139,8 @@ $('#btnLockPass').onclick = ()=>{
   btn.onclick = e=>{ e.stopPropagation(); paintMenu(); m.hidden = !m.hidden; btn.classList.toggle('on', !m.hidden); };
   document.addEventListener('click', e=>{ if(!m.hidden && !e.target.closest('#moreMenu')) close(); });
   m.onclick = async e=>{
+    const t = e.target.closest('[data-theme-pick]');
+    if (t){ e.stopPropagation(); save('inv.theme', applyTheme(t.dataset.themePick)); paintMenu(); return; }
     const a = e.target.closest('[data-act]'); if(!a) return;
     const act = a.dataset.act; close();
     if (act==='eye'){ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); }
