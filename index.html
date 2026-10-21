@@ -132,6 +132,11 @@ main{padding:0}
 
 /* ---------- hero ---------- */
 .hero .cap{font-size:13px;color:var(--ink-2);letter-spacing:-.08px}
+.hero .nwgo{display:inline-flex;align-items:center;gap:1px;background:none;padding:2px 0;cursor:pointer}
+.hero .nwgo svg{width:14px;height:14px;color:var(--ink-3);margin-top:1px}
+.navback{display:flex;align-items:center;gap:1px;color:var(--blue);font-size:17px;letter-spacing:-.4px;margin:0 0 2px -7px;padding:2px 0;background:none}
+.navback[hidden]{display:none}
+.navback svg{width:22px;height:22px}
 .hero .big{font-family:var(--font-disp);font-size:40px;font-weight:600;letter-spacing:-1.1px;line-height:1.07;margin:4px 0 9px}
 .pill{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);font-size:14px;font-weight:600;letter-spacing:-.224px;background:var(--sunken);color:var(--ink-2)}
 .pill.up{background:var(--up-bg);color:var(--up)}
@@ -1133,6 +1138,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 <div id="app" hidden>
   <header class="nav">
     <div class="navl">
+      <button class="navback" id="navBack" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Overview</button>
       <div class="eyebrow" id="navDate"></div>
       <h1 id="title">Overview</h1>
       <div class="sub" id="navSub"><span class="dot" id="dot"></span><span id="statusTxt">Loading…</span></div>
@@ -1148,7 +1154,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
     <!-- OVERVIEW -->
     <section class="view active" id="v-home">
       <div class="card hero">
-        <div class="cap">Net worth</div>
+        <button class="cap nwgo" data-go="trend" aria-label="Net worth trends">Net worth<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
         <div class="big num money" id="nw">—</div>
         <div id="nwSub"></div>
         <div class="chart" id="homeChart"><svg></svg><div class="tip"></div></div>
@@ -1234,7 +1240,6 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
   <nav class="tabs">
     <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>Overview</button>
     <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Holdings</button>
-    <button data-v="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Trends</button>
     <button data-v="txn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Trades</button>
     <button data-v="spend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5"/><path d="M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1z"/><path d="M16 14.25h.01"/></svg>Spend</button>
   </nav>
@@ -1298,7 +1303,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25x';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25y';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2816,10 +2821,13 @@ addEventListener('scroll', ()=>{
 
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+$('#navBack').onclick = ()=>show('home');
 function show(v){
   const prevView = activeView; activeView=v;
-  $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  const tabV = v==='trend' ? 'home' : v;                 // Trends opens from Overview, so Overview stays lit
+  $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===tabV));
   moveBlob(true);
+  $('#navBack').hidden = v!=='trend';
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend';
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
