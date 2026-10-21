@@ -336,6 +336,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vbc .vb-sum{padding:12px 0}
 .vbc .vb-row.total{padding:26px 0 12px}
 .vb-mo{border-top:1px solid var(--hairline)}
+.vb-all{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:.5px solid var(--hairline);padding:11px 0 12px;font-size:13px;color:var(--ink-2)}
+.vb-all b{font-size:15px;font-weight:600;color:var(--ink);margin-left:6px}
 .vb-mo .vb-row.total{padding-top:30px}
 .vb-l span{display:block;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vb-l b{display:block;font-size:14px;font-weight:600;letter-spacing:-.2px}
@@ -1207,7 +1209,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-24n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3520,6 +3522,7 @@ function spBudgetHtml(){
   const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
   const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
   const bud = budgeted.reduce((a,x)=>a+x.b,0), spent = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spent;
+  const looseSum = loose.reduce((a,x)=>a+x.s,0);
   const row = (lbl, s, b, total) => {
     const u = b ? s/b : 0, over = s > b;
     return `<div class="vb-row ${total?'total':'tap'}" ${total?'':`data-xcat="${esc(lbl)}"`}>
@@ -3531,7 +3534,8 @@ function spBudgetHtml(){
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('');
   return `<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
       <button data-budgets class="bset" aria-label="Budget settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
-      <div class="vb-mo">${row('Monthly', spent, bud, true)}</div></div>
+      <div class="vb-mo">${row('Monthly', spent, bud, true)}</div>
+      <div class="vb-all"><span>All expenses<b class="num money">${fINR2(spent + looseSum)}</b></span>${looseSum ? `<span class="num money">${fINR2(looseSum)} not budgeted</span>` : ''}</div></div>
     <div class="card tight vbc">${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
     ${inv.length ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">Not counted as spending</div></div>
