@@ -881,6 +881,13 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .xfr.want .ph{color:var(--blue)}
 
 .cfund{margin-bottom:10px}
+.cfund.tap{cursor:pointer}
+.cfund .k{display:flex;align-items:center;gap:2px}
+.cfund .k svg{width:13px;height:13px;color:var(--ink-3)}
+.cmhead{display:flex;justify-content:space-between;align-items:baseline;padding:18px 24px 8px}
+.cmhead h3{font-family:var(--font-disp);font-size:17px;font-weight:600;letter-spacing:-.4px;margin:0}
+.cmhead span{font-size:14px;font-weight:600;color:var(--ink-2)}
+.cmtot .empty{padding:14px 18px}
 .cother{margin-top:10px}
 .kitepay{display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:12px 12px 0;padding:12px 14px;background:var(--canvas);border-radius:var(--r-card);text-align:left}
 .kitepay svg{width:20px;height:20px;padding:7px;box-sizing:content-box;border-radius:50%;background:var(--up-bg);color:var(--up);flex:none}
@@ -1239,7 +1246,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3000,7 +3007,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc)
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3032,7 +3039,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p)
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p)
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3041,6 +3048,7 @@ function renderPage(){
   $('#pgBack').onclick = popPage;
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
   if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
+  if (p.kind==='constr'){ wireConstr(p); return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
@@ -3430,7 +3438,7 @@ async function loadExpenses(fresh){
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
-    if (top && /^(expcat|inccat|budgets|acct|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+    if (top && /^(expcat|inccat|budgets|acct|constr|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
   finally{ xLoading = false; }
 }
@@ -3538,6 +3546,7 @@ function renderSpend(){
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-accsec]').forEach(b=>b.onclick=()=>{ accSec = b.dataset.accsec; renderSpend(); });
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
+  $$('#spBody [data-constr]').forEach(b=>b.onclick=()=>pushPage({ kind:'constr' }));
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
@@ -3976,9 +3985,60 @@ function constrFund(){
 function constrFundHtml(part){
   const f = constrFund();
   if (part==='other') return f.rows.some(r=>!r.acc) ? `<div class="card tight cother" id="cfOther"></div>` : '';
-  return `<div class="card spsum cfund"><div class="k">Construction fund</div><div class="big num money">${fINR2(f.total)}</div>
+  return `<div class="card spsum cfund tap" data-constr role="button"><div class="k">Construction fund${chev('M9 5l7 7-7 7')}</div><div class="big num money">${fINR2(f.total)}</div>
       <div class="spstats"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
         <div><span>Spent so far</span><b class="num money">${fINR2(f.spentAll)}</b></div></div></div>`;
+}
+// Construction page: every expense in the Construction category (all of it -
+// the server sends construction entries older than the usual window too),
+// a month-by-month graph, and the fund's numbers on top
+function constrEntries(){
+  const d = xd() || {};
+  return (d.entries||[]).filter(e=>isConstr(e.category)).concat(d.constrOld||[])
+    .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.row-a.row);
+}
+function constrBody(p){
+  const f = constrFund(), list = constrEntries(), d = xd() || {};
+  const tot = m => Object.entries(xMonth(m)).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0);
+  const has = Array.from(new Set(Object.keys(d.monthly||{}).concat(list.map(e=>e.date.slice(0,7))))).filter(m=>tot(m)).sort();
+  const first = has[0] || ymNow(), months = []; for (let m=first; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
+  const vals = months.map(tot), live = vals.filter(Boolean).length;
+  const avg = live ? f.spentAll / live : 0;
+  const sel = p.ym && months.includes(p.ym) ? p.ym : months[months.length-1];
+  const hero = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${xTile('Construction')}<div class="grow"><div class="t">Construction</div>
+        <div class="s">${list.length} payment${list.length===1?'':'s'}${has.length ? ' · since '+esc(ymLabel(first)) : ''}</div></div></div>
+      <div class="pg-big num money">${fINR2(f.spentAll)}</div>
+      <div class="pg-sub"><span class="k">spent so far</span></div>
+      <div class="spstats"><div><span>Fund left</span><b class="num money">${fINR2(f.total)}</b></div>
+        <div><span>This month</span><b class="num money">${fINR2(f.spentM)}</b></div>
+        <div><span>Monthly avg</span><b class="num money">${fINR2(avg)}</b></div></div>
+      ${has.length ? monthLineChart(months, vals, sel) : ''}
+    </div>`;
+  const subs = {}; list.forEach(e=>{ const k = e.sub || 'Other'; subs[k] = (subs[k]||0) + e.amount; });
+  const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
+  const by = {}; list.forEach(e=>{ (by[e.date.slice(0,7)] = by[e.date.slice(0,7)] || []).push(e); });
+  const shortAcc = n => String(n||'').replace(/\s*[·\-–|]\s*construction$/i,'');
+  const row = e => { const title = e.note || e.sub || 'Construction';
+    const meta = [fDate(e.date), e.sub && e.sub!==title ? e.sub : null, e.account ? shortAcc(e.account) : null].filter(Boolean).map(esc).join(' · ');
+    return `<button class="row" data-xrow="${e.row}">${xTile(e.category)}
+      <div class="l"><div class="n">${esc(title)}</div><div class="m">${meta}</div></div>
+      <div class="r"><div class="v num money ${e.amount<0?'up':''}">${e.amount<0?'+'+fINR2(-e.amount):fINR2(e.amount)}</div></div></button>`; };
+  const sections = months.slice().reverse().filter(m=>by[m] || tot(m)).map(m=>`<div class="cmhead" id="cm-${m}"><h3>${esc(ymLabel(m))}</h3><span class="num money">${fINR2(tot(m))}</span></div>
+      <div class="card tight ${by[m]?'':'cmtot'}">${by[m] ? by[m].map(row).join('') : '<div class="empty">Only the month total is on hand</div>'}</div>`).join('');
+  return hero
+    + (subRows ? `<div class="sechead"><h2>By subcategory</h2></div><div class="card hstats xsubs">${subRows}</div>` : '')
+    + `<div class="sechead"><h2>Expenses</h2></div>`
+    + (sections || '<div class="card tight"><div class="empty">No construction expenses yet - log one under the Construction category</div></div>');
+}
+function wireConstr(p){
+  const d = xd() || {}, all = (d.entries||[]).concat(d.constrOld||[]);
+  $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(all.find(e=>String(e.row)===r.dataset.xrow)));
+  const gs = $('#page .mbscroll');
+  if (gs){ gs.scrollLeft = p.gx!=null ? p.gx : gs.scrollWidth; gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true }); }
+  // a month on the graph jumps to its expenses
+  $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = x.dataset.mbym; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
+    const h = $('#cm-'+p.ym); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
 }
 function accGroupsHtml(acc){
   return ACC_GROUPS.map(([k,label])=>{
@@ -4635,7 +4695,7 @@ function xErr(m, field, step){
 function rerenderSpendViews(){
   if (activeView==='spend') renderSpend();
   const top = pageStack[pageStack.length-1];
-  if (top && /^(expcat|inccat|budgets|acct|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  if (top && /^(expcat|inccat|budgets|acct|constr|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 async function saveXSheet(){
   const amount = xAmt();
