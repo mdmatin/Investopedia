@@ -385,6 +385,7 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .spstats b{font-size:16px;font-weight:600;letter-spacing:-.3px}
 .spstats b em{font-style:normal}
 .spstats em.rate{font-style:normal;font-size:11.5px;color:var(--ink-3)}
+.spstats b em.pct{font-size:12.5px;font-weight:500;color:var(--ink-3);letter-spacing:0}
 .xsubs .hrow:first-child{border-top:0}
 .xsubs.hstats{padding-top:4px}
 .mb .mv{font-size:9.5px;font-weight:600;color:var(--ink-3);margin-bottom:3px;white-space:nowrap;letter-spacing:-.2px;font-variant-numeric:tabular-nums;min-height:12px}
@@ -1308,7 +1309,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4030,7 +4031,7 @@ function spAccountsHtml(){
       <div class="of num money">${cardLine}</div>
       <div class="spstats">
         <div><span>Income · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money">${fINR2(mIn)}</b></div>
-        <div><span>Saved · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}</b>${mIn>0?`<em class="rate">${Math.round(saved/mIn*100)}% of income</em>`:''}</div>
+        <div><span>Saved · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}${mIn>0?` <em class="pct">(${Math.round(saved/mIn*100)}%)</em>`:''}</b></div>
       </div></div>`;
   const seg = `<div class="seg accseg">${[['accounts','Accounts'],['transfers','Transfers'],['income','Income']]
     .map(([k,l])=>`<button data-accsec="${k}" class="${accSec===k?'on':''}">${l}</button>`).join('')}</div>`;
