@@ -1239,7 +1239,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1459,16 +1459,19 @@ function renderHome(d){
 
   // banks — tappable, each opening an editor that writes the cell back
   // every account, zero balances too; filter by kind (remembered on this device)
-  const kinds = cash ? ACC_FILT.filter(([k])=>k==='all' || cash.rows.some(r=>r.kind===k)) : [];
-  if (!kinds.some(([k])=>k===accFilt)) accFilt = 'all';
+  const consItems = (nw.construction && nw.construction.items) || [];
+  const kinds = cash ? ACC_FILT.filter(([k])=>k==='all' || cash.rows.some(r=>r.kind===k) || (k==='construction' && consItems.length)) : [];
+  if (cash && !kinds.some(([k])=>k===accFilt)) accFilt = 'all';     // until money data is in, keep the saved filter
   const fl = $('#accFlt'); fl.hidden = kinds.length < 3;
   fl.innerHTML = kinds.map(([k,l])=>`<button data-af="${k}" class="${accFilt===k?'on':''}">${l}</button>`).join('');
   $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); });
-  const shown = cash ? cash.rows.filter(r=>accFilt==='all' ? r.kind!=='construction' : r.kind===accFilt) : null;
+  // Construction: the For Construction table — account rows live from Money, the
+  // hand-kept rows (Cash Owed, Invested, INDwallet) editable right here
+  const shown = cash ? (accFilt==='construction' ? constrRows(nw) : cash.rows.filter(r=>accFilt==='all' ? r.kind!=='construction' : r.kind===accFilt)) : null;
   EL.banks.rows = cash ? shown : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
-  const rbal = cash ? shown.reduce((a,r)=>a+r.amount,0) : h.runningBalance;
+  const rbal = cash ? shown.reduce((a,r)=>a+(r.amount||0),0) : h.runningBalance;
   EL.banks.foot = rbal!=null
-    ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Running balance' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
+    ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Running balance' : accFilt==='construction' ? 'Construction fund' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
   renderEditList(EL.banks);
   // a live balance opens its account (set the actual balance there)
   $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
@@ -1488,11 +1491,15 @@ function renderHome(d){
   const cons = nw.construction || {items:[], summary:[]};
   cons.items.forEach(it=>{ if (/indwallet/i.test(it.name) && W.construction && !W.construction.formula) {
     it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; it.src = W.construction; it.fx = fx; } });
-  $('#consHead').hidden = $('#construction').hidden = !cons.items.length;
-  EL.cons.rows = cons.items;
-  const sum = cons.summary||[], ctot = sum.find(x=>/^total$/i.test(x.name));
-  EL.cons.foot = ctot ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(ctot.value)}</span></div>` : '';
-  renderEditList(EL.cons);
+  $('#consHead').hidden = $('#construction').hidden = true;      // shown under Accounts › Construction now
+}
+// rows of the For Construction table: accounts live, the rest as the sheet has them
+function constrRows(nw){
+  const items = (nw && nw.construction && nw.construction.items) || [], accs = xAccounts().filter(a=>accKind(a)==='construction');
+  const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===String(it.name).toLowerCase());
+    return a ? { name:a.name, label:it.name, kind:'construction', amount:Math.round(accBalance(a.name)*100)/100, live:true } : it; });
+  accs.forEach(a=>{ if (!rows.some(r=>r.live && r.name===a.name)) rows.unshift({ name:a.name, label:constrBase(a.name) ? a.name.replace(/\s*[·\-–|]\s*construction$/i,'') : a.name, kind:'construction', amount:accBalance(a.name), live:true }); });
+  return rows;
 }
 
 // Editable money lists (Cash, Construction fund): tap a row to open an editor
@@ -1501,7 +1508,8 @@ function renderHome(d){
 const EL = {
   wal:   { sel:'#wallets',      rows:[], open:-1, foot:'', empty:'No wallets' },
   banks: { sel:'#banks',        rows:[], open:-1, foot:'', empty:'No balances' },
-  cons:  { sel:'#construction', rows:[], open:-1, foot:'', empty:'Nothing allocated' }
+  cons:  { sel:'#construction', rows:[], open:-1, foot:'', empty:'Nothing allocated' },
+  cfs:   { sel:'#cfOther',      rows:[], open:-1, foot:'', empty:'' }
 };
 const fUSD = v => '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function editRowMeta(b){
@@ -1517,7 +1525,7 @@ function renderEditList(L){
   const el = $(L.sel); if(!el) return;
   el.innerHTML = L.rows.map((b,i)=>{
     if (b.live) return `<div class="row tap" data-acc="${esc(b.name)}">${bankMark(b.name)}
-      <div class="l"><div class="n">${esc(b.name)}</div></div>
+      <div class="l"><div class="n">${esc(b.label || b.name)}</div></div>
       <div class="r"><div class="v num money ${b.amount<0?'down':''}">${fINR(b.amount)}</div></div></div>`;
     const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
     const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
@@ -1528,6 +1536,7 @@ function renderEditList(L){
     + (L.open===i ? bankEditor(b) : '');
   }).join('') + L.foot || `<div class="empty">${L.empty}</div>`;
 
+  el.querySelectorAll('.row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   el.querySelectorAll('.row.tap:not([data-acc])').forEach(r=>r.onclick=e=>{
     if(e.target.closest('.ed')) return;              // taps inside the editor aren't a toggle
     const i = Number(r.dataset.i);
@@ -3529,6 +3538,7 @@ function renderSpend(){
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-accsec]').forEach(b=>b.onclick=()=>{ accSec = b.dataset.accsec; renderSpend(); });
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
+  if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
     const [k,row] = r.dataset.tx.split(':'), d = xd();
@@ -3955,7 +3965,7 @@ function constrFund(){
   const accs = xAccounts().filter(a=>accKind(a)==='construction');
   const items = ((D && D.data && D.data.netWorth && D.data.netWorth.construction && D.data.netWorth.construction.items) || []);
   const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===it.name.toLowerCase());
-    return { name:it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null }; });
+    return { name:it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null, item: it }; });
   accs.forEach(a=>{ if (!rows.some(r=>r.acc===a.name)) rows.push({ name:constrBase(a.name) || a.name, amount:accBalance(a.name), acc:a.name, unmatched:true }); });
   const ym = ymNow(), d = xd() || {};
   const months = new Set(Object.keys(d.monthly||{}).concat((d.entries||[]).map(e=>e.date.slice(0,7))));
@@ -3964,9 +3974,8 @@ function constrFund(){
   return { rows, total: rows.reduce((s,r)=>s+r.amount,0), spentM, spentAll };
 }
 function constrFundHtml(part){
-  const f = constrFund(), other = f.rows.filter(r=>!r.acc && r.amount);
-  if (part==='other') return other.length ? `<div class="card tight cother">${other.map(r=>`<div class="row"><div class="tile ch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
-      <div class="l"><div class="n">${esc(r.name)}</div><div class="m">Typed on Net Worth</div></div><div class="r"><div class="v num money">${fINR2(r.amount)}</div></div></div>`).join('')}</div>` : '';
+  const f = constrFund();
+  if (part==='other') return f.rows.some(r=>!r.acc) ? `<div class="card tight cother" id="cfOther"></div>` : '';
   return `<div class="card spsum cfund"><div class="k">Construction fund</div><div class="big num money">${fINR2(f.total)}</div>
       <div class="spstats"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
         <div><span>Spent so far</span><b class="num money">${fINR2(f.spentAll)}</b></div></div></div>`;
@@ -4907,7 +4916,8 @@ function profileBody(){
 
    <h3>Data</h3><div class="grp">
     ${row('sheet','#0f9d58','Google Sheet', `<span class="vl">${esc(host ? 'Connected' : '—')}</span>`)}
-    ${row('sync','#007aff','Refresh now', '', '', 'data-act="refresh"')}
+    ${row('sync','#007aff','Refresh app data', '', 'Re-reads your sheets into the app', 'data-act="refresh"')}
+    ${row('sheet','#34c759','Refresh the sheet', sheetBusy ? '<span class="vl">Running…</span>' : '', 'Runs the sheet\'s Refresh all: FIFO, buckets and money sync', 'data-act="refreshsheet"')}
     ${row('dl','#5ac8fa','Export as CSV', `<span class="vl">${chv}</span>`, xd() ? 'Expenses, income and transfers' : 'Available once Spend has synced', 'data-act="export"')}
     ${row('trash','#8e8e93','Clear cached data', '', 'Keeps your sheet connection and settings', 'data-act="clear"')}
    </div>
@@ -4920,6 +4930,15 @@ function profileBody(){
    <div class="grp danger"><button class="r" data-act="disconnect"><div class="lb">Disconnect sheet</div></button></div>
    <div class="ft ctr">Centric keeps your sheet URL and passcode only on this phone.</div>
   </div>`;
+}
+// the sheet's own Refresh all, run by the script (takes a little while)
+let sheetBusy = false;
+async function refreshSheet(after){
+  if (sheetBusy) return; sheetBusy = true; if (after) after(); toast('Refreshing the sheet…');
+  try{ const r = await apiPost('refreshAll', {}); toast(`Sheet refreshed${r && r.ms ? ' in ' + Math.round(r.ms/1000) + 's' : ''}`);
+    refresh(true, true); loadExpenses(true); }
+  catch(e){ toast('Sheet refresh failed: ' + (e.message || e)); }
+  finally{ sheetBusy = false; const top = pageStack[pageStack.length-1]; if (top && top.kind==='profile' && after) after(); }
 }
 function rerenderAll(){
   if (D) render();
@@ -4956,6 +4975,7 @@ function wireProfile(){
     else if (a==='refresh'){ refresh(true); loadExpenses(true); toast('Refreshing…'); }
     else if (a==='disconnect') disconnect();
     else if (a==='export') exportMoneyCsv();
+    else if (a==='refreshsheet') refreshSheet(again);
     else if (a==='recurring'){ if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; } pushPage({ kind:'recurring' }); }
     else if (a==='clear'){
       if (!confirm('Clear cached data?\n\nCentric will download everything again from your sheet. Your connection and settings stay.')) return;
