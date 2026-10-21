@@ -872,6 +872,12 @@ html[data-theme=dark] .recf .segw button.on{background:#636366}
 .xsug small{flex:none;font-size:12px;color:var(--ink-2)}
 html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6px 18px rgba(0,0,0,.4)}
 
+.xfr.drop{position:relative}
+.xfr.drop .v{display:flex;align-items:center;gap:6px}
+.xfr.drop .xdd{width:16px;height:16px;color:var(--ink-3);margin-left:auto;flex:none}
+.xfr.drop select{position:absolute;inset:0;width:100%;opacity:0;font-size:16px}
+.xfr.want .ph{color:var(--blue)}
+
 /* ---------- drill-down pages (holding, platform) ---------- */
 .page{position:fixed;inset:0;z-index:15;background:var(--parchment);overflow-y:auto;-webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
@@ -1201,7 +1207,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-24m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3760,7 +3766,7 @@ function inccatBody(p){
       <div class="xbud num money" style="pointer-events:none">Last 12 months ${fINR2(yearTot)}</div>
       ${chart}
     </div>
-    ${srcRows ? `<div class="sechead"><h2>By source</h2></div><div class="card hstats xsubs">${srcRows}</div>` : ''}
+    ${srcRows ? `<div class="sechead"><h2>By company</h2></div><div class="card hstats xsubs">${srcRows}</div>` : ''}
     <div class="sechead"><h2>Entries</h2></div>
     ${rows ? `<div class="card tight">${rows}</div>` : '<div class="card tight"><div class="empty">Nothing of this type this month</div></div>'}`;
 }
@@ -4224,7 +4230,8 @@ function wireCommon(el){
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
   bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
   const t = $('#xTax', el); if (t) commaInput(t, 'en-IN');
-  const n = $('#xNote', el); if (n){ n.setAttribute('autocomplete','off'); n.addEventListener('focus', ()=>noteSuggest(el)); n.addEventListener('blur', ()=>setTimeout(()=>{ const b=$('.xsug', el); if (b) b.remove(); }, 150)); }
+  const n = $('#xNote', el); if (n){ n.setAttribute('autocomplete','off');
+    n.addEventListener('keydown', e=>{ if (e.key==='Enter'){ e.preventDefault(); xAfterNote(); } }); n.addEventListener('focus', ()=>noteSuggest(el)); n.addEventListener('blur', ()=>setTimeout(()=>{ const b=$('.xsug', el); if (b) b.remove(); }, 150)); }
   $$('[data-close]', el).forEach(b=>b.onclick=closeXSheet);
   $$('[data-save]', el).forEach(b=>b.onclick=saveXSheet);
   const d = $('[data-del]', el); if (d) d.onclick = deleteXSheet;
@@ -4241,6 +4248,10 @@ function notePast(){
   else (d.entries||[]).forEach(e=>add(e.note, e.date, { cat:e.category, sub:e.sub }));
   return [...by.values()];
 }
+function xAfterNote(){
+  const n = $('#xNote'); if (n) n.blur();
+  if (ADD_UI==='flow' && xMode==='expense' && !xCat){ xField = 'category'; xOpenCat = ''; paintXSheet(); }
+}
 function noteSuggest(el){
   const inp = $('#xNote', el); if (!inp) return;
   const q = inp.value.trim().toLowerCase();
@@ -4256,7 +4267,7 @@ function noteSuggest(el){
     b.onclick = ()=>{ const o = list[+b.dataset.ns];
       xNoteV = o.note; inp.value = o.note;
       if (xMode==='expense' && !xCat && o.cat){ xCat = o.cat; xSub = o.sub || ''; const v = $('.xfr[data-f="category"] .v', el); if (v) v.innerHTML = xValue('category'); }
-      box.remove(); inp.blur(); };
+      box.remove(); xAfterNote(); };
   });
 }
 // tapping a category: open its subcategories, or take it if it has none
@@ -4268,18 +4279,38 @@ function pickCat(c, done){
 
 /* ===== layout 1: flow ===== */
 function xFields(){
-  if (xMode==='expense') return ['date','amount','category','account','note'];
+  if (xMode==='expense') return ['amount','note','category','account','date'];
   if (xMode==='transfer') return ['date','amount','from','to','note'];
   if (xIsRefund()) return ['date','amount','type','category','account','note'];
-  return ['date','amount','type','account','source','tax','note'];
+  return ['date','amount','type','account'].concat(xAsksCompany() ? ['source'] : [], ['tax','note']);
 }
+// Company is only asked for salary
+const xAsksCompany = () => xMode==='income' && /^salary$/i.test(xType||'');
 const X_PICK = { amount:1, category:1, account:1, from:1, to:1, type:1 };
+// no subcategories here, so a plain dropdown (the iOS picker) instead of the tile grid
+const xIsDrop = f => (xMode==='transfer' && (f==='from' || f==='to')) || (xMode==='income' && (f==='type' || f==='account' || (f==='source' && !xIsRefund())));
+// companies you've had income from, most used first
+function xCompanies(){ const n = {}; ((xd()||{}).incomes||[]).forEach(i=>{ const c = String(i.source||'').trim(); if (c) n[c] = (n[c]||0) + 1; });
+  return Object.keys(n).sort((a,b)=>n[b]-n[a] || a.localeCompare(b)); }
+const xGridField = f => X_PICK[f] && !xIsDrop(f);
+function xDropOpts(f){
+  if (f==='from') return xAllAcc();
+  if (f==='to') return xAllAcc().filter(n=>n!==xFrom);
+  if (f==='type') return inTypesList();
+  if (f==='source'){ const L = xCompanies(); if (xSrcV && !L.includes(xSrcV)) L.unshift(xSrcV); return L; }
+  return xAllAcc();
+}
 function xLabel(f){
   return { date:'Date', amount:'Amount', category: xMode==='income' ? 'Refund for' : 'Category', account: xMode==='income' ? 'Into' : 'Paid via',
-    from:'From', to:'To', type:'Type', source:'Source', tax:'Tax paid', note: (xMode==='income' && !xIsRefund()) ? 'Remark' : 'Note' }[f];
+    from:'From', to:'To', type:'Type', source:'Company', tax:'Tax paid', note:'Note' }[f];
 }
 function xValue(f){
   const ph = t => `<span class="ph">${t}</span>`;
+  if (xIsDrop(f)){
+    const cur = { from:xFrom, to:xTo, type:xType, account:xAcc, source:xSrcV }[f] || '', opt = f==='source';
+    return `${cur ? esc(cur) : ph(opt ? 'None' : 'Pick one')}<svg class="xdd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>
+      <select data-xsel="${f}" aria-label="${esc(xLabel(f))}">${opt ? `<option value="" ${cur?'':'selected'}>None</option>` : cur ? '' : '<option value="" selected disabled>Pick one</option>'}${xDropOpts(f).map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}${opt ? '<option value="__new">New company…</option>' : ''}</select>`;
+  }
   if (f==='date') return `<input type="date" id="xDate" value="${esc(xDateV)}">`;
   if (f==='amount') return xExpr ? `<b class="num">${xHasOp(xExpr) ? xExprHtml() + ` <small>= ${fINR2(xAmt())}</small>` : fINR2(xAmt())}</b>` : ph('0.00');
   if (f==='category') return xCat ? esc(xCat + (xSub ? ' › ' + xSub : '')) : ph('Pick one');
@@ -4289,18 +4320,21 @@ function xValue(f){
   if (f==='type') return xType ? esc(xType) : ph('Pick one');
   if (f==='source') return `<input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}`;
   if (f==='tax') return `<input id="xTax" inputmode="decimal" placeholder="optional" value="${xTaxV ? esc(groupNum(xTaxV,'en-IN')) : ''}">`;
-  if (f==='note') return `<input id="xNote" placeholder="optional" value="${esc(xNoteV)}">`;
+  if (f==='note') return `<input id="xNote" placeholder="optional" enterkeyhint="next" value="${esc(xNoteV)}">`;
 }
 function xNext(){
   const fs = xFields(), i = fs.indexOf(xField);
-  const nxt = fs.slice(i+1).find(f=>X_PICK[f] || f==='source' || f==='note' || f==='tax');
+  // an empty dropdown next in line: stop there, so it isn't skipped
+  const emptyDrop = f => xIsDrop(f) && f!=='source' && !({ from:xFrom, to:xTo, type:xType, account:xAcc }[f]);
+  const nxt = fs.slice(i+1).find(f=>emptyDrop(f) || xGridField(f) || (f==='source' && !xIsDrop(f)) || f==='note' || f==='tax');
+  if (nxt && emptyDrop(nxt)){ xField = null; paintXSheet(); const r = $(`.xfr[data-f="${nxt}"]`); if (r) r.classList.add('want'); return; }
   if (!nxt){ xField = null; paintXSheet(); return; }
-  if (X_PICK[nxt]){ xField = nxt; paintXSheet(); return; }
+  if (xGridField(nxt)){ xField = nxt; paintXSheet(); return; }
   xField = null; paintXSheet();
   const inp = $(nxt==='note' ? '#xNote' : nxt==='source' ? '#xSource' : '#xTax'); if (inp) inp.focus();
 }
 function flowPanel(){
-  const f = xField; if (!f || !X_PICK[f]) return '';
+  const f = xField; if (!f || !xGridField(f)) return '';
   let body = '', head = xLabel(f);
   if (f==='amount') body = xKeypad('Next');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense' });
@@ -4312,7 +4346,7 @@ function flowPanel(){
 }
 function paintFlow(){
   const el = $('#xsheet');
-  const rows = xFields().map(f=>`<div class="xfr ${xField===f?'on':''} ${X_PICK[f]?'tap':''}" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
+  const rows = xFields().map(f=>`<div class="xfr ${xField===f?'on':''} ${xGridField(f)?'tap':''} ${xIsDrop(f)?'drop':''}" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
   el.innerHTML = `<div class="grab"></div><div class="xhd"><h3>${esc(xTitle())}</h3><button data-close>Cancel</button></div>
     <div class="xscroll">${xModeSeg()}${xErrHtml()}<div class="xform">${rows}</div>
       <button class="btn" data-save>Save</button>${xEditing?`<button class="btn danger" data-del>Delete</button>`:''}
@@ -4321,6 +4355,15 @@ function paintFlow(){
   $$('.xfr.tap', el).forEach(r=>r.onclick=()=>{ xField = xField===r.dataset.f ? null : r.dataset.f; xOpenCat=''; paintXSheet(); });
   $$('.xfr input', el).forEach(i=>i.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } }));
   const hide = $('[data-hide]', el); if (hide) hide.onclick = ()=>{ xField=null; paintXSheet(); };
+  $$('[data-xsel]', el).forEach(sel=>{
+    sel.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } });
+    sel.onchange = ()=>{ const f = sel.dataset.xsel, v = sel.value;
+      if (f==='from'){ xFrom = v; if (xTo===v) xTo = ''; } else if (f==='to') xTo = v;
+      else if (f==='type'){ xType = v; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; }
+      else if (f==='source'){ if (v==='__new'){ const n = (prompt('Company name') || '').trim(); if (n) xSrcV = n; } else xSrcV = v; }
+      else xAcc = v;
+      xErrMsg=''; paintXSheet(); };
+  });
   $$('.xkp button', el).forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
     if (k==='OK'){ if (xHasOp(xExpr)) xExpr = String(xAmt()); xNext(); return; }
     xKey(k); const v = $('.xfr[data-f="amount"] .v', el); if (v) v.innerHTML = xValue('amount'); xFreshMark(); });
@@ -4328,7 +4371,7 @@ function paintFlow(){
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; xNext(); });
   $$('.xgrid [data-a]', el).forEach(b=>b.onclick=()=>{ const v=b.dataset.a;
     if (xField==='from'){ xFrom=v; if (xTo===v) xTo=''; } else if (xField==='to') xTo=v; else xAcc=v; xNext(); });
-  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (!xSrcV) xSrcV = lastSource(xType); xNext(); });
+  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; xNext(); });
 }
 
 /* ===== layout 3: steps ===== */
@@ -4364,9 +4407,9 @@ function paintSteps(){
     if (xIsRefund()) body += `<div class="xlbl">Refund for</div><div class="xchips">${chips(xCatsByUse(), xCat, 'c')}</div>`;
     const inc = xMode==='income' && !xIsRefund();
     body += `<div class="fields">
-      ${inc ? `<div class="f"><label>Source</label><input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}</div>
+      ${inc ? `${xAsksCompany() ? `<div class="f"><label>Company</label><input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}</div>` : ''}
         <div class="f"><label>Tax paid</label><input id="xTax" inputmode="decimal" placeholder="optional" value="${xTaxV ? esc(groupNum(xTaxV,'en-IN')) : ''}"></div>` : ''}
-      <div class="f"><label>${inc ? 'Remark' : 'Note'}</label><input id="xNote" placeholder="optional" value="${esc(xNoteV)}"></div>
+      <div class="f"><label>Note</label><input id="xNote" placeholder="optional" value="${esc(xNoteV)}"></div>
       <div class="f"><label>Date</label><input type="date" id="xDate" value="${esc(xDateV)}"></div></div>
       ${xEditing ? `<button class="btn danger" data-del>Delete</button>` : ''}<p class="hint">${esc(xHint())}</p>`;
     foot = `<div class="xfoot"><button class="btn2" data-back>Back</button><button class="btn" data-save>Save</button></div>`;
@@ -4385,7 +4428,7 @@ function paintSteps(){
     box.querySelector('.a').innerHTML = `<span>₹</span>${xExpr ? esc(inrP.format(xAmt())) : '<em>0.00</em>'}`; xFreshMark(); });
   $$('.xgrid [data-c]', el).forEach(b=>b.onclick=()=>pickCat(b.dataset.c, ()=>go(3)));
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; go(3); });
-  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (!xSrcV) xSrcV = lastSource(xType); go(3); });
+  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; go(3); });
   $$('.xchips [data-f]', el).forEach(b=>b.onclick=()=>{ xFrom=b.dataset.f; if (xTo===xFrom) xTo=''; paintXSheet(); });
   $$('.xchips [data-o]', el).forEach(b=>b.onclick=()=>{ xTo=b.dataset.o; paintXSheet(); });
   $$('.xchips [data-a]', el).forEach(b=>b.onclick=()=>{ xAcc=b.dataset.a; paintXSheet(); });
@@ -4735,7 +4778,7 @@ function wireProfile(){
 async function exportMoneyCsv(){
   const d = xd(); if (!d){ toast('Open Spend once so the data loads'); loadExpenses(); return; }
   const q = v => { const t = v==null ? '' : String(v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g,'""') + '"' : t; };
-  const rows = [['Date','Type','Account','Category / Income type','Subcategory / Source','From','To','Note','Amount']];
+  const rows = [['Date','Type','Account','Category / Income type','Subcategory / Company','From','To','Note','Amount']];
   (d.entries||[]).forEach(e=>rows.push([e.date, e.amount<0 ? 'Refund' : 'Expense', e.account, e.category, e.sub, '', '', e.note, e.amount]));
   (d.incomes||[]).forEach(e=>rows.push([e.date, e.type==='Adjustment' ? 'Adjustment' : 'Income', e.account, e.type, e.source, '', '', e.note || e.remark, e.amount]));
   (d.transfers||[]).forEach(e=>rows.push([e.date, 'Transfer', '', '', '', e.from, e.to, e.note, e.amount]));
@@ -4835,7 +4878,7 @@ function recFormBody(p){
              + row('Pay from', sel('account', f.account, accs.map(a=>[a,a])))
     : f.kind==='income' ? row('Type', sel('cat', f.cat, inTypesList().filter(t=>t!==XREFUND).map(t=>[t,t]), 'Choose'))
              + row('Into', sel('account', f.account, accs.map(a=>[a,a])))
-             + row('Source', `<input class="rin" data-rt="sub" value="${esc(f.sub||'')}" placeholder="optional">`)
+             + (/^salary$/i.test(f.cat||'') ? row('Company', sel('sub', f.sub||'', (()=>{ const L = xCompanies().map(c=>[c,c]); if (f.sub && !L.some(o=>o[0]===f.sub)) L.unshift([f.sub,f.sub]); return L.concat([['__new','New company…']]); })(), 'None')) : '')
     : row('From', sel('account', f.account, accs.map(a=>[a,a]))) + row('To', sel('to', f.to, accs.map(a=>[a,a]), 'Choose'));
   return `<div class="prof recf">
     ${p.err ? `<div class="ft" style="color:var(--down);margin-top:4px">${esc(p.err)}</div>` : ''}
@@ -4871,6 +4914,7 @@ function wireRecForm(p){
     if (f.kind==='income'){ const bank = xAccounts().find(a=>accKind(a)==='bank'); if (bank) f.account = bank.name; } } rer(); });
   $$('#page [data-rf]').forEach(s=>s.onchange=()=>{ keep(); const k = s.dataset.rf;
     if (k==='catsub'){ const [c, sb] = s.value.split('|'); f.cat = c; f.sub = sb || ''; if (!f.name) f.name = sb || c; }
+    else if (k==='sub' && s.value==='__new'){ const n = (prompt('Company name') || '').trim(); if (n) f.sub = n; }
     else f[k] = k==='day' && s.value!=='Last' ? Number(s.value) : s.value;
     rer(); });
   $$('#page [data-rs]').forEach(b=>b.onclick=()=>{ keep(); f[b.dataset.rs] = !f[b.dataset.rs]; rer(); });
@@ -4883,7 +4927,7 @@ function wireRecForm(p){
       : f.kind==='income' && !f.cat ? 'Pick the income type.' : !f.account ? 'Pick an account.'
       : f.kind==='transfer' && (!f.to || f.to===f.account) ? 'Pick a different To account.' : f.end && f.start && f.end < f.start ? 'It ends before it starts.' : '';
     if (err){ p.err = err; rer(); return; }
-    const rec = { id:p.id, kind:f.kind, name, amount:amt, cat:f.cat||'', sub:f.sub||'', account:f.account, to:f.kind==='transfer'?f.to:'',
+    const rec = { id:p.id, kind:f.kind, name, amount:amt, cat:f.cat||'', sub: f.kind==='income' && !/^salary$/i.test(f.cat||'') ? '' : f.sub||'', account:f.account, to:f.kind==='transfer'?f.to:'',
       day:f.day, start:f.start||ymNow(), end:f.end||'', auto:!!f.auto, active:f.active!==false, note:f.note||'' };
     const btn = $('#page [data-rsave]'); btn.disabled = true; btn.textContent = 'Saving…';
     try{
