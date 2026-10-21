@@ -864,6 +864,14 @@ html[data-theme=dark] .recf .segw button.on{background:#636366}
 .recdue .rdbtn button{font-size:13.5px;font-weight:600;padding:6px 12px;border-radius:9999px;background:var(--sunken);color:var(--ink-2)}
 .recdue .rdbtn button.ok{background:var(--blue);color:#fff}
 
+.xsug{display:flex;flex-direction:column;margin:-2px 0 6px;background:var(--canvas);border-radius:12px;box-shadow:0 0 0 .5px var(--hairline),0 6px 18px rgba(0,0,0,.08);overflow:hidden}
+.xsug button{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 14px;text-align:left;font-size:15px;color:var(--ink)}
+.xsug button + button{border-top:.5px solid var(--hairline)}
+.xsug button:active{background:var(--sunken)}
+.xsug span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xsug small{flex:none;font-size:12px;color:var(--ink-2)}
+html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6px 18px rgba(0,0,0,.4)}
+
 /* ---------- drill-down pages (holding, platform) ---------- */
 .page{position:fixed;inset:0;z-index:15;background:var(--parchment);overflow-y:auto;-webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
@@ -1193,7 +1201,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-24i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4214,11 +4222,42 @@ function wireCommon(el){
   $$('.xseg button', el).forEach(b=>b.onclick=()=>{ xMode=b.dataset.m; xKind=xMode; if (xMode==='income' && !accByName(xAcc)) xAcc=''; xOpenCat=''; xErrMsg='';
     if (ADD_UI==='flow' && xField && !xFields().includes(xField)) xField='amount'; paintXSheet(); });
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
-  bind('xDate', v=>xDateV=v); bind('xNote', v=>xNoteV=v); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
+  bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
   const t = $('#xTax', el); if (t) commaInput(t, 'en-IN');
+  const n = $('#xNote', el); if (n){ n.setAttribute('autocomplete','off'); n.addEventListener('focus', ()=>noteSuggest(el)); n.addEventListener('blur', ()=>setTimeout(()=>{ const b=$('.xsug', el); if (b) b.remove(); }, 150)); }
   $$('[data-close]', el).forEach(b=>b.onclick=closeXSheet);
   $$('[data-save]', el).forEach(b=>b.onclick=saveXSheet);
   const d = $('[data-del]', el); if (d) d.onclick = deleteXSheet;
+}
+// Note autofill: past notes for this kind of entry, best match first. Picking an
+// expense note also fills its category (and sub) when none is chosen yet.
+function notePast(){
+  const d = xd() || {}, by = new Map();
+  const add = (note, date, extra) => { const t = String(note||'').trim(); if (!t) return;
+    const k = t.toLowerCase(), o = by.get(k) || { note:t, n:0, last:'', ...extra };
+    o.n++; if (date > o.last){ o.last = date; Object.assign(o, extra, { note:t }); } by.set(k, o); };
+  if (xMode==='income') (d.incomes||[]).forEach(e=>{ if (e.type!=='Adjustment') add(e.remark || e.note, e.date, { type:e.type }); });
+  else if (xMode==='transfer') (d.transfers||[]).forEach(e=>add(e.note, e.date, {}));
+  else (d.entries||[]).forEach(e=>add(e.note, e.date, { cat:e.category, sub:e.sub }));
+  return [...by.values()];
+}
+function noteSuggest(el){
+  const inp = $('#xNote', el); if (!inp) return;
+  const q = inp.value.trim().toLowerCase();
+  let box = $('.xsug', el);
+  const list = notePast().filter(o=>o.note.toLowerCase()!==q && (!q || o.note.toLowerCase().includes(q)))
+    .map(o=>({ o, w: !q ? 0 : o.note.toLowerCase().startsWith(q) ? 0 : o.note.toLowerCase().split(/\s+/).some(w=>w.startsWith(q)) ? 1 : 2 }))
+    .sort((a,b)=>a.w-b.w || b.o.n-a.o.n || (a.o.last<b.o.last?1:-1)).slice(0,5).map(x=>x.o);
+  if (!list.length){ if (box) box.remove(); return; }
+  if (!box){ box = document.createElement('div'); box.className = 'xsug'; (inp.closest('.xfr, .f') || inp).insertAdjacentElement('afterend', box); }
+  box.innerHTML = list.map((o,i)=>`<button type="button" data-ns="${i}"><span>${esc(o.note)}</span>${o.cat ? `<small>${esc(o.cat + (o.sub ? ' › '+o.sub : ''))}</small>` : o.type ? `<small>${esc(o.type)}</small>` : ''}</button>`).join('');
+  $$('[data-ns]', box).forEach(b=>{
+    b.onpointerdown = e => e.preventDefault();            // keep the keyboard up
+    b.onclick = ()=>{ const o = list[+b.dataset.ns];
+      xNoteV = o.note; inp.value = o.note;
+      if (xMode==='expense' && !xCat && o.cat){ xCat = o.cat; xSub = o.sub || ''; const v = $('.xfr[data-f="category"] .v', el); if (v) v.innerHTML = xValue('category'); }
+      box.remove(); inp.blur(); };
+  });
 }
 // tapping a category: open its subcategories, or take it if it has none
 function pickCat(c, done){
