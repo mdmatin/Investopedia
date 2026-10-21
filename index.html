@@ -57,11 +57,11 @@
   /* accent + state */
   --blue:       #0066cc;
   --blue-focus: #0071e3;
-  --up:         #008a3e;
-  --up-bg:      #e8f5ec;
-  --down:       #d13b30;
-  --over:       #c4483f;   /* over budget — a softer red than --down */
-  --down-bg:    #fdecea;
+  --up:         #2e8550;   /* muted emerald */
+  --up-bg:      #e6f2ea;
+  --down:       #c23b33;   /* soft coral */
+  --over:       #c23b33;   /* over budget */
+  --down-bg:    #fbeceb;
 
   /* shape */
   --r-card:  20px;
@@ -136,6 +136,11 @@ main{padding:0}
 .hero .nwgo svg{width:14px;height:14px;color:var(--ink-3);margin-top:1px}
 .navback{display:flex;align-items:center;gap:1px;color:var(--blue);font-size:17px;letter-spacing:-.4px;margin:0 0 2px -7px;padding:2px 0;background:none}
 .navback[hidden]{display:none}
+.nav.inner{padding:calc(8px + env(safe-area-inset-top)) 12px 8px;align-items:center;min-height:44px}
+.nav.inner .navl{display:flex;align-items:center;flex:1;padding-left:0;text-align:left}
+.nav.inner .navback{margin:0;padding:6px 4px}
+.nav.inner h1{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-.4px;line-height:1.3}
+.nav.inner .sub,.nav.inner .eyebrow,.nav.inner .navbtns{display:none}
 .navback svg{width:22px;height:22px}
 .hero .big{font-family:var(--font-disp);font-size:40px;font-weight:600;letter-spacing:-1.1px;line-height:1.07;margin:4px 0 9px}
 .pill{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);font-size:14px;font-weight:600;letter-spacing:-.224px;background:var(--sunken);color:var(--ink-2)}
@@ -654,7 +659,7 @@ html[data-theme=dark]{
   color-scheme: dark;
   --canvas:#1c1c1e; --parchment:#000000; --sunken:#2c2c2e; --hairline:#38383a; --card-edge:rgba(255,255,255,.07);
   --ink:#f5f5f7; --ink-2:#a1a1a6; --ink-3:#6e6e73;
-  --blue:#2997ff; --blue-focus:#0a84ff; --up:#32d74b; --up-bg:rgba(50,215,75,.16); --down:#ff453a; --down-bg:rgba(255,69,58,.16); --over:#ec5f57;
+  --blue:#2997ff; --blue-focus:#0a84ff; --up:#5cbf7e; --up-bg:rgba(92,191,126,.16); --down:#e5675f; --down-bg:rgba(229,103,95,.16); --over:#e5675f;
 }
 html[data-theme=dark] body{background:var(--parchment);color:var(--ink)}
 html[data-theme=dark] .nav{background:rgba(0,0,0,.72)}
@@ -669,7 +674,7 @@ html[data-theme=dark] .seg button.on{background:#3a3a3c;box-shadow:0 1px 3px rgb
 /* icon tiles: tinted glass instead of pastel */
 html[data-theme=dark] .tile{--tile:#2c2c2e;--tileink:#a1a1a6}
 html[data-theme=dark] .tile.us{--tile:rgba(41,151,255,.18);--tileink:#64b5ff}
-html[data-theme=dark] .tile.in{--tile:rgba(50,215,75,.16);--tileink:#5fe07a}
+html[data-theme=dark] .tile.in{--tile:rgba(92,191,126,.16);--tileink:#7fd39a}
 html[data-theme=dark] .tile.cr{--tile:rgba(160,120,255,.2);--tileink:#b9a2ff}
 html[data-theme=dark] .tile.mf{--tile:rgba(255,159,10,.18);--tileink:#ffb340}
 html[data-theme=dark] .tile.gd{--tile:rgba(255,214,10,.16);--tileink:#ffd60a}
@@ -804,7 +809,7 @@ input[type=date]::-webkit-datetime-edit{padding:0}
 .prof .av.me img{width:100%;height:100%;object-fit:cover;display:block}
 .prof .nm{margin-top:12px;font:700 24px/1.15 var(--font-disp);letter-spacing:-.5px}
 .prof .sub2{margin-top:4px;font-size:13.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
-.prof .sub2 i{width:7px;height:7px;border-radius:50%;background:#34c759;display:inline-block}
+.prof .sub2 i{width:7px;height:7px;border-radius:50%;background:var(--up);display:inline-block}
 .prof h3{margin:22px 32px 7px;font-size:12.5px;font-weight:500;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2)}
 .prof .grp{margin:0 16px;background:var(--canvas);border-radius:14px;overflow:hidden}
 .prof .r{display:flex;align-items:center;gap:12px;min-height:46px;padding:7px 14px;position:relative;width:100%;text-align:left}
@@ -820,11 +825,11 @@ input[type=date]::-webkit-datetime-edit{padding:0}
 .prof .sw{width:51px;height:31px;border-radius:16px;background:#e9e9ea;position:relative;flex:0 0 auto;transition:background .25s}
 .prof .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;
   box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:left .25s cubic-bezier(.32,.72,0,1)}
-.prof .sw.on{background:#34c759}.prof .sw.on::after{left:22px}
+.prof .sw.on{background:var(--up)}.prof .sw.on::after{left:22px}
 .prof .ft{margin:7px 32px 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
 .prof .ft.ctr{text-align:center;margin-top:10px}
 .prof .danger{margin-top:28px}
-.prof .danger .lb{color:#ff3b30;text-align:center}
+.prof .danger .lb{color:var(--down);text-align:center}
 .prof .themes{display:flex;justify-content:space-around;padding:16px 10px 12px}
 .prof .th{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
 .prof .mini{width:62px;height:112px;border-radius:12px;border:1px solid rgba(128,128,128,.25);overflow:hidden;position:relative}
@@ -839,7 +844,7 @@ input[type=date]::-webkit-datetime-edit{padding:0}
 .prof .seg2 button.on{background:var(--canvas);box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:600}
 html[data-theme=dark] .prof .seg2 button.on{background:#636366}
 html[data-theme=dark] .prof .sw{background:#39393d}
-html[data-theme=dark] .prof .sw.on{background:#30d158}
+html[data-theme=dark] .prof .sw.on{background:var(--up)}
 
 .pg-add{margin-left:auto;width:34px;height:34px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;color:var(--blue);flex:none}
 .pg-add svg{width:18px;height:18px}
@@ -1303,7 +1308,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25y';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2828,6 +2833,7 @@ function show(v){
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===tabV));
   moveBlob(true);
   $('#navBack').hidden = v!=='trend';
+  $('.nav').classList.toggle('inner', v==='trend');      // Trends looks like an inner page: back, centred title
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend';
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
