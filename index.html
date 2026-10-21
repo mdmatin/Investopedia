@@ -909,6 +909,14 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .bk-amber{color:#c77700} html[data-theme=dark] .bk-amber{color:#ff9f0a}
 .bkrows .hrow em{font-style:normal;color:var(--ink-3);font-size:13px}
 .bkrows .hrow.sub span{color:var(--ink);font-weight:600}
+.bklog .row{align-items:flex-start}
+.bklog .bkl-dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--up)}
+.bklog .bkl-dot.off{background:#ff9f0a}
+.bklog .bkl-t{font-size:14.5px;font-weight:600;letter-spacing:-.2px;line-height:1.3;word-break:break-word}
+.bklog .bkl-mv{font-size:13px;color:var(--ink);margin-top:3px;line-height:1.35}
+.bklog .m{margin-top:3px}
+.bklog .r{text-align:right;flex:none}
+.bkl-more{display:block;width:100%;padding:12px 0 10px;border-top:1px solid var(--hairline);color:var(--blue);font-weight:600;font-size:14.5px;background:none}
 .cfund.tap{cursor:pointer}
 .cfund .k{display:flex;align-items:center;gap:2px}
 .cfund .k svg{width:13px;height:13px;color:var(--ink-3)}
@@ -1280,7 +1288,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3085,7 +3093,8 @@ function renderPage(){
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
   if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
-  if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck; return; }
+  if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
+    const m = $('#bkLogMore'); if (m) m.onclick = ()=>{ bkLogAll = !bkLogAll; renderPage(); }; return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
@@ -4081,6 +4090,7 @@ function wireConstr(p){
    Expected balance (Money › Expected Balance). The server works both out after
    every save and sends them back; a gap of a paisa or more is flagged. */
 const booksNow = () => (xd()||{}).books || null;
+let bkLogAll = false;
 const booksOff = b => !!b && Math.abs(b.diff||0) >= 0.01;
 const BK_OK = 'M5 12.5l4.5 4.5L19 7.5', BK_WARN = 'M12 8v5M12 16.5h.01M10.3 3.9L2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z';
 function paintBooks(){
@@ -4120,8 +4130,22 @@ function booksBody(){
       <div class="pg-sub"><span class="k">difference</span></div>
       <div class="spstats"><div><span>Available</span><b class="num money">${fINR2(b.avl)}</b></div>
         <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div></div>`;
-  // the Available Balance tab, section by section
+  // what moved the books, newest first (All Investments › Books Log)
+  const log = b.log || [];
   let html = '', cur = null;
+  if (log.length){
+    const shown = bkLogAll ? log : log.slice(0, 4);
+    const t = iso => new Date(iso).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+    html += `<div class="sechead"><h2>Activity</h2></div><div class="card tight bklog">${shown.map(e=>{
+      const d1 = e.diff ? e.diff[1] : 0, ok = e.ok;
+      return `<div class="row"><div class="bkl-dot ${ok?'ok':'off'}"></div>
+        <div class="l wrap"><div class="bkl-t">${esc(e.what)}</div>
+          ${(e.moved||[]).length ? `<div class="bkl-mv">${e.moved.map(esc).join('<br>')}</div>` : ''}
+          <div class="m">${esc(e.src)} · ${esc(t(e.at))}</div></div>
+        <div class="r"><div class="v num money ${ok?'':'bk-amber'}">${ok ? '✓' : (d1<0?'−':'+')+fINR2(Math.abs(d1))}</div><div class="s">${ok?'balanced':'off'}</div></div></div>`;
+    }).join('')}${log.length > 4 ? `<button class="bkl-more" id="bkLogMore">${bkLogAll ? 'Show less' : 'Show all '+log.length}</button>` : ''}</div>`;
+  }
+  // the Available Balance tab, section by section
   const flush = ()=>{ if (cur) html += `<div class="sechead"><h2>${esc(cur.h)}</h2></div><div class="card hstats xsubs bkrows">${cur.rows.join('')}</div>`; };
   (b.parts||[]).forEach(p=>{
     if (p.length === 1){ flush(); cur = { h:p[0], rows:[] }; return; }
