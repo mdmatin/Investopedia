@@ -881,6 +881,25 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .xfr.want .ph{color:var(--blue)}
 
 .cfund{margin-bottom:10px}
+/* Books: Available vs Expected, on Overview */
+.books{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;margin-top:12px}
+.books .bk-ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
+.books .bk-ic svg{width:18px;height:18px}
+.books.off .bk-ic{background:rgba(255,159,10,.16);color:#c77700}
+html[data-theme=dark] .books.off .bk-ic{color:#ff9f0a}
+.books .l{flex:1;min-width:0}
+.books .n{font-size:16px;font-weight:600;letter-spacing:-.35px}
+.books.off .n{color:#c77700}
+html[data-theme=dark] .books.off .n{color:#ff9f0a}
+.books .m{font-size:12.5px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.books > svg{flex:none;width:14px;height:14px;color:var(--ink-3)}
+.tabs button[data-v="home"]{position:relative}
+.tabs button[data-v="home"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
+.bk-hero .pg-big.off{color:#c77700}
+html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
+.bk-hero .bk-why{font-size:13.5px;color:var(--ink-2);margin-top:8px;line-height:1.4}
+.bkrows .hrow.sub b{font-weight:700}
+.bkrows .hrow.sub span{color:var(--ink);font-weight:600}
 .cfund.tap{cursor:pointer}
 .cfund .k{display:flex;align-items:center;gap:2px}
 .cfund .k svg{width:13px;height:13px;color:var(--ink-3)}
@@ -889,6 +908,8 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .cmhead span{font-size:14px;font-weight:600;color:var(--ink-2)}
 .cmtot .empty{padding:14px 18px}
 .cother{margin-top:10px}
+.cfin .row:first-child{border-top:1px solid var(--hairline)}
+.cfin:empty{display:none}
 .kitepay{display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:12px 12px 0;padding:12px 14px;background:var(--canvas);border-radius:var(--r-card);text-align:left}
 .kitepay svg{width:20px;height:20px;padding:7px;box-sizing:content-box;border-radius:50%;background:var(--up-bg);color:var(--up);flex:none}
 .kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
@@ -1104,6 +1125,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
         <div class="ranges" id="homeRanges"></div>
         <div class="kpirow" id="kpis"></div>
       </div>
+      <div class="card books" id="books" role="button" hidden></div>
 
       <div class="sechead"><h2>Assets</h2><button data-go="break">Holdings</button></div>
       <div class="card tight" id="assets"></div>
@@ -1246,7 +1268,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1431,6 +1453,7 @@ function renderHome(d){
   if (!cash && cfg && !xLoading) loadExpenses();
   const nwVal = cash && h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance + cash.total : h.netWorth;
   $('#nw').textContent = fINR(nwVal);
+  paintBooks();
   $('#nwSub').innerHTML = `<span class="pill ${cls(h.netWorthDay)} num money">${fINRs(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>`;
 
   // hero chart + ranges
@@ -3007,7 +3030,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction'
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3039,7 +3062,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p)
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3438,7 +3461,7 @@ async function loadExpenses(fresh){
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
-    if (top && /^(expcat|inccat|budgets|acct|constr|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+    if (top && /^(expcat|inccat|budgets|acct|constr|books|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
   finally{ xLoading = false; }
 }
@@ -3984,7 +4007,7 @@ function constrFund(){
 }
 function constrFundHtml(part){
   const f = constrFund();
-  if (part==='other') return f.rows.some(r=>!r.acc) ? `<div class="card tight cother" id="cfOther"></div>` : '';
+  if (part==='other') return f.rows.some(r=>!r.acc) ? `<div class="cfin" id="cfOther"></div>` : '';
   return `<div class="card spsum cfund tap" data-constr role="button"><div class="k">Construction fund${chev('M9 5l7 7-7 7')}</div><div class="big num money">${fINR2(f.total)}</div>
       <div class="spstats"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
         <div><span>Spent so far</span><b class="num money">${fINR2(f.spentAll)}</b></div></div></div>`;
@@ -4040,6 +4063,62 @@ function wireConstr(p){
   $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = x.dataset.mbym; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
     const h = $('#cm-'+p.ym); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
 }
+/* Books: Available balance (All Investments › Available Balance) against
+   Expected balance (Money › Expected Balance). The server works both out after
+   every save and sends them back; a gap of a paisa or more is flagged. */
+const booksNow = () => (xd()||{}).books || null;
+const booksOff = b => !!b && Math.abs(b.diff||0) >= 0.01;
+const BK_OK = 'M5 12.5l4.5 4.5L19 7.5', BK_WARN = 'M12 8v5M12 16.5h.01M10.3 3.9L2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z';
+function paintBooks(){
+  const el = $('#books'), b = booksNow(), off = booksOff(b);
+  const nav = $('.tabs button[data-v="home"]'); if (nav) nav.classList.toggle('bkdot', off);
+  if (!el) return;
+  if (!b){ el.hidden = true; return; }
+  el.hidden = false; el.classList.toggle('off', off);
+  el.innerHTML = `<div class="bk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></div>
+    <div class="l"><div class="n">${off ? 'Books off by <span class="num money">'+fINR2(Math.abs(b.diff))+'</span>' : 'Books balanced'}</div>
+      <div class="m num money">Available ${fCompact(b.avl)} · Expected ${fCompact(b.expected)}</div></div>${chev('M9 5l7 7-7 7')}`;
+  el.onclick = ()=>pushPage({ kind:'books' });
+}
+// after a save: keep the server's fresh figures, and say so when the books stop balancing
+function applyBooks(b){
+  if (!b || !xd()) return;
+  const was = booksNow(); xd().books = b; save('inv.exp', X); paintBooks();
+  if (booksOff(b) && (!booksOff(was) || Math.abs((was.diff||0) - b.diff) >= 0.01))
+    setTimeout(()=>toast(`Books off by ${fINR2(Math.abs(b.diff))} — see Overview`), 2600);
+  const top = pageStack[pageStack.length-1]; if (top && top.kind==='books') renderPage();
+}
+function booksBody(){
+  const b = booksNow();
+  if (!b) return '<div class="pg-load">Not worked out yet — pull to refresh</div>';
+  const off = booksOff(b), when = b.at ? new Date(b.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
+  const why = off
+    ? (b.diff < 0 ? 'Available is lower than Expected: money left an account without a matching entry here or in All Investments — for example an Investment expense whose buy isn’t in All Investments yet.'
+                  : 'Available is higher than Expected: money arrived that isn’t logged as income, or an expense is missing.')
+    : 'Everything you hold, at the money you put in, matches everything earned minus everything spent.';
+  const hero = `<div class="card pg-card pg-hero bk-hero">
+      <div class="pg-id"><div class="tile" style="${off?'background:rgba(255,159,10,.16);color:#ff9f0a':'background:var(--up-bg);color:var(--up)'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></div>
+        <div class="grow"><div class="t">${off?'Books off':'Books balanced'}</div><div class="s">${when?'Checked '+esc(when):''}</div></div></div>
+      <div class="pg-big num money ${off?'off':''}">${off ? (b.diff<0?'−':'+')+fINR2(Math.abs(b.diff)) : fINR2(0)}</div>
+      <div class="pg-sub"><span class="k">difference</span></div>
+      <div class="spstats"><div><span>Available</span><b class="num money">${fINR2(b.avl)}</b></div>
+        <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div>
+      <div class="bk-why">${esc(why)}</div></div>`;
+  // the Available Balance tab, section by section
+  let html = '', cur = null;
+  const flush = ()=>{ if (cur) html += `<div class="sechead"><h2>${esc(cur.h)}</h2></div><div class="card hstats xsubs bkrows">${cur.rows.join('')}</div>`; };
+  (b.parts||[]).forEach(p=>{
+    if (p.length === 1){ flush(); cur = { h:p[0], rows:[] }; return; }
+    if (!cur) cur = { h:'Available', rows:[] };
+    const sub = /subtotal$/i.test(p[0]);
+    cur.rows.push(`<div class="hrow ${sub?'sub':''}"><span>${esc(p[0])}</span><b class="num money">${fINR2(p[1])}</b></div>`);
+  });
+  flush();
+  html += `<div class="sechead"><h2>Expected</h2></div><div class="card hstats xsubs bkrows">
+      ${b.adj ? `<div class="hrow"><span>Earned − spent</span><b class="num money">${fINR2(b.expected - b.adj)}</b></div><div class="hrow"><span>Adjustment</span><b class="num money">${fINR2(b.adj)}</b></div>` : ''}
+      <div class="hrow sub"><span>Expected balance</span><b class="num money">${fINR2(b.expected)}</b></div></div>`;
+  return hero + html;
+}
 function accGroupsHtml(acc){
   return ACC_GROUPS.map(([k,label])=>{
     const list = acc.filter(a=>accKind(a)===k); if (!list.length) return '';
@@ -4055,7 +4134,7 @@ function accGroupsHtml(acc){
       return `<div class="row tap" data-acc="${esc(a.name)}">${((k==='bank' || k==='construction') && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
         <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
-    }).join('')}</div>${k==='construction' ? constrFundHtml('other') : ''}`;
+    }).join('')}${k==='construction' ? constrFundHtml('other') : ''}</div>`;
   }).join('');
 }
 let accSec = 'accounts';
@@ -4695,7 +4774,7 @@ function xErr(m, field, step){
 function rerenderSpendViews(){
   if (activeView==='spend') renderSpend();
   const top = pageStack[pageStack.length-1];
-  if (top && /^(expcat|inccat|budgets|acct|constr|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  if (top && /^(expcat|inccat|budgets|acct|constr|books|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 async function saveXSheet(){
   const amount = xAmt();
@@ -4742,8 +4821,10 @@ async function saveMove(kind, rec, was){
   closeXSheet(); rerenderSpendViews();
   const act = { expense:['addExpense','editExpense'], income:['addIncome','editIncome'], transfer:['addTransfer','editTransfer'] }[kind];
   try{
-    if (was) await apiPost(act[1], { row:was.row, before:{ date:prev.date, amount:prev.amount }, ...rec });
-    else { const r = await apiPost(act[0], rec); if (r && r.row) tmp.row = r.row; }
+    let reply;
+    if (was) reply = await apiPost(act[1], { row:was.row, before:{ date:prev.date, amount:prev.amount }, ...rec });
+    else { reply = await apiPost(act[0], rec); if (reply && reply.row) tmp.row = reply.row; }
+    applyBooks(reply && reply.books);
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
     toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}` + (kind==='expense' ? budgetAlert(rec, was ? prev : null) : ''));
     if (recDone) recMarkDone(recDone.id, recDone.ym);
@@ -4764,8 +4845,8 @@ async function deleteXSheet(){
   if (i>=0) list.splice(i,1);
   closeXSheet(); rerenderSpendViews();
   try{
-    await apiPost({ expense:'deleteExpense', income:'deleteIncome', transfer:'deleteTransfer' }[kind], { row:e.row, date:e.date, amount:e.amount, note:e.note||'' });
-    toast('Deleted'); loadExpenses(true);
+    const reply = await apiPost({ expense:'deleteExpense', income:'deleteIncome', transfer:'deleteTransfer' }[kind], { row:e.row, date:e.date, amount:e.amount, note:e.note||'' });
+    toast('Deleted'); applyBooks(reply && reply.books); loadExpenses(true);
   }catch(err){ list.splice(Math.max(0,i), 0, e); rerenderSpendViews(); toast(err.message || 'Could not delete'); }
 }
 
