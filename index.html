@@ -1319,7 +1319,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2626,6 +2626,7 @@ $('#btnSave').onclick = async ()=>{
   b.disabled=true; b.textContent='Saving…'; $('#formErr').hidden=true;
   try{
     const res = await apiPost(editing?'editTxn':'addTxn', data);
+    if (res && res.books) applyBooks(res.books);          // the server checked the books with this trade named
     const where = res && res.row ? ' · row ' + res.row : '';
     // the INDmoney bucket wallet, when the save moved one
     const w = res && res.wallet;
@@ -2681,6 +2682,7 @@ async function saveAll(){
       let res;
       try {
         res = await apiPost('addTxn', tradeData(scanQueue[i]));
+        if (res && res.books) applyBooks(res.books);
       } catch (err) {
         // Already recorded? Tick it off and carry on with the rest.
         if (/already in the sheet at row/i.test(err.message || '')) {
@@ -2710,7 +2712,7 @@ $('#btnDelete').onclick = async ()=>{
   const b=$('#btnDelete');
   if(!b.dataset.arm){ b.dataset.arm='1'; b.textContent='Tap again to confirm'; setTimeout(()=>{ b.dataset.arm=''; b.textContent='Delete transaction'; },4000); return; }
   b.disabled=true;
-  try{ await apiPost('deleteTxn',{row:editing.row, ticker:editing.ticker}); closeSheet(); toast('Transaction deleted'); refresh(); }
+  try{ const rd = await apiPost('deleteTxn',{row:editing.row, ticker:editing.ticker}); if (rd && rd.books) applyBooks(rd.books); closeSheet(); toast('Transaction deleted'); refresh(); }
   catch(e){ $('#formErr').innerHTML='<b>Not deleted.</b><br>'+esc(e.message); $('#formErr').hidden=false; $('#sheet').scrollTop=0; }
   finally{ b.disabled=false; }
 };
@@ -2882,6 +2884,7 @@ function show(v){
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend';
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
+  if (v==='break' && prevView!=='break') showHoldSec('assets');    // Holdings always opens on Assets
   if (v==='spend'){ spSec = 'list'; if (prevView!=='spend') spMonth = ymNow(); renderSpend();   // Spend always opens on Activity
     if (!X || Date.now() - X.at > X_STALE) loadExpenses(); }
   window.scrollTo(0,0);
@@ -5326,11 +5329,10 @@ function profileBody(){
    <h3>Data</h3><div class="grp">
     ${row('sheet','#0f9d58','Google Sheet', `<span class="vl">${esc(host ? 'Connected' : '—')}</span>`)}
     ${row('sync','#007aff','Refresh app data', '', 'Re-reads your sheets into the app', 'data-act="refresh"')}
-    ${row('sheet','#34c759','Refresh the sheet', sheetBusy ? '<span class="vl">Running…</span>' : '', 'Runs the sheet\'s Refresh all: FIFO, buckets and money sync', 'data-act="refreshsheet"')}
+    ${row('sheet','#34c759','Refresh the sheet', sheetBusy ? '<span class="vl">Running…</span>' : '', '', 'data-act="refreshsheet"')}
     ${row('dl','#5ac8fa','Export as CSV', `<span class="vl">${chv}</span>`, xd() ? 'Expenses, income and transfers' : 'Available once Spend has synced', 'data-act="export"')}
     ${row('trash','#8e8e93','Clear cached data', '', 'Keeps your sheet connection and settings', 'data-act="clear"')}
    </div>
-   <div class="ft">Centric saves the last sync on this phone so it opens instantly. Clearing it just re-downloads everything.</div>
 
    <h3>About</h3><div class="grp">
     ${row('info','#8e8e93','App', `<span class="vl">${esc(BUILD)}</span>`)}
