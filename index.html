@@ -1027,7 +1027,7 @@ body.paged{overflow:hidden}
 .hlink svg{width:15px;height:15px;color:var(--ink-3);margin-right:-3px}
 .dvrow{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-top:1px solid var(--hairline);font-size:15px}
 .dvrow:first-child{border-top:0}
-.dvrow span{color:var(--ink-2)} .dvrow b{font-weight:600}
+.dvrow span{color:var(--ink-2)} .dvrow b{font-weight:600} .dvrow .dvt{color:var(--ink)}
 .kgrid > div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .kgrid > div:nth-child(3n+2){align-items:center;text-align:center}
 .kgrid > div:nth-child(3n){align-items:flex-end;text-align:right}
@@ -1314,7 +1314,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3096,15 +3096,25 @@ function divsFor(ticker){
   const up = String(ticker).toUpperCase();
   return ((D.data && D.data.dividends) || []).filter(x=>x.ticker===up).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
 }
-function dividendsBody(ticker){
-  const divs = divsFor(ticker), m = nativeMoney(true);
+// Payouts for a platform: tickers held there, plus (on a US platform) any ticker
+// not held on another platform — a stock sold since still paid its dividends here
+function divsForPlatform(name){
+  const hs = (D.data.buckets && D.data.buckets.holdings) || [], up = t => String(t).toUpperCase();
+  const here = new Set(hs.filter(h=>(h.platform||'—')===name).map(h=>up(h.ticker)));
+  const elsewhere = new Set(hs.filter(h=>(h.platform||'—')!==name).map(h=>up(h.ticker)));
+  const usHere = hs.some(h=>(h.platform||'—')===name && h.category==='US Stocks');
+  return ((D.data && D.data.dividends) || []).filter(x=>here.has(x.ticker) || (usHere && !elsewhere.has(x.ticker)))
+    .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function dividendsBody(ticker, platform){
+  const divs = platform ? divsForPlatform(platform) : divsFor(ticker), m = nativeMoney(true);
   const tot = divs.reduce((a,x)=>a+x.amount,0);
   const first = divs.length ? divs[divs.length-1].date : null;
   const years = {};
   divs.forEach(x=>{ const y=String(x.date).slice(0,4); (years[y]=years[y]||[]).push(x); });
   const hero = `<div class="card pg-card pg-hero">
-      <div class="pg-id">${tickerTile({ticker, category:'US Stocks'})}
-        <div><div class="t">${esc(ticker)}</div><div class="s">Dividends earned</div></div></div>
+      <div class="pg-id">${platform ? logoMark(platform, null, iconFor('US Stocks')) : tickerTile({ticker, category:'US Stocks'})}
+        <div><div class="t">${esc(platform || ticker)}</div><div class="s">Dividends earned</div></div></div>
       <div class="pg-big num money">${m(tot)}</div>
       <div class="pg-sub">${divs.length} payout${divs.length===1?'':'s'}${first?` · since ${esc(fDate(first))}`:''}</div>
     </div>`;
@@ -3112,7 +3122,7 @@ function dividendsBody(ticker){
   return hero + Object.keys(years).sort().reverse().map(y=>{
     const ys = years[y], yt = ys.reduce((a,x)=>a+x.amount,0);
     return `<div class="sechead"><h2>${esc(y)}</h2><span class="cnt num money">${m(yt)}</span></div>
-      <div class="card tight">${ys.map(x=>`<div class="dvrow"><span>${esc(new Date(x.date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))}</span><b class="num money">${m(x.amount)}</b></div>`).join('')}</div>`;
+      <div class="card tight">${ys.map(x=>`<div class="dvrow"><span>${platform ? `<b class="dvt">${esc(x.ticker)}</b> · ` : ''}${esc(new Date(x.date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))}</span><b class="num money">${m(x.amount)}</b></div>`).join('')}</div>`;
   }).join('');
 }
 
@@ -3120,7 +3130,7 @@ function renderPage(){
   const p = pageStack[pageStack.length-1]; if(!p || (!D && !/^(profile|recurring|recform)$/.test(p.kind))) return;
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
-  const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker)
+  const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : platformBody(p.platform);
@@ -3186,6 +3196,7 @@ function renderPage(){
       inp.onkeydown = e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') close(); };
     }
     if (p.showChart) drawHist('P:'+p.platform, false);
+    $$('#page [data-pdiv]').forEach(b=>b.onclick=()=>pushPage({ kind:'dividends', platform:p.platform }));
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ if (p.tab!==b.dataset.ht){ p.q=''; p.sf=false; } p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
@@ -3480,12 +3491,14 @@ function platformBody(name){
   // 2×2 tiles (Invested · XIRR / Returns · Total P&L) and Realised as a row, per the design
   // Invested and Current returns as tiles; XIRR, Total returns and Realised as a list
   const tp = inv ? (ret+rl)/inv : null;
+  const pdivs = divsForPlatform(name);            // shown only when this platform has paid any
   const stats = `<div class="card hstats num"><div class="kgrid k2">
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
       <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
+    ${pdivs.length ? `<button class="hrow hlink" data-pdiv><span>Dividends earned</span><b class="money">${nativeMoney(true)(pdivs.reduce((a,x)=>a+x.amount,0))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></b></button>` : ''}
     <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
