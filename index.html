@@ -448,7 +448,7 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .tarw svg{width:11px;height:11px}
 .tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .xfresh{background:rgba(0,102,204,.16);border-radius:6px;box-shadow:0 0 0 3px rgba(0,102,204,.16)}
 html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3px rgba(41,151,255,.28)}
-.tarw.rf{background:#fff3df;color:#9a5b00} .tarw.adj{background:var(--sunken);color:var(--ink-2)} .tarw.iv{background:#efeafc;color:#6b4fd8}
+.tarw.rf,.tarw.lq{background:#fff3df;color:#9a5b00} .tarw.adj{background:var(--sunken);color:var(--ink-2)} .tarw.iv{background:#efeafc;color:#6b4fd8}
 .tinv{margin:-4px 16px 10px;font-size:12.5px;color:var(--ink-2);text-align:center}
 .tinv b{font-weight:600;color:var(--ink)}
 .nsnote{font-size:12px;color:var(--ink-3);margin:6px 4px 0}
@@ -676,7 +676,7 @@ html[data-theme=dark] .mb.on i{opacity:1}
 html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
 html[data-theme=dark] .xamt input::placeholder,html[data-theme=dark] .xbig .a em{color:#48484a}
 html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
-html[data-theme=dark] .tarw.rf{background:rgba(255,159,10,.18);color:#ffb340}
+html[data-theme=dark] .tarw.rf,html[data-theme=dark] .tarw.lq{background:rgba(255,159,10,.18);color:#ffb340}
 html[data-theme=dark] .tarw.iv{background:rgba(191,90,242,.2);color:#d08bff}
 html[data-theme=dark] .xkp button.op{background:#2c2c2e}
 html[data-theme=dark] .xgrid > button.on,html[data-theme=dark] .xgrid.tiles > button.on{background:rgba(41,151,255,.16)}
@@ -897,8 +897,10 @@ html[data-theme=dark] .books.off .n{color:#ff9f0a}
 .tabs button[data-v="home"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
 .bk-hero .pg-big.off{color:#c77700}
 html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
-.bk-hero .bk-why{font-size:13.5px;color:var(--ink-2);margin-top:8px;line-height:1.4}
+.bk-why{font-size:13.5px;color:var(--ink-2);margin-top:8px;line-height:1.4}
 .bkrows .hrow.sub b{font-weight:700}
+.bk-amber{color:#c77700} html[data-theme=dark] .bk-amber{color:#ff9f0a}
+.bkrows .hrow em{font-style:normal;color:var(--ink-3);font-size:13px}
 .bkrows .hrow.sub span{color:var(--ink);font-weight:600}
 .cfund.tap{cursor:pointer}
 .cfund .k{display:flex;align-items:center;gap:2px}
@@ -912,6 +914,9 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .cfin:empty{display:none}
 .kitepay{display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:12px 12px 0;padding:12px 14px;background:var(--canvas);border-radius:var(--r-card);text-align:left}
 .kitepay svg{width:20px;height:20px;padding:7px;box-sizing:content-box;border-radius:50%;background:var(--up-bg);color:var(--up);flex:none}
+.xkw{display:flex;align-items:center;gap:10px;margin:12px 4px 0;font-size:14px;color:var(--ink-2)}
+.xkw input{width:20px;height:20px;accent-color:var(--blue);flex:none}
+.xkw b{color:var(--ink);font-weight:600}
 .kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
 .cbk{margin-bottom:6px}
 .cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:16px 16px 4px}
@@ -1268,7 +1273,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3710,11 +3715,11 @@ function xDayGroups(list, showCat){
    A small badge says which: ↓ red money out, ↑ green money in, ⇄ blue transfer,
    ↑ amber refund. */
 let txFilter = 'ex';                 // Activity opens on Expenses
-const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
-const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund' };
+const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', lq:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
+const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund', lq:'Liquidation' };
 function txItems(ym){
   const d = xd() || {}, out = [];
-  (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? 'rf' : isInvest(e.category) ? 'iv' : 'ex', e }); });
+  (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? (isInvest(e.category) ? 'lq' : 'rf') : isInvest(e.category) ? 'iv' : 'ex', e }); });
   (d.transfers||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k:'tr', e }); });
   // a balance correction is listed too, but never counted as income
   (d.incomes||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.type==='Adjustment' ? 'adj' : 'in', e }); });
@@ -3728,10 +3733,10 @@ function isRecEntry(e, kind){
 function txRow(x){
   const e = x.e, badge = `<span class="tarw ${x.k}" aria-label="${TX_NAME[x.k]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${TX_ARW[x.k]}"/></svg></span>`;
   let icon, title, meta, amt, cls = '', q;
-  if (x.k==='ex' || x.k==='rf' || x.k==='iv'){
+  if (x.k==='ex' || x.k==='rf' || x.k==='lq' || x.k==='iv'){
     icon = xTile(e.category); title = e.note || e.sub || e.category; if (isRecEntry(e, 'expense')) title += ' ↻';
     meta = [e.category!==title ? e.category : null, e.sub && e.sub!==title ? e.sub : null, e.account].filter(Boolean).join(' · ');
-    amt = (x.k==='rf' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf' ? 'up' : ''; q = qWords(e.note, e.category, e.sub, e.account, TX_NAME[x.k]);
+    amt = (x.k==='rf'||x.k==='lq' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf'||x.k==='lq' ? 'up' : ''; q = qWords(e.note, e.category, e.sub, e.account, TX_NAME[x.k]);
   } else if (x.k==='tr'){
     icon = moveTile('transfer'); title = `${e.from} → ${e.to}` + (isRecEntry(e, 'transfer') ? ' ↻' : ''); meta = e.note || 'Transfer'; amt = fINR2(e.amount); cls = 'tr'; q = qWords(e.from, e.to, e.note, 'transfer');
   } else if (x.k==='adj'){
@@ -3746,10 +3751,10 @@ function txRow(x){
 }
 function spListHtml(){
   const all = txItems(spMonth);
-  const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='iv') && !isConstr(x.e.category);
+  const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv') && !isConstr(x.e.category);
   const spent = all.filter(counts).reduce((s,x)=>s+x.e.amount,0);
   const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
-  const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
+  const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
   const days = Object.keys(by).sort().reverse().map(dt=>{
@@ -3799,7 +3804,7 @@ function expcatBody(p){
       ${bud ? pbar(spent/bud) : ''}
       ${chart}
     </div>
-    ${isInvest(cat) ? `<button class="kitepay" data-kitepay>${chev('M12 19V5M5 12l7-7 7 7')}<span><b>Kite payback</b><small>Money Zerodha sent back to the bank</small></span></button>` : ''}
+    ${isInvest(cat) ? `<button class="kitepay" data-kitepay>${chev('M12 19V5M5 12l7-7 7 7')}<span><b>Liquidation</b><small>Money back from an investment to your bank</small></span></button>` : ''}
     ${subRows ? `<div class="sechead"><h2>By subcategory</h2></div><div class="card hstats xsubs">${subRows}</div>` : ''}
     <div class="sechead"><h2>Expenses</h2></div>
     ${list.length ? xDayGroups(list, false) : '<div class="card tight"><div class="empty">Nothing in this category this month</div></div>'}`;
@@ -3897,7 +3902,7 @@ function wireXPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   $$('#page [data-mvi]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
-  const kp = $('#page [data-kitepay]'); if (kp) kp.onclick = ()=>openKitePayback(p.cat);
+  const kp = $('#page [data-kitepay]'); if (kp) kp.onclick = ()=>openLiquidation(p.cat);
   if (p.kind==='expcat' || p.kind==='inccat'){
     const b = $('#page [data-bedit]'); if (b) b.onclick = ()=>{ p.bEdit = !p.bEdit; rerender(); };
     const gs = $('#page .mbscroll');
@@ -4117,6 +4122,18 @@ function booksBody(){
   html += `<div class="sechead"><h2>Expected</h2></div><div class="card hstats xsubs bkrows">
       ${b.adj ? `<div class="hrow"><span>Earned − spent</span><b class="num money">${fINR2(b.expected - b.adj)}</b></div><div class="hrow"><span>Adjustment</span><b class="num money">${fINR2(b.adj)}</b></div>` : ''}
       <div class="hrow sub"><span>Expected balance</span><b class="num money">${fINR2(b.expected)}</b></div></div>`;
+  // the softer check: Money's Investment entries against All Investments
+  const iv = b.inv;
+  if (iv){
+    const g = Math.abs(iv.gap||0) >= 1;
+    html += `<div class="sechead"><h2>Investment log</h2></div><div class="card hstats xsubs bkrows">
+      <div class="hrow"><span>Logged in Money</span><b class="num money">${fINR2(iv.logged)}</b></div>
+      <div class="hrow"><span>All Investments</span><b class="num money">${fINR2(iv.ai)}</b></div>
+      <div class="hrow sub"><span>${g ? 'Apart by' : 'In step'}</span><b class="num money ${g?'bk-amber':''}">${g ? fINR2(Math.abs(iv.gap)) : '✓'}</b></div>
+      ${(iv.missed||[]).map(m=>`<div class="hrow"><span>${esc(fDate(m.date))} · <em>${esc(m.what)}</em></span><b class="num money bk-amber">${fINR2(m.amount)}</b></div>`).join('')}
+      ${g ? `<div class="bk-why" style="padding:4px 0 14px">${iv.gap > 0 ? 'All Investments has more than you logged: a transfer to an investment was not logged in Money (log it as an Investment expense).' : 'You logged more than All Investments has: money came back from an investment without a Liquidation entry, or a buy is missing in All Investments.'} This doesn\u2019t affect the books above.</div>` : ''}
+    </div>`;
+  }
   return hero + html;
 }
 function accGroupsHtml(acc){
@@ -4414,7 +4431,10 @@ const IN_TYPES_DEF = ['Salary','Freelancing','Interest','Cashback','Dividends','
 // for something you bought (or friends' share of a bill, or an ITR refund under
 // Taxes) — saved as a minus expense so it lowers that category, never as income.
 const XREFUND = 'Refund';
-const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment' && t!==XREFUND).concat(XREFUND);
+// "Liquidation" works the same way for money back from an investment: a minus
+// Investment entry (the subcategory says which one), never income
+const XLIQ = 'Liquidation';
+const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment' && t!==XREFUND && t!==XLIQ).concat(XLIQ, XREFUND);
 // the most recent Source used for a type (Salary → your employer, and so on)
 const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
@@ -4462,19 +4482,30 @@ function xCatsByUse(){
   return xCats().slice().sort((a,b)=>(used[b]||0)-(used[a]||0));
 }
 const xIsRefund = () => xMode==='income' && xType===XREFUND;
+const xIsLiq = () => xMode==='income' && xType===XLIQ;
+const invCat = () => xCats().find(isInvest) || 'Investment';
+const liqSubs = () => { const L = xSubs(invCat()); return L.length ? L : ['Stocks','Mutual funds','Gold','Crypto','US Stocks','NPS']; };
+// the Kite wallet on Net Worth, when it holds something a liquidation could come out of
+const kiteWallet = () => { const w = ((D && D.data && D.data.netWorth && D.data.netWorth.wallets) || []).find(x=>x.key==='kite'); return w && !w.formula && w.amount > 0 ? w : null; };
 const xTitle = () => (xEditing ? 'Edit ' : 'New ') + (xMode==='expense' ? 'expense' : xMode==='transfer' ? 'transfer' : 'income');
 const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money sheet.'
   : xMode==='transfer' ? 'Moves money between your accounts — not counted as spending. Paying a card bill is a transfer from the bank to the card.'
   : xIsRefund() ? 'A refund is saved as a minus entry on the Expenses tab, so it lowers that category’s spend.'
+  : xIsLiq() ? 'Money back from an investment — saved as a minus Investment entry, so it lowers what you’ve put in. Not income.'
   : 'Saved to the Income tab in your Money sheet.';
 
 // tpl: a new entry filled in ahead (a due recurring one) — saved as new, not as an edit
 let xRecPend = null, xKitePay = false;
-// Kite's quarterly settlement: a refund on Investment into the bank it came from
-function openKitePayback(cat){
-  const d = xd() || {}, inv = cat || (xCats().find(isInvest) || 'Investment');
+function xKiteToggle(){
+  const w = xIsLiq() && !xEditing ? kiteWallet() : null; if (!w) return '';
+  return `<label class="xkw"><input type="checkbox" id="xKw" ${xKitePay?'checked':''}><span>Take it out of the Kite wallet <b class="num">${fINR(w.amount)}</b></span></label>`;
+}
+// Money back from an investment (Kite's quarterly settlement, a sale withdrawn…):
+// a Liquidation into the bank you last invested from
+function openLiquidation(cat){
+  const d = xd() || {}, inv = cat || invCat();
   const last = (d.entries||[]).find(e=>isInvest(e.category) && e.amount>0 && accByName(e.account) && accKind(accByName(e.account))==='bank');
-  openXSheet(null, 'income', { type:XREFUND, category:inv, account: last ? last.account : xIncomeAcc(), note:'Kite settlement', kite:true });
+  openXSheet(null, 'income', { type:XLIQ, category:inv, account: last ? last.account : xIncomeAcc(), note:'' });
 }
 // …and the same amount leaves the Kite wallet on Net Worth
 async function kiteWalletDown(amount){
@@ -4504,7 +4535,7 @@ function openXSheet(e, mode, tpl){
   xCat = s && s.category || ''; xSub = s && s.sub || '';
   xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : xExpenseAcc());
   xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
-  xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : !e && xMode==='income' ? xIncomeType() : '');
+  xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? (isInvest(e.category) ? XLIQ : XREFUND) : !e && xMode==='income' ? xIncomeType() : '');
   if (!s && xMode==='income' && xAsksCompany()) xSrcV = lastSource(xType);
   xOpenCat = ''; xErrMsg = '';
   xField = s && s.amount ? null : 'amount'; xStep = s && s.amount ? 3 : 1;
@@ -4556,6 +4587,8 @@ function wireCommon(el){
     if (xMode==='income' && !xEditing){ xAcc = xIncomeAcc(); if (!xType){ xType = xIncomeType(); if (xAsksCompany() && !xSrcV) xSrcV = lastSource(xType); } }
     if (xMode==='income' && !accByName(xAcc)) xAcc=''; xOpenCat=''; xErrMsg='';
     if (ADD_UI==='flow' && xField && !xFields().includes(xField)) xField='amount'; paintXSheet(); });
+  $$('.xchips [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; xErrMsg=''; paintXSheet(); });
+  const kw = $('#xKw', el); if (kw) kw.onchange = ()=>{ xKitePay = kw.checked; };
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
   bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
   const t = $('#xTax', el); if (t) commaInput(t, 'en-IN');
@@ -4611,14 +4644,14 @@ function pickCat(c, done){
 function xFields(){
   if (xMode==='expense') return ['amount','note','category','account','date'];
   if (xMode==='transfer') return ['date','amount','from','to','note'];
-  if (xIsRefund()) return ['date','amount','type','category','account','note'];
+  if (xIsRefund() || xIsLiq()) return ['date','amount','type','category','account','note'];
   return ['date','amount','type','account'].concat(xAsksCompany() ? ['source'] : [], ['tax','note']);
 }
 // Company is only asked for salary
 const xAsksCompany = () => xMode==='income' && /^salary$/i.test(xType||'');
 const X_PICK = { amount:1, category:1, account:1, from:1, to:1, type:1 };
 // no subcategories here, so a plain dropdown (the iOS picker) instead of the tile grid
-const xIsDrop = f => (xMode==='transfer' && (f==='from' || f==='to')) || (xMode==='income' && (f==='type' || f==='account' || (f==='source' && !xIsRefund())));
+const xIsDrop = f => (xMode==='transfer' && (f==='from' || f==='to')) || (xMode==='income' && (f==='type' || f==='account' || (f==='source' && !xIsRefund() && !xIsLiq())));
 // companies you've had income from, most used first
 function xCompanies(){ const n = {}; ((xd()||{}).incomes||[]).forEach(i=>{ const c = String(i.source||'').trim(); if (c) n[c] = (n[c]||0) + 1; });
   return Object.keys(n).sort((a,b)=>n[b]-n[a] || a.localeCompare(b)); }
@@ -4631,7 +4664,7 @@ function xDropOpts(f){
   return xAllAcc();
 }
 function xLabel(f){
-  return { date:'Date', amount:'Amount', category: xMode==='income' ? 'Refund for' : 'Category', account: xMode==='income' ? 'Into' : 'Paid via',
+  return { date:'Date', amount:'Amount', category: xIsLiq() ? 'From' : xMode==='income' ? 'Refund for' : 'Category', account: xMode==='income' ? 'Into' : 'Paid via',
     from:'From', to:'To', type:'Type', source:'Company', tax:'Tax paid', note:'Note' }[f];
 }
 function xValue(f){
@@ -4643,6 +4676,7 @@ function xValue(f){
   }
   if (f==='date') return `<input type="date" id="xDate" value="${esc(xDateV)}">`;
   if (f==='amount') return xExpr ? `<b class="num">${xHasOp(xExpr) ? xExprHtml() + ` <small>= ${fINR2(xAmt())}</small>` : fINR2(xAmt())}</b>` : ph('0.00');
+  if (f==='category' && xIsLiq()) return xSub ? esc(xSub) : ph('Which investment');
   if (f==='category') return xCat ? esc(xCat + (xSub ? ' › ' + xSub : '')) : ph('Pick one');
   if (f==='account') return xAcc ? esc(xAcc) : ph('Pick one');
   if (f==='from') return xFrom ? esc(xFrom) : ph('Pick one');
@@ -4667,6 +4701,7 @@ function flowPanel(){
   const f = xField; if (!f || !xGridField(f)) return '';
   let body = '', head = xLabel(f);
   if (f==='amount') body = xKeypad('Next');
+  else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense' });
   else if (f==='account') body = xGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc, 'a');
   else if (f==='from') body = xGrid(xAllAcc(), xFrom, 'a');
@@ -4678,7 +4713,7 @@ function paintFlow(){
   const el = $('#xsheet');
   const rows = xFields().map(f=>`<div class="xfr ${xField===f?'on':''} ${xGridField(f)?'tap':''} ${xIsDrop(f)?'drop':''}" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
   el.innerHTML = `<div class="grab"></div><div class="xhd"><h3>${esc(xTitle())}</h3><button data-close>Cancel</button></div>
-    <div class="xscroll">${xModeSeg()}${xErrHtml()}<div class="xform">${rows}</div>
+    <div class="xscroll">${xModeSeg()}${xErrHtml()}<div class="xform">${rows}</div>${xKiteToggle()}
       <button class="btn" data-save>Save</button>${xEditing?`<button class="btn danger" data-del>Delete</button>`:''}
       <p class="hint">${esc(xHint())}</p></div>${flowPanel()}`;
   wireCommon(el);
@@ -4698,6 +4733,7 @@ function paintFlow(){
     if (k==='OK'){ if (xHasOp(xExpr)) xExpr = String(xAmt()); xNext(); return; }
     xKey(k); const v = $('.xfr[data-f="amount"] .v', el); if (v) v.innerHTML = xValue('amount'); xFreshMark(); });
   $$('.xgrid [data-c]', el).forEach(b=>b.onclick=()=>pickCat(b.dataset.c, xNext));
+  $$('.xgrid [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; xNext(); });
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; xNext(); });
   $$('.xgrid [data-a]', el).forEach(b=>b.onclick=()=>{ const v=b.dataset.a;
     if (xField==='from'){ xFrom=v; if (xTo===v) xTo=''; } else if (xField==='to') xTo=v; else xAcc=v; xNext(); });
@@ -4735,7 +4771,8 @@ function paintSteps(){
     body = stepsSummary() + xErrHtml();
     if (xMode!=='transfer') body += `<div class="xlbl">${xMode==='income' ? 'Into' : 'Paid via'}</div><div class="xchips">${chips(accs, xAcc, 'a')}</div>`;
     if (xIsRefund()) body += `<div class="xlbl">Refund for</div><div class="xchips">${chips(xCatsByUse(), xCat, 'c')}</div>`;
-    const inc = xMode==='income' && !xIsRefund();
+    if (xIsLiq()) body += `<div class="xlbl">From</div><div class="xchips">${chips(liqSubs(), xSub, 'lq')}</div>${xKiteToggle()}`;
+    const inc = xMode==='income' && !xIsRefund() && !xIsLiq();
     body += `<div class="fields">
       ${inc ? `${xAsksCompany() ? `<div class="f"><label>Company</label><input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}</div>` : ''}
         <div class="f"><label>Tax paid</label><input id="xTax" inputmode="decimal" placeholder="optional" value="${xTaxV ? esc(groupNum(xTaxV,'en-IN')) : ''}"></div>` : ''}
@@ -4793,6 +4830,10 @@ async function saveXSheet(){
   }
   if (!xType) return xErr('Pick what kind of money this is.', 'type', 2);
   if (!xAcc) return xErr('Pick the account it went into.', 'account', 3);
+  if (xType===XLIQ){
+    if (!xSub) return xErr('Pick which investment it came from.', 'category', 3);
+    return saveMove('expense', { date, account:xAcc, category:invCat(), sub:xSub, note: note || 'Liquidation', amount:-amount }, xEditing);
+  }
   if (xType===XREFUND){
     if (!xCat) return xErr('Pick the category this refund is for.', 'category', 3);
     return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note: note || 'Refund', amount:-amount }, xEditing);
@@ -4826,7 +4867,8 @@ async function saveMove(kind, rec, was){
     else { reply = await apiPost(act[0], rec); if (reply && reply.row) tmp.row = reply.row; }
     applyBooks(reply && reply.books);
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
-    toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}` + (kind==='expense' ? budgetAlert(rec, was ? prev : null) : ''));
+    const us = reply && reply.us && !reply.us.existed ? ` · ${rec.amount<0?'withdrawal':'transfer'} added to US Stocks` : '';
+    toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}` + (kind==='expense' ? budgetAlert(rec, was ? prev : null) : '') + us);
     if (recDone) recMarkDone(recDone.id, recDone.ym);
     if (kiteDone && rec.amount < 0) setTimeout(()=>kiteWalletDown(Math.abs(rec.amount)), 1600);
     loadExpenses(true);                        // rows below an insert have moved; re-read them
