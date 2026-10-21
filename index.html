@@ -885,10 +885,16 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .cfund{margin-bottom:10px}
 /* Books: Available vs Expected — a tick (or warning) in the net worth card */
 .card.hero{position:relative}
-.bkbadge{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
-.bkbadge svg{width:17px;height:17px}
-.bkbadge.off{background:rgba(255,159,10,.16);color:#c77700}
-html[data-theme=dark] .bkbadge.off{color:#ff9f0a}
+.bkpill{display:flex;align-items:center;gap:10px;width:calc(100% - 32px);padding:11px 16px;margin-top:-4px;text-align:left;cursor:pointer}
+.bkpill[hidden]{display:none}
+.bkpill .bk-ic{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
+.bkpill .bk-ic svg{width:13px;height:13px}
+.bkpill .bk-t{flex:1;font-size:15px;font-weight:600;letter-spacing:-.25px;color:var(--ink)}
+.bkpill .bk-v{font-size:14.5px;font-weight:600}
+.bkpill .bk-chev{flex:none;width:14px;height:14px;color:var(--ink-3)}
+.bkpill.off .bk-ic{background:rgba(255,159,10,.16);color:#c77700}
+.bkpill.off .bk-t,.bkpill.off .bk-v{color:#c77700}
+html[data-theme=dark] .bkpill.off .bk-ic,html[data-theme=dark] .bkpill.off .bk-t,html[data-theme=dark] .bkpill.off .bk-v{color:#ff9f0a}
 .books{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;margin-top:12px}
 .books .bk-ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
 .books .bk-ic svg{width:18px;height:18px}
@@ -1139,13 +1145,13 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
     <section class="view active" id="v-home">
       <div class="card hero">
         <div class="cap">Net worth</div>
-        <button class="bkbadge" id="books" hidden aria-label="Books"></button>
         <div class="big num money" id="nw">—</div>
         <div id="nwSub"></div>
         <div class="chart" id="homeChart"><svg></svg><div class="tip"></div></div>
         <div class="ranges" id="homeRanges"></div>
         <div class="kpirow" id="kpis"></div>
       </div>
+      <button class="card bkpill" id="books" hidden aria-label="Books"></button>
 
       <div class="sechead"><h2>Assets</h2><button data-go="break">Holdings</button></div>
       <div class="card tight" id="assets"></div>
@@ -1288,7 +1294,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3641,7 +3647,7 @@ function spBudgetHtml(){
   return `<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
       <button data-budgets class="bset" aria-label="Budget settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
       <div class="vb-mo">${row('Monthly', spent, bud, true)}</div>
-      <div class="vb-all"><span>All expenses<b class="num money">${fINR2(spent + looseSum)}</b></span>${looseSum ? `<span class="num money">${fINR2(looseSum)} not budgeted</span>` : ''}</div></div>
+      <div class="vb-all"><span>All exp.<b class="num money">${fINR2(spent + looseSum)}</b></span>${looseSum ? `<span class="num money">${fINR2(looseSum)} not budgeted</span>` : ''}</div></div>
     <div class="card tight vbc">${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
     ${inv.length ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">From the construction fund</div></div>
@@ -4100,7 +4106,9 @@ function paintBooks(){
   if (!b){ el.hidden = true; return; }
   el.hidden = false; el.classList.toggle('off', off);
   el.setAttribute('aria-label', off ? `Books off by ${fINR2(Math.abs(b.diff))}` : 'Books balanced');
-  el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg>`;
+  el.innerHTML = `<span class="bk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></span>
+    <span class="bk-t">${off ? 'Books off' : 'Books balanced'}</span>${off ? `<span class="bk-v num money">${b.diff<0?'−':'+'}${fINR2(Math.abs(b.diff))}</span>` : ''}
+    <svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
   el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
 }
 // after a save: keep the server's fresh figures, and say so when the books stop balancing
