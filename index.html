@@ -182,7 +182,8 @@ main{padding:0}
 .tile.lq{--tile:#e2f4f7;--tileink:#0b6b7d}   /* liquid / parking          */
 .tile.rt{--tile:#eceaf7;--tileink:#4a44a8}   /* NPS, EPF, PPF             */
 .tile.bk{--tile:#e9f1ee;--tileink:#2d6b5c}   /* wallets, bank balances    */
-.tile.bu{--tile:#eef0f4;--tileink:#4a5568}   /* buckets, anything unknown */
+.tile.bu{--tile:#eef0f4;--tileink:#4a5568}   /* anything unknown */
+.tile.pk{--tile:#fdeaf0;--tileink:#b8326a}   /* buckets: one more colour */
 /* buy / sell reads as a letter on the meta line instead of a corner dot, so the
    tile is left to the logo and the side is legible rather than colour-coded */
 /* the chip is a flex child so it centres on the text's optical middle rather
@@ -459,6 +460,9 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .tflt button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tarw{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;vertical-align:-3px;margin-right:6px;flex:none}
 .tarw svg{width:11px;height:11px}
+.trow .m{display:flex;align-items:center}      /* badge and text on one centre line */
+.trow .m .tarw{vertical-align:0}
+.trow .m .mt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tarw.ex{background:var(--down-bg);color:var(--down)} .tarw.in{background:var(--up-bg);color:var(--up)} .tarw.tr{background:#e6f0fb;color:var(--blue)} .xfresh{background:rgba(0,102,204,.16);border-radius:6px;box-shadow:0 0 0 3px rgba(0,102,204,.16)}
 html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3px rgba(41,151,255,.28)}
 .tarw.rf,.tarw.lq{background:#fff3df;color:#9a5b00} .tarw.adj{background:var(--sunken);color:var(--ink-2)} .tarw.iv{background:#efeafc;color:#6b4fd8}
@@ -684,6 +688,7 @@ html[data-theme=dark] .tile.lq{--tile:rgba(100,210,255,.16);--tileink:#64d2ff}
 html[data-theme=dark] .tile.rt{--tile:rgba(94,92,230,.22);--tileink:#a5a3ff}
 html[data-theme=dark] .tile.bk{--tile:rgba(48,176,140,.18);--tileink:#63d1b0}
 html[data-theme=dark] .tile.bu{--tile:#2c2c2e;--tileink:#aeb4c2}
+html[data-theme=dark] .tile.pk{--tile:rgba(255,55,95,.18);--tileink:#ff7a9a}
 html[data-theme=dark] .mb i{opacity:.45}
 html[data-theme=dark] .mb.on i{opacity:1}
 html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
@@ -1314,7 +1319,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1485,7 +1490,7 @@ function inRange(daily, r){
 // Cash on Overview comes from Money › Accounts, worked out live in the app, so
 // an expense moves it (and net worth) at once. The sheet's Running accounts
 // table catches up nightly. Until the money data is here, the sheet's numbers show.
-const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Cards'],['construction','Construction']];
+const ACC_FILT = [['all','All'],['bank','Bank'],['card','Cards'],['wallet','Wallet'],['construction','Construction']];
 let accFilt = load('inv.accFilt') || 'all';
 function liveCash(){
   if (!xd() || !(xd().accounts||[]).length) return null;
@@ -1763,6 +1768,40 @@ function mark(label, fb){
 }
 const FB_BANK   = ['bank','bk'];
 const FB_BUCKET = ['bucket','bu'];
+// Buckets get their own colour and an icon from what the name says (a goal, a
+// time horizon, a purpose); names that say nothing take the next icon in turn.
+// Colours go round in list order, so neighbours never share one.
+const BK_ICONS = {
+  shield:  S(`<path d="M12 3.2 19 6v5.6c0 4.2-2.9 7.4-7 9.2-4.1-1.8-7-5-7-9.2V6z"/>`),
+  plane:   S(`<path d="M21 12.2 3.6 5.4l2.7 6.8-2.7 6.8z"/><path d="M6.3 12.2H13"/>`),
+  home:    S(`<path d="M3.6 11.2 12 4l8.4 7.2"/><path d="M5.8 9.6v10h12.4v-10"/><path d="M10 19.6v-5h4v5"/>`),
+  cap:     S(`<path d="M2.6 9.4 12 5l9.4 4.4L12 13.8z"/><path d="M6.4 11.4v4.4c1.6 1.6 3.6 2.4 5.6 2.4s4-.8 5.6-2.4v-4.4"/><path d="M21.4 9.4v5"/>`),
+  sprout:  S(`<path d="M12 20.4v-8"/><path d="M12 12.4c0-3.7-2.6-6.2-6.6-6.2 0 3.7 2.6 6.2 6.6 6.2z"/><path d="M12 14.2c0-3.3 2.4-5.6 6.2-5.6 0 3.3-2.4 5.6-6.2 5.6z"/>`),
+  clock:   S(`<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3 2"/>`),
+  rocket:  S(`<path d="M14.6 4.2c2.9-1 5.2-1 5.2-1s0 2.3-1 5.2l-5.6 5.6-4.2-4.2z"/><path d="M9 9.8 5.6 9.4 3.4 11.6l3.8 1.2M14.2 15l.4 3.4-2.2 2.2-1.2-3.8"/><path d="M6.6 17.4c-1.2 1.2-1.4 3-1.4 3s1.8-.2 3-1.4"/>`),
+  umbrella:S(`<path d="M3 12a9 9 0 0 1 18 0z"/><path d="M12 12v6.2a2 2 0 0 1-4 0"/>`),
+  gift:    S(`<rect x="3.6" y="8.2" width="16.8" height="4.2" rx="1"/><path d="M5.2 12.4v7.4h13.6v-7.4M12 8.2v11.6"/><path d="M12 8.2c-1.6-3.6-5.4-3.6-5.4-1.4 0 1.4 3 1.4 5.4 1.4zM12 8.2c1.6-3.6 5.4-3.6 5.4-1.4 0 1.4-3 1.4-5.4 1.4z"/>`),
+  car:     S(`<path d="M4.2 16.6V12l2-4.6h11.6l2 4.6v4.6z"/><path d="M4.2 12h15.6"/><circle cx="7.6" cy="16.8" r="1.6"/><circle cx="16.4" cy="16.8" r="1.6"/>`),
+  heart:   S(`<path d="M12 19.6s-7.6-4.4-7.6-9.8a4.2 4.2 0 0 1 7.6-2.5 4.2 4.2 0 0 1 7.6 2.5c0 5.4-7.6 9.8-7.6 9.8z"/>`),
+  target:  S(`<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r=".9"/>`),
+  star:    S(`<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>`),
+  flag:    S(`<path d="M5.4 20.6V4M5.4 4.6h11.4l-2.2 3.8 2.2 3.8H5.4"/>`),
+  pillars: S(`<path d="M3.4 9 12 4.2 20.6 9z"/><path d="M5.6 9.4v7.6M9.8 9.4v7.6M14.2 9.4v7.6M18.4 9.4v7.6M3.4 19.8h17.2"/>`),
+  build:   ICONS.build
+};
+const BK_WORDS = [
+  [/construct|renovat|build/i,'build'], [/emergenc|safety|safe\b|reserve/i,'shield'], [/rain|contingen/i,'umbrella'],
+  [/travel|trip|holiday|vacation/i,'plane'], [/house|home|flat|property|land|plot/i,'home'], [/educat|study|college|school|kid|child/i,'cap'],
+  [/retire|pension|freedom|fire\b/i,'sprout'], [/long/i,'sprout'], [/short|near/i,'clock'], [/growth|aggress|high.?risk|momentum/i,'rocket'],
+  [/debt|bond|fixed|\bfd\b|deposit|gilt/i,'pillars'], [/regular|core|main|general|default/i,'sprout'],
+  [/gift|wedding|marriage/i,'gift'], [/car|bike|vehicle/i,'car'], [/family|parent|mom|dad|health|medical/i,'heart'], [/goal|target/i,'target']
+];
+const BK_TINTS = ['us','mf','in','cr','pk','lq','gd','rt'], BK_SPARE = ['target','star','flag','sprout','rocket'];
+function bucketMark(name, i){
+  const hit = BK_WORDS.find(([re])=>re.test(name));
+  const ic = hit ? hit[1] : BK_SPARE[i % BK_SPARE.length];
+  return `<div class="tile ${BK_TINTS[i % BK_TINTS.length]}">${BK_ICONS[ic]}</div>`;
+}
 
 // Bank names carry account digits and spacing ("Jupiter  ●●●2433"), so the
 // logo is matched on the brand inside the name — all three Jupiter rows share
@@ -2088,35 +2127,15 @@ function renderPlatforms(bk){
 function renderBreakdown(bd, bk){
   renderPlatforms(bk);
 
-  // tap a bucket to open it in place and show what it holds; tap again to close
+  // each bucket opens its own page
   const buckets = (bk&&bk.buckets)||[];
-  const held = ((bk&&bk.holdings)||[]).filter(h=>h.qty>1e-7);
-  $('#buckets').innerHTML = buckets.map(b=>{
-    const open = openBucket===b.name;
-    const hs = open ? held.filter(h=>h.bucket===b.name).sort((x,y)=>(y.value||0)-(x.value||0)) : [];
-    return `<div class="row tap bkrow ${open?'open':''}" data-bk="${esc(b.name)}">${mark(b.name, FB_BUCKET)}
-      <div class="l wrap"><div class="n">${esc(b.name)}${b.excluded?' <span class="faint" style="font-weight:400">· excluded</span>':''}</div>
-        <div class="m num money">Invested ${fCompact(b.invested)} · realised ${fCompact(b.realized)}</div></div>
+  $('#buckets').innerHTML = buckets.map((b,bi)=>`<div class="row tap bkrow" data-bk="${esc(b.name)}">${bucketMark(b.name, bi)}
+      <div class="l"><div class="n">${esc(b.name)}</div>
+        <div class="m num money">Invested ${fCompact(b.invested)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
         <div class="p"><span class="pill sm ${cls(b.currPnl)} num money">${fPct(b.currPnlPct)}</span></div></div>
-      <span class="chev">${open?'⌄':'›'}</span></div>`
-    + (open ? `<div class="bkin">${hs.map(h=>{
-        const pnl=(h.value||0)-(h.invested||0), pct=h.invested?pnl/h.invested:null;
-        return `<div class="row tap" data-t="${esc(h.ticker)}">${tickerTile(h)}
-          <div class="l"><div class="n">${esc(h.ticker)}</div><div class="m">${esc(h.platform)}</div></div>
-          <div class="r"><div class="v num money">${fINR(h.value)}</div>
-            <div class="p"><span class="pill sm ${cls(pnl)} num money">${fPct(pct)}</span></div></div></div>`;
-      }).join('') || '<div class="empty">Nothing held in this bucket</div>'}</div>` : '');
-  }).join('') || '<div class="empty">No buckets</div>';
-  $$('#buckets .bkrow').forEach(r=>r.onclick=()=>{
-    openBucket = openBucket===r.dataset.bk ? null : r.dataset.bk;
-    renderBreakdown(bd,bk);
-    const row = $(`#buckets .bkrow[data-bk="${CSS.escape(r.dataset.bk)}"]`);
-    const navH = ($('.nav')||{}).offsetHeight || 0;
-    if (openBucket && row && row.getBoundingClientRect().top < navH)
-      window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - navH - 6, behavior:'smooth' });
-  });
-  $$('#buckets .bkin .row[data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, [...r.closest('.bkin').querySelectorAll('.row[data-t]')].map(x=>x.dataset.t)));
+      <span class="chev">›</span></div>`).join('') || '<div class="empty">No buckets</div>';
+  $$('#buckets .bkrow').forEach(r=>r.onclick=()=>pushPage({ kind:'bucket', bucket:r.dataset.bk, list: buckets.map(x=>x.name) }));
 }
 
 function renderTrends(daily, monthly){
@@ -3093,14 +3112,14 @@ try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
 })();
 
 function stepper(p){
-  if ((p.kind!=='holding' && p.kind!=='platform') || !p.list) return '';
-  const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.platform); if (i<0) return '';
+  if ((p.kind!=='holding' && p.kind!=='platform' && p.kind!=='bucket') || !p.list) return '';
+  const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.platform); if (i<0) return '';
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<div class="pg-step">
       <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
-function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='dividends' ? 'Dividends'
+function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
   : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
@@ -3145,7 +3164,7 @@ function renderPage(){
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='recurring' ? recurringBody()
-    : p.kind==='recform' ? recFormBody(p) : platformBody(p.platform);
+    : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
       <div class="pg-title">${esc(pageTitle(p))}</div>${p.kind==='recurring' ? '<button class="pg-add" id="pgAdd" aria-label="Add recurring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
@@ -3163,12 +3182,12 @@ function renderPage(){
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
   // prev / next swap the ticker in place, so Back still returns to the list
   $$('#page [data-step]').forEach(b=>b.onclick=()=>{
-    const k = p.kind==='holding' ? 'ticker' : 'platform';
+    const k = p.kind==='holding' ? 'ticker' : p.kind==='bucket' ? 'bucket' : 'platform';
     const L=p.list||[], i=L.indexOf(p[k]), n=L[i+Number(b.dataset.step)];
     if(n){ p[k]=n; renderPage(); $('#page').scrollTop=0; }
   });
   $$('#page .row[data-row]').forEach(b=>b.onclick=()=>{
-    const list = ((p.kind==='platform' ? platCache[p.platform] : tkCache[p.ticker])||{}).txns || [];
+    const list = ((p.kind==='platform' ? platCache[p.platform] : p.kind==='bucket' ? bkCache[p.bucket] : tkCache[p.ticker])||{}).txns || [];
     openSheet(list.find(t=>t.row==b.dataset.row));
   });
   $$('#page [data-loadchart]').forEach(b=>b.onclick=()=>{ p.showChart = !p.showChart; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
@@ -3209,6 +3228,17 @@ function renderPage(){
     }
     if (p.showChart) drawHist('P:'+p.platform, false);
     $$('#page [data-pdiv]').forEach(b=>b.onclick=()=>pushPage({ kind:'dividends', platform:p.platform }));
+    $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ if (p.tab!==b.dataset.ht){ p.q=''; p.sf=false; } p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+    $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+  }
+  if (p.kind==='bucket'){
+    // like a platform: the chart and the order list come in one call, made when you ask for either
+    if (p.showChart || p.tab==='orders') loadBucket(p.bucket);
+    wireSearch($('#pgSearch'), ()=>$('#pgList'), ()=>p.q||'', v=>p.q=v);
+    { const si = $('#pgSearch input');
+      if (si){ si.onfocus=()=>p.sf=true; si.onblur=()=>p.sf=false;
+        if (p.sf){ si.focus({preventScroll:true}); si.setSelectionRange(si.value.length, si.value.length); } } }
+    if (p.showChart) drawHist('B:'+p.bucket, false);
     $$('#page [data-ht]').forEach(b=>b.onclick=()=>{ if (p.tab!==b.dataset.ht){ p.q=''; p.sf=false; } p.tab=b.dataset.ht; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
@@ -3525,6 +3555,98 @@ function platformBody(name){
   return card + seg + stats + held;
 }
 
+/* ---------- one bucket's page ----------
+   Same shape as a platform: value and today, an Invested vs Value chart, then
+   Overview (stats + what it holds) and Orders. Figures come from the Buckets
+   tab; holdings from the Bucket Ledger; orders and history from the server. */
+const bkCache = {};
+async function loadBucket(name){
+  const c = bkCache[name];
+  if (c && (c.loading || (Date.now() - c.at) < ((c.txns) ? 6e5 : 2e4))) return;
+  bkCache[name] = { loading:true, txns: c && c.txns, at: Date.now() };
+  histCache['B:'+name] = histCache['B:'+name] || { loading:true, at: Date.now() };
+  try{
+    const j = await api({ action:'bucket', bucket:name });
+    const dd = j.data || {};
+    bkCache[name] = { txns: dd.transactions || [], at: Date.now() };
+    histCache['B:'+name] = { pts: dd.points || [], at: Date.now() };
+  }catch(e){
+    const msg = /unknown action/i.test(e.message||'') ? 'Needs the latest script (2026-10-26a)' : (e.message || 'Could not load');
+    bkCache[name] = { err: msg, at: Date.now() };
+    histCache['B:'+name] = { err: msg, at: Date.now() };
+  }
+  const top = pageStack[pageStack.length-1];
+  if (top && top.kind==='bucket' && top.bucket===name){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+}
+function bucketBody(name){
+  const bks = (D.data.buckets && D.data.buckets.buckets) || [], bi = Math.max(0, bks.findIndex(b=>b.name===name)), b = bks[bi] || { name };
+  const led = ((D.data.buckets && D.data.buckets.holdings) || []).filter(h=>h.bucket===name && h.qty>1e-7);
+  // one row per ticker — a ticker can sit on two platforms inside one bucket
+  const by = new Map();
+  for (const h of led){
+    const o = by.get(h.ticker) || { ticker:h.ticker, category:h.category, qty:0, invested:0, value:0, plats:[] };
+    o.qty += h.qty||0; o.invested += h.invested||0; o.value += h.value||0;
+    if (h.platform && o.plats.indexOf(h.platform)<0) o.plats.push(h.platform);
+    by.set(h.ticker, o);
+  }
+  const rows = [...by.values()].sort((a,c)=>c.value-a.value);
+  const val = b.value!=null ? b.value : rows.reduce((t,r)=>t+r.value,0);
+  const inv = b.invested!=null ? b.invested : rows.reduce((t,r)=>t+r.invested,0);
+  const ret = b.currPnl!=null ? b.currPnl : val-inv, pct = b.currPnlPct!=null ? b.currPnlPct : inv ? ret/inv : null;
+  const rl = b.realized||0, tot = b.totalPnl!=null ? b.totalPnl : ret+rl, tp = inv ? tot/inv : null;
+  // today: each holding's day move (Master List, rupees) in proportion to the quantity this bucket holds
+  const H = new Map((D.data.holdings||[]).map(h=>[String(h.ticker).toUpperCase(), h]));
+  let day = 0, anyDay = false;
+  rows.forEach(r=>{ const h = H.get(String(r.ticker).toUpperCase()); if (h && h.day!=null && h.qty){ day += h.day * (r.qty / h.qty); anyDay = true; } });
+  const dayPct = anyDay && (val-day) ? day/(val-day) : null;
+  const cats = [...new Set(rows.map(r=>r.category).filter(Boolean))];
+  const top = pageStack[pageStack.length-1] || {}, tab = top.tab || 'overview';
+  const c = bkCache[name] || {}, txns = c.txns || [];
+  const xr = c.txns ? platXirr(txns, val) : null;
+
+  const card = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${bucketMark(name, bi)}
+        <div class="grow"><div class="t">${esc(name)}</div><div class="s">${cats.map(x=>esc(CAT_LABEL[x]||x)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div>
+        ${chartToggle(top.showChart)}</div>
+      <div class="pg-big num money">${fINR(val)}</div>
+      ${anyDay ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(day, fINR)}${dayPct!=null?` <span class="${cls(dayPct)}">(${fPct(Math.abs(dayPct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
+      ${histInner('B:'+name, top.showChart)}
+    </div>`;
+  const seg = `<div class="utabs" id="hdSeg">
+      <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
+
+  if (tab==='orders'){
+    const buys = txns.filter(t=>t.order==='Buy').length, sells = txns.length - buys;
+    const list = c.err ? `<div class="pg-load">${esc(c.err)}</div>`
+               : !c.txns ? '<div class="pg-load">Loading orders…</div>'
+               : txns.length ? txns.map(t=>txnRow(t,true,true)).join('')
+               : '<div class="pg-load">No orders in this bucket</div>';
+    const srch = c.txns && txns.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search orders')}</div>` : '';
+    return card + seg + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>`;
+  }
+  const stats = `<div class="card hstats num"><div class="kgrid k2">
+      <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
+      <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
+    </div>
+    <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
+    <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
+    <div class="hrow tr2"><span>Total returns</span><b class="money">${tot<0?'−':tot>0?'+':''}${fINR(Math.abs(tot))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
+    </div>`;
+  const held = `<div class="sechead"><h2>Holdings</h2></div>
+    ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
+    <div class="card tight" id="pgList">${rows.map(r=>{
+      const g = r.value-r.invested, gp = r.invested ? g/r.invested : null;
+      return `<div class="row tap" data-t="${esc(r.ticker)}" data-q="${esc(qWords(r.ticker, r.category, CAT_LABEL[r.category], r.plats.join(' ')))}">${tickerTile(r)}
+        <div class="l"><div class="n">${esc(r.ticker)}</div><div class="m">${qtyFmt(r.qty)} · ${r.plats.map(esc).join(', ')||'—'}</div></div>
+        <div class="r"><div class="v num money">${fINR(r.value)}</div>
+          <div class="p"><span class="pill sm ${cls(g)} num money">${fPct(gp)}</span></div></div></div>`;
+    }).join('') || '<div class="empty">Nothing held in this bucket</div>'}</div>`;
+  // XIRR needs the orders: fetch them quietly once the page is up
+  if (!c.txns && !c.loading && !c.err) setTimeout(()=>loadBucket(name), 0);
+  return card + seg + stats + held;
+}
+
 /* ==========================================================================
    SPEND — expenses from the Expenses tab, budgets from the Budgets tab.
    Loaded on their own (action=expenses) when the tab is opened, so the
@@ -3548,7 +3670,7 @@ async function loadExpenses(fresh){
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
-    if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+    if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
   finally{ xLoading = false; }
 }
@@ -3828,7 +3950,7 @@ function txRow(x){
     icon = moveTile('income'); title = e.source || e.type || 'Income'; meta = [e.source ? e.type : '', e.account, e.remark].filter(Boolean).join(' · ');
     amt = '+' + fINR2(e.amount); cls = 'up'; q = qWords(e.source, e.type, e.account, e.remark, 'money in income');
   }
-  return `<button class="row trow" data-tx="${x.k}:${e.row}" data-q="${esc(q)}">${icon}<div class="l"><div class="n">${esc(title)}</div><div class="m">${badge}${esc(meta)}</div></div>
+  return `<button class="row trow" data-tx="${x.k}:${e.row}" data-q="${esc(q)}">${icon}<div class="l"><div class="n">${esc(title)}</div><div class="m">${badge}<span class="mt">${esc(meta)}</span></div></div>
     <div class="r"><div class="v num money ${cls}">${amt}</div></div></button>`;
 }
 function spListHtml(){
@@ -4917,7 +5039,7 @@ function xErr(m, field, step){
 function rerenderSpendViews(){
   if (activeView==='spend') renderSpend();
   const top = pageStack[pageStack.length-1];
-  if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 async function saveXSheet(){
   const amount = xAmt();
