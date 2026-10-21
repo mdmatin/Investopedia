@@ -235,10 +235,10 @@ main{padding:0}
 .pg-edit svg{width:18px;height:18px;color:var(--blue);flex:none}
 .pg-ed{margin-top:10px;padding-bottom:6px}
 .pg-ed .hint{font-size:12px;color:var(--ink-3);margin-top:8px}
-.ed .inwrap{display:flex;align-items:center;gap:10px;background:var(--parchment);
+.cbform .inwrap,.ed .inwrap{display:flex;align-items:center;gap:10px;background:var(--parchment);
   border:1px solid var(--card-edge);border-radius:12px;padding:10px 14px}
-.ed .inwrap span{color:var(--ink-3);font-size:19px}
-.ed input{flex:1;min-width:0;border:0;outline:0;font-size:22px;font-weight:600;letter-spacing:-.5px;
+.cbform .inwrap span,.ed .inwrap span{color:var(--ink-3);font-size:19px}
+.cbform .inwrap input,.ed input{flex:1;color:var(--ink);min-width:0;border:0;outline:0;font-size:22px;font-weight:600;letter-spacing:-.5px;
   font-variant-numeric:tabular-nums;background:none;font-family:var(--font-disp)}
 .ed .quick{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 .ed .quick button{padding:7px 13px;font-size:13.5px;font-weight:500;background:var(--sunken);
@@ -880,6 +880,34 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .xfr.drop select{position:absolute;inset:0;width:100%;opacity:0;font-size:16px}
 .xfr.want .ph{color:var(--blue)}
 
+.kitepay{display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:12px 12px 0;padding:12px 14px;background:var(--canvas);border-radius:var(--r-card);text-align:left}
+.kitepay svg{width:20px;height:20px;padding:7px;box-sizing:content-box;border-radius:50%;background:var(--up-bg);color:var(--up);flex:none}
+.kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
+.cbk{margin-bottom:6px}
+.cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:16px 16px 4px}
+.cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.4px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
+.cbk .st{display:flex;margin:6px 12px 0;background:var(--canvas);border-radius:14px;padding:12px 0}
+.cbk .st div{flex:1;text-align:center}.cbk .st div+div{border-left:.5px solid var(--hairline)}
+.cbk .st span{display:block;font-size:11.5px;color:var(--ink-2)}.cbk .st b{font-size:17px;font-weight:600}.cbk .st b.up{color:var(--up)}
+.cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:12px 20px 4px}
+.cbk .bars i{flex:1;background:var(--up);opacity:.7;border-radius:4px 4px 1px 1px}.cbk .bars i.cur{opacity:1}
+.cbk .bl{display:flex;gap:6px;margin:0 20px;font-size:10px;color:var(--ink-3)}.cbk .bl span{flex:1;text-align:center}
+.cbk .lst{margin:10px 12px 0;background:var(--canvas);border-radius:14px;overflow:hidden}
+.cbk .lr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:15px}
+.cbk .lr+.lr{border-top:.5px solid var(--hairline)}.cbk .lr small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
+.cbk .lr b{color:var(--up);font-weight:600}
+.cbk .addcb{display:block;width:calc(100% - 24px);margin:12px 12px 0;padding:12px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15.5px;text-align:center}
+.cbform{margin:12px 12px 0;background:var(--canvas);border-radius:14px;padding:14px}
+.cbform label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}
+.cbform .cbm{position:relative;font-size:16px}.cbform .cbm input{position:absolute;inset:0;opacity:0;width:100%}
+.cbform .calc{margin-top:12px;background:var(--sunken);border-radius:12px;padding:10px 12px;font-size:14px}
+.cbform .calc div{display:flex;justify-content:space-between;padding:3px 0;color:var(--ink-2)}
+.cbform .calc div.t{color:var(--ink);font-weight:600;border-top:.5px solid var(--hairline);margin-top:4px;padding-top:8px}.cbform .calc div.t b{color:var(--up)}
+.cbform .calc div.t b.down{color:var(--down)}
+.cbform .btns{display:flex;gap:8px;margin-top:14px}.cbform .btns button{flex:1;padding:11px;border-radius:12px;font-weight:600;font-size:15px}
+.cbform .btns .cancel{background:var(--sunken);color:var(--ink)}.cbform .btns .save{background:var(--blue);color:#fff}
+.cbform .err{color:var(--down);font-size:13px;margin-top:10px}
+
 /* ---------- drill-down pages (holding, platform) ---------- */
 .page{position:fixed;inset:0;z-index:15;background:var(--parchment);overflow-y:auto;-webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
@@ -1209,7 +1237,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1221,6 +1249,14 @@ let timer = null, loading = false, activeView = 'home';
 // Profile settings (the ones that aren't stored on their own key)
 const PREF = Object.assign({ lockAfter:60000, blurOnOpen:false, chartRange:'', paise:true, payFrom:'', incomeInto:'', incomeType:'', budgetAlerts:true }, load('inv.prefs') || {});
 function setPref(k, v){ PREF[k] = v; save('inv.prefs', PREF); }
+// account defaults: '' now means None (pick each time). Before, '' meant Cash for
+// expenses and the first bank for income — carry those over once.
+function acctPrefsMigrate(){
+  if (PREF.acctV2 || !xd()) return;
+  if (!PREF.payFrom) PREF.payFrom = 'Cash';
+  if (!PREF.incomeInto) PREF.incomeInto = (xAccounts().find(a=>accKind(a)==='bank')||{}).name || '';
+  PREF.acctV2 = 1; save('inv.prefs', PREF);
+}
 let range = PREF.chartRange || load(LS.range) || '3M';
 if (!['1W','1M','3M','6M','1Y','All'].includes(range)) range = '3M';   // 1D was dropped
 let bucketFilter = 'All', openBucket = null, editing = null;
@@ -2992,7 +3028,7 @@ function renderPage(){
       <div class="pg-title">${esc(pageTitle(p))}</div>${p.kind==='recurring' ? '<button class="pg-add" id="pgAdd" aria-label="Add recurring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' : stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
-  if (p.kind==='acct'){ wireAccPage(p); return; }
+  if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
@@ -3715,6 +3751,7 @@ function expcatBody(p){
       ${bud ? pbar(spent/bud) : ''}
       ${chart}
     </div>
+    ${isInvest(cat) ? `<button class="kitepay" data-kitepay>${chev('M12 19V5M5 12l7-7 7 7')}<span><b>Kite payback</b><small>Money Zerodha sent back to the bank</small></span></button>` : ''}
     ${subRows ? `<div class="sechead"><h2>By subcategory</h2></div><div class="card hstats xsubs">${subRows}</div>` : ''}
     <div class="sechead"><h2>Expenses</h2></div>
     ${list.length ? xDayGroups(list, false) : '<div class="card tight"><div class="empty">Nothing in this category this month</div></div>'}`;
@@ -3812,6 +3849,7 @@ function wireXPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   $$('#page [data-mvi]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
+  const kp = $('#page [data-kitepay]'); if (kp) kp.onclick = ()=>openKitePayback(p.cat);
   if (p.kind==='expcat' || p.kind==='inccat'){
     const b = $('#page [data-bedit]'); if (b) b.onclick = ()=>{ p.bEdit = !p.bEdit; rerender(); };
     const gs = $('#page .mbscroll');
@@ -3974,7 +4012,89 @@ function accBody(p){
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
     </div>
+    ${card ? cashbackHtml(a, p) : ''}
     ${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}`;
+}
+/* ---------- Cashback on a card: saved as Income · Cashback into the card.
+   'monthly' cards: type what came in. 'total' cards: type the lifetime total from
+   the card app; the difference from the last total is the month's cashback, and
+   each entry keeps the total in its note ("Cashback · total ₹4,980"). ---------- */
+const isCashback = t => /^cash ?back$/i.test(String(t||'').trim());
+function cbMode(name){ const m = (PREF.cbMode||{})[name]; return m || (/icici/i.test(name) ? 'total' : 'monthly'); }
+function cbList(name){ return (((xd()||{}).incomes)||[]).filter(i=>i.account===name && isCashback(i.type) && i.amount>0).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0); }
+const cbTotalOf = i => { const m = /total\s*₹?\s*([\d,]+(?:\.\d+)?)/i.exec(String(i.note||i.remark||'')); return m ? Number(m[1].replace(/,/g,'')) : null; };
+function cbLastTotal(name){ for (const i of cbList(name)){ const t = cbTotalOf(i); if (t!=null) return { total:t, date:i.date }; } return null; }
+function cashbackHtml(a, p){
+  const L = cbList(a.name), mode = cbMode(a.name), ym = ymNow(), yr = ym.slice(0,4);
+  const byM = {}; L.forEach(i=>{ const m = i.date.slice(0,7); byM[m] = (byM[m]||0) + i.amount; });
+  const months = []; for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
+  const vals = months.map(m=>byM[m]||0), mx = Math.max(1, ...vals);
+  const yearSum = L.filter(i=>i.date.slice(0,4)===yr).reduce((s,i)=>s+i.amount,0);
+  const active = Object.keys(byM).filter(m=>m.slice(0,4)===yr).length;
+  const tm = byM[ym] || 0;
+  const rows = Object.keys(byM).sort().reverse().slice(0,6).map(m=>{
+    const es = L.filter(i=>i.date.slice(0,7)===m), t = es.map(cbTotalOf).find(x=>x!=null);
+    return `<div class="lr"><span>${esc(ymLabel(m).split(' ')[0])}<small>${t!=null ? `Total ${fINR(t)}` : es.length>1 ? `${es.length} entries` : `Logged ${esc(fDate(es[0].date))}`}</small></span><b class="num money">+${fINR2(byM[m])}</b></div>`; }).join('');
+  let form = '';
+  if (p.cb){
+    const last = cbLastTotal(a.name);
+    if (mode==='total'){
+      const tot = Number(p.cbTot)||0, delta = last ? Math.round((tot - last.total)*100)/100 : (p.cbAmt!=null ? Number(p.cbAmt)||0 : tot);
+      form = `<div class="cbform">
+        <label>Total cashback shown in the card app</label>
+        <div class="inwrap"><span>₹</span><input data-cbtot inputmode="decimal" value="${p.cbTot ? esc(groupNum(String(p.cbTot),'en-IN')) : ''}" placeholder="${last ? esc(String(last.total)) : '0'}"></div>
+        ${last ? `<div class="calc"><div><span>Last total (${esc(fDate(last.date))})</span><span class="num money">${fINR2(last.total)}</span></div>
+          <div class="t"><span>Cashback this month</span><b class="num money ${delta<0?'down':''}">${p.cbTot ? (delta>=0?'+':'') + fINR2(delta) : '—'}</b></div></div>`
+          : `<label style="margin-top:12px">How much of that came this month?</label>
+             <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt!=null ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="the first time only"></div>`}
+        ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
+        <div class="btns"><button class="cancel" data-cbx>Cancel</button><button class="save" data-cbsave>Save${p.cbTot && delta>0 ? ' ' + fINR(delta) : ''}</button></div></div>`;
+    } else {
+      form = `<div class="cbform">
+        <label>Cashback received for</label>
+        <div class="cbm"><b>${esc(ymLabel(p.cbYm||ym))}</b><input type="month" data-cbym value="${esc(p.cbYm||ym)}" max="${ym}"></div>
+        <label style="margin-top:12px">Amount</label>
+        <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="0"></div>
+        ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
+        <div class="btns"><button class="cancel" data-cbx>Cancel</button><button class="save" data-cbsave>Save</button></div></div>`;
+    }
+  }
+  return `<div class="cbk"><div class="hd"><h2>Cashback</h2><span>${mode==='total' ? "From the card's running total" : 'Entered each month'}</span></div>
+    <div class="st"><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>Avg / month</span><b class="num money">${active ? fINR(yearSum/active) : '—'}</b></div></div>
+    ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
+    <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
+    ${rows ? `<div class="lst">${rows}</div>` : ''}
+    ${form || `<button class="addcb" data-cbadd>${mode==='total' ? 'Update cashback total' : '+ Add cashback received'}</button>`}
+  </div>`;
+}
+function wireCashback(p){
+  const a = accByName(p.acc); if (!a) return;
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  const add = $('#page [data-cbadd]'); if (add) add.onclick = ()=>{ p.cb = true; p.cbTot = ''; p.cbAmt = null; p.cbYm = ymNow(); p.cbErr = ''; again(); setTimeout(()=>{ const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i) i.focus(); }, 50); };
+  const x = $('#page [data-cbx]'); if (x) x.onclick = ()=>{ p.cb = false; again(); };
+  const tot = $('#page [data-cbtot]'); if (tot){ commaInput(tot,'en-IN'); tot.onchange = ()=>{ p.cbTot = numPlain(tot.value); again(); }; }
+  const amt = $('#page [data-cbamt]'); if (amt){ commaInput(amt,'en-IN'); amt.oninput = ()=>{ p.cbAmt = numPlain(amt.value); }; }
+  const my = $('#page [data-cbym]'); if (my) my.onchange = ()=>{ p.cbYm = my.value || ymNow(); if (amt) p.cbAmt = numPlain(amt.value); again(); };
+  const sv = $('#page [data-cbsave]'); if (sv) sv.onclick = async ()=>{
+    if (tot) p.cbTot = numPlain(tot.value); if (amt) p.cbAmt = numPlain(amt.value);
+    const today = todayISO(), mode = cbMode(a.name);
+    let amount, note, date = today;
+    if (mode==='total'){
+      const t = Number(p.cbTot)||0, last = cbLastTotal(a.name);
+      if (!(t>0)){ p.cbErr = 'Enter the total from the card app.'; again(); return; }
+      amount = last ? Math.round((t - last.total)*100)/100 : Number(p.cbAmt)||0;
+      if (last && amount<=0){ p.cbErr = amount<0 ? `That's less than the last total (${fINR(last.total)}).` : 'No new cashback since the last total.'; again(); return; }
+      if (!last && !(amount>0)){ p.cbErr = 'Enter how much of it came this month.'; again(); return; }
+      note = `Cashback · total ${fINR(t)}`;
+    } else {
+      amount = Number(p.cbAmt)||0; if (!(amount>0)){ p.cbErr = 'Enter the cashback amount.'; again(); return; }
+      const m = p.cbYm || ymNow(); if (m < ymNow()){ const y=+m.slice(0,4), mo=+m.slice(5,7); date = m + '-' + String(new Date(y, mo, 0).getDate()).padStart(2,'0'); }
+      note = `Cashback · ${ymShort(m)}`;
+    }
+    const type = (inTypesList().find(isCashback)) || 'Cashback';
+    p.cb = false; again();
+    await saveMove('income', { date, account:a.name, type, source:'', tax:0, remark:note, note, amount });
+  };
 }
 function moveTile(kind){
   const p = kind==='income' ? 'M12 19V5M5 12l7-7 7 7' : 'M4 9h13l-3.5-3.5M20 15H7l3.5 3.5';
@@ -4036,6 +4156,8 @@ function accFormBody(p){
         <div class="f"><label>Since</label><input id="afDate" type="date" value="${esc(f.openDate||'')}"></div>
         ${card ? `<div class="f"><label>Credit limit</label><input id="afLimit" inputmode="decimal" value="${f.limit?groupNum(String(f.limit),'en-IN'):''}" placeholder="optional"></div>
         <div class="f"><label>Bill due day</label><input id="afDue" inputmode="numeric" value="${esc(String(f.dueDay||''))}" placeholder="1–31"></div>` : ''}
+      ${card && a ? `<div class="xlbl">Cashback is entered as</div>
+      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${cbMode(a.name)===k?'on':''}">${l}</button>`).join('')}</div>` : ''}
       </div>
       <p class="hint" style="margin:0 4px 14px">${card ? 'What you owed on the card on the “Since” date.' : 'The balance on the “Since” date.'} Entries before that date don't count toward the balance.</p>
       <button class="btn" data-afsave>${a ? 'Save' : 'Add account'}</button>
@@ -4049,6 +4171,7 @@ function wireAccForm(p){
     if ($('#afLimit')) f.limit = numPlain($('#afLimit').value); if ($('#afDue')) f.dueDay = $('#afDue').value; };
   commaInput($('#afOpen'), 'en-IN'); if ($('#afLimit')) commaInput($('#afLimit'), 'en-IN');
   $$('#page [data-at]').forEach(b=>b.onclick=()=>{ keep(); f.type = b.dataset.at; rer(); });
+  $$('#page [data-cbm]').forEach(b=>b.onclick=()=>{ keep(); setPref('cbMode', Object.assign({}, PREF.cbMode, { [p.acc]: b.dataset.cbm })); rer(); });
   $('#page [data-afsave]').onclick = ()=>{ keep(); saveAccount(p); };
   const del = $('#page [data-afdel]'); if (del) del.onclick = ()=>{
     if (del.dataset.arm!=='1'){ del.dataset.arm='1'; del.textContent='Tap again to confirm'; return; }
@@ -4166,34 +4289,50 @@ const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money
   : 'Saved to the Income tab in your Money sheet.';
 
 // tpl: a new entry filled in ahead (a due recurring one) — saved as new, not as an edit
-let xRecPend = null;
+let xRecPend = null, xKitePay = false;
+// Kite's quarterly settlement: a refund on Investment into the bank it came from
+function openKitePayback(cat){
+  const d = xd() || {}, inv = cat || (xCats().find(isInvest) || 'Investment');
+  const last = (d.entries||[]).find(e=>isInvest(e.category) && e.amount>0 && accByName(e.account) && accKind(accByName(e.account))==='bank');
+  openXSheet(null, 'income', { type:XREFUND, category:inv, account: last ? last.account : xIncomeAcc(), note:'Kite settlement', kite:true });
+}
+// …and the same amount leaves the Kite wallet on Net Worth
+async function kiteWalletDown(amount){
+  const w = ((D && D.data && D.data.netWorth && D.data.netWorth.wallets) || []).find(x=>x.key==='kite');
+  if (!w || w.amount==null || w.formula){ toast('Kite wallet not updated — change it on Net Worth'); return; }
+  const after = Math.round((w.amount - amount) * 100) / 100;
+  if (after < 0){ toast(`Kite wallet shows ${fINR(w.amount)}, less than the payback — update it on Net Worth`); return; }
+  try{ const r = await apiPost('setWallet', { key:'kite', amount:after }); w.amount = r && r.after!=null ? r.after : after;
+    if (D) save(LS.data, D); toast(`Kite wallet → ${fINR(w.amount)}`); refresh(false, true); }
+  catch(e){ toast('Kite wallet: ' + (e.message || 'could not update')); }
+}
 // Profile defaults for new income: the account it goes into and its type
-function xIncomeAcc(){ const bank = (xAccounts().find(a=>accKind(a)==='bank')||{}).name || ''; return PREF.incomeInto && accByName(PREF.incomeInto) ? PREF.incomeInto : bank; }
+function xIncomeAcc(){ acctPrefsMigrate(); return PREF.incomeInto && accByName(PREF.incomeInto) ? PREF.incomeInto : ''; }
+function xExpenseAcc(){ acctPrefsMigrate(); return PREF.payFrom && (PREF.payFrom==='Cash' || accByName(PREF.payFrom)) ? PREF.payFrom : ''; }
 function xIncomeType(){ return PREF.incomeType && inTypesList().includes(PREF.incomeType) ? PREF.incomeType : ''; }
 function openXSheet(e, mode, tpl){
   if (e===undefined) return;
   if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; }
   xEditing = e || null; xMode = mode || 'expense'; xKind = xMode;
-  xRecPend = !e && tpl && tpl.rec || null;
+  xRecPend = !e && tpl && tpl.rec || null; xKitePay = !e && tpl && tpl.kite || false;
   const s = e || tpl || null;
   if (e && xMode==='expense' && e.amount < 0){ xMode = 'income'; }   // a refund is a minus expense
   const first = (k)=> (xAccounts().find(a=>accKind(a)===k)||{}).name || '';
-  xExpr = s ? String(Math.abs(s.amount)) : '';
-  xDateV = s ? s.date : todayISO();
+  xExpr = s && s.amount ? String(Math.abs(s.amount)) : '';
+  xDateV = s && s.date || todayISO();
   xNoteV = s ? (s.note||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
   xCat = s && s.category || ''; xSub = s && s.sub || '';
-  const payFrom = PREF.payFrom && xAccounts().some(a=>a.name===PREF.payFrom) ? PREF.payFrom : 'Cash';
-  xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : payFrom);
+  xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : xExpenseAcc());
   xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
   xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : !e && xMode==='income' ? xIncomeType() : '');
   if (!s && xMode==='income' && xAsksCompany()) xSrcV = lastSource(xType);
   xOpenCat = ''; xErrMsg = '';
-  xField = s ? null : 'amount'; xStep = s ? 3 : 1;
+  xField = s && s.amount ? null : 'amount'; xStep = s && s.amount ? 3 : 1;
   paintXSheet();
   $('#backdrop').hidden=false; $('#xsheet').hidden=false;
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#xsheet').classList.add('show'); });
 }
-function closeXSheet(){ xRecPend = null; $('#backdrop').classList.remove('show'); $('#xsheet').classList.remove('show');
+function closeXSheet(){ xRecPend = null; xKitePay = false; $('#backdrop').classList.remove('show'); $('#xsheet').classList.remove('show');
   setTimeout(()=>{ if ($('#xsheet').classList.contains('show')) return; $('#backdrop').hidden=true; $('#xsheet').hidden=true; },280); }
 const chips = (list, on, attr) => list.map(v=>`<button class="${v===on?'on':''}" data-${attr}="${esc(v)}">${esc(v)}</button>`).join('');
 // The amount already there (an edit, or what you typed before leaving the
@@ -4492,7 +4631,7 @@ function budgetAlert(rec, prev){
   return '';
 }
 async function saveMove(kind, rec, was){
-  const recDone = was ? null : xRecPend;
+  const recDone = was ? null : xRecPend, kiteDone = !was && xKitePay;
   const d = xd(), key = kind==='expense' ? 'entries' : kind==='income' ? 'incomes' : 'transfers';
   const list = d[key] = d[key] || [];
   let tmp = null, prev = null;
@@ -4506,6 +4645,7 @@ async function saveMove(kind, rec, was){
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
     toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}` + (kind==='expense' ? budgetAlert(rec, was ? prev : null) : ''));
     if (recDone) recMarkDone(recDone.id, recDone.ym);
+    if (kiteDone && rec.amount < 0) setTimeout(()=>kiteWalletDown(Math.abs(rec.amount)), 1600);
     loadExpenses(true);                        // rows below an insert have moved; re-read them
   }catch(e){
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
@@ -4695,11 +4835,11 @@ function profileBody(){
   const pick = (k, cur, opts)=>`<span class="vl">${esc((opts.find(o=>String(o[0])===String(cur))||opts[0])[1])}${chv}</span>
       <select data-pick="${k}" aria-label="${k}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
   const blur = document.body.classList.contains('blur'), start = load('inv.start') || 'home', th = themePick();
+  acctPrefsMigrate();
   const accs = xd() ? xAccounts().filter(a=>accKind(a)!=='wallet').map(a=>[a.name, a.name]) : [];
   if (!accs.some(a=>a[0]==='Cash')) accs.unshift(['Cash','Cash']);
   const incAccs = xd() ? xAccounts().filter(a=>accKind(a)!=='card').map(a=>[a.name, a.name]) : [];
   if (PREF.incomeInto && !incAccs.some(a=>a[0]===PREF.incomeInto)) incAccs.push([PREF.incomeInto, PREF.incomeInto]);
-  if (!incAccs.length) incAccs.push(['','—']);
   if (PREF.payFrom && !accs.some(a=>a[0]===PREF.payFrom)) accs.push([PREF.payFrom, PREF.payFrom]);
   const synced = D ? 'synced ' + ago(Date.now()-D.at) : 'not synced yet';
   let host = ''; try{ host = new URL(cfg.url).hostname; }catch(e){}
@@ -4725,8 +4865,8 @@ function profileBody(){
    </div>
 
    <h3>Money</h3><div class="grp">
-    ${row('card','#34c759','Default pay-from', pick('payFrom', PREF.payFrom || 'Cash', accs))}
-    ${row('in','#30d158','Income goes into', pick('incomeInto', PREF.incomeInto || (xd() ? xIncomeAcc() : ''), incAccs))}
+    ${row('card','#34c759','Default expense account', pick('payFrom', PREF.payFrom, [['','None']].concat(accs)))}
+    ${row('in','#30d158','Default income account', pick('incomeInto', PREF.incomeInto, [['','None']].concat(incAccs)))}
     ${row('tag','#ff9500','Default income type', pick('incomeType', PREF.incomeType, [['','None']].concat(xd() ? inTypesList().filter(t=>t!==XREFUND).map(t=>[t,t]) : [])))}
     ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
@@ -4772,8 +4912,7 @@ function wireProfile(){
     const k = sel.dataset.pick, v = sel.value;
     if (k==='lockAfter') setPref('lockAfter', Number(v));
     else if (k==='chartRange'){ setPref('chartRange', v); if (v){ range = v; save(LS.range, v); if (D) render(); } }
-    else if (k==='payFrom') setPref('payFrom', v==='Cash' ? '' : v);
-    else if (k==='incomeInto' || k==='incomeType') setPref(k, v);
+    else if (k==='payFrom' || k==='incomeInto' || k==='incomeType') setPref(k, v);
     again();
   });
   $$("#page [data-thm]").forEach(b=>b.onclick=()=>{ save("inv.theme", applyTheme(b.dataset.thm)); again(); });
@@ -4880,7 +5019,7 @@ function recFormBody(p){
   if (p.id && !was) return '<div class="pg-load">That entry is no longer on the sheet</div>';
   if (!p.f){
     const dd = new Date().getDate();
-    p.f = was ? { ...was } : { kind:'expense', name:'', amount:'', cat:'', sub:'', account: PREF.payFrom || 'Cash', to:'', day: Math.min(dd, 28),
+    p.f = was ? { ...was } : { kind:'expense', name:'', amount:'', cat:'', sub:'', account: xExpenseAcc(), to:'', day: Math.min(dd, 28),
       start: ymNow(), end:'', auto:true, active:true, note:'' };
   }
   const f = p.f, chv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
