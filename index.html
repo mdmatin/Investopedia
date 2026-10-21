@@ -834,6 +834,8 @@ html[data-theme=dark] .prof .sw.on{background:#30d158}
 
 .pg-add{margin-left:auto;width:34px;height:34px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;color:var(--blue);flex:none}
 .pg-add svg{width:18px;height:18px}
+.pg-add.spin svg{animation:bkspin .8s linear infinite}
+@keyframes bkspin{to{transform:rotate(360deg)}}
 .rec .sum{margin:4px 16px 0;background:var(--canvas);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between}
 .rec .sum div span{display:block;font-size:12px;color:var(--ink-2)}
 .rec .sum div b{font:600 19px/1.3 var(--font-disp);letter-spacing:-.3px}
@@ -1273,7 +1275,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25l';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1362,7 +1364,7 @@ async function refresh(manual, fresh){
     D = { data:j.data, at:Date.now() }; save(LS.data, D);
     if (manual && typeof histCache!=='undefined') Object.keys(histCache).forEach(k=>delete histCache[k]);
     render(manual); setStatus('Updated just now','');
-    if (manual && activeView==='spend') loadExpenses(true);
+    if (manual && (activeView==='spend' || activeView==='home')) loadExpenses(true);   // Overview shows the books too
   }catch(e){
     setStatus('Offline · ' + (D ? 'showing '+ago(Date.now()-D.at) : 'no data'), 'err');
     if(manual) toast(e.message);
@@ -3072,11 +3074,13 @@ function renderPage(){
     : p.kind==='recform' ? recFormBody(p) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
-      <div class="pg-title">${esc(pageTitle(p))}</div>${p.kind==='recurring' ? '<button class="pg-add" id="pgAdd" aria-label="Add recurring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' : stepper(p)}</div>` + body;
+      <div class="pg-title">${esc(pageTitle(p))}</div>${p.kind==='recurring' ? '<button class="pg-add" id="pgAdd" aria-label="Add recurring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
+        : p.kind==='books' ? `<button class="pg-add ${booksBusy?'spin':''}" id="pgRefresh" aria-label="Check again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>` : stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
   if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
+  if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck; return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
@@ -4083,15 +4087,23 @@ function paintBooks(){
   el.innerHTML = `<div class="bk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></div>
     <div class="l"><div class="n">${off ? 'Books off by <span class="num money">'+fINR2(Math.abs(b.diff))+'</span>' : 'Books balanced'}</div>
       <div class="m num money">Available ${fCompact(b.avl)} · Expected ${fCompact(b.expected)}</div></div>${chev('M9 5l7 7-7 7')}`;
-  el.onclick = ()=>pushPage({ kind:'books' });
+  el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
 }
 // after a save: keep the server's fresh figures, and say so when the books stop balancing
 function applyBooks(b){
   if (!b || !xd()) return;
   const was = booksNow(); xd().books = b; save('inv.exp', X); paintBooks();
-  if (booksOff(b) && (!booksOff(was) || Math.abs((was.diff||0) - b.diff) >= 0.01))
+  if (!booksBusy && booksOff(b) && (!booksOff(was) || Math.abs((was.diff||0) - b.diff) >= 0.01))
     setTimeout(()=>toast(`Books off by ${fINR2(Math.abs(b.diff))} — see Overview`), 2600);
   const top = pageStack[pageStack.length-1]; if (top && top.kind==='books') renderPage();
+}
+// the refresh button: the server works both totals out again, right now
+let booksBusy = false;
+async function booksRecheck(){
+  if (booksBusy) return; booksBusy = true; const b = $('#pgRefresh'); if (b) b.classList.add('spin');
+  try{ const r = await apiPost('books', {}); if (r && r.avl != null){ applyBooks(r); toast(booksOff(r) ? `Books off by ${fINR2(Math.abs(r.diff))}` : 'Books balanced'); } }
+  catch(e){ toast(e.message || 'Could not check'); }
+  finally{ booksBusy = false; const top = pageStack[pageStack.length-1]; if (top && top.kind==='books') renderPage(); }
 }
 function booksBody(){
   const b = booksNow();
@@ -4497,7 +4509,7 @@ const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money
 // tpl: a new entry filled in ahead (a due recurring one) — saved as new, not as an edit
 let xRecPend = null, xKitePay = false;
 function xKiteToggle(){
-  const w = xIsLiq() && !xEditing ? kiteWallet() : null; if (!w) return '';
+  const w = xIsLiq() && !xEditing && /^stocks?$/i.test(xSub||'') ? kiteWallet() : null; if (!w) return '';
   return `<label class="xkw"><input type="checkbox" id="xKw" ${xKitePay?'checked':''}><span>Take it out of the Kite wallet <b class="num">${fINR(w.amount)}</b></span></label>`;
 }
 // Money back from an investment (Kite's quarterly settlement, a sale withdrawn…):
@@ -4587,7 +4599,7 @@ function wireCommon(el){
     if (xMode==='income' && !xEditing){ xAcc = xIncomeAcc(); if (!xType){ xType = xIncomeType(); if (xAsksCompany() && !xSrcV) xSrcV = lastSource(xType); } }
     if (xMode==='income' && !accByName(xAcc)) xAcc=''; xOpenCat=''; xErrMsg='';
     if (ADD_UI==='flow' && xField && !xFields().includes(xField)) xField='amount'; paintXSheet(); });
-  $$('.xchips [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; xErrMsg=''; paintXSheet(); });
+  $$('.xchips [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; if (!/^stocks?$/i.test(xSub)) xKitePay = false; xErrMsg=''; paintXSheet(); });
   const kw = $('#xKw', el); if (kw) kw.onchange = ()=>{ xKitePay = kw.checked; };
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
   bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
@@ -4733,7 +4745,7 @@ function paintFlow(){
     if (k==='OK'){ if (xHasOp(xExpr)) xExpr = String(xAmt()); xNext(); return; }
     xKey(k); const v = $('.xfr[data-f="amount"] .v', el); if (v) v.innerHTML = xValue('amount'); xFreshMark(); });
   $$('.xgrid [data-c]', el).forEach(b=>b.onclick=()=>pickCat(b.dataset.c, xNext));
-  $$('.xgrid [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; xNext(); });
+  $$('.xgrid [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; if (!/^stocks?$/i.test(xSub)) xKitePay = false; xNext(); });
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; xNext(); });
   $$('.xgrid [data-a]', el).forEach(b=>b.onclick=()=>{ const v=b.dataset.a;
     if (xField==='from'){ xFrom=v; if (xTo===v) xTo=''; } else if (xField==='to') xTo=v; else xAcc=v; xNext(); });
@@ -4853,7 +4865,7 @@ function budgetAlert(rec, prev){
   return '';
 }
 async function saveMove(kind, rec, was){
-  const recDone = was ? null : xRecPend, kiteDone = !was && xKitePay;
+  const recDone = was ? null : xRecPend, kiteDone = !was && xKitePay && /^stocks?$/i.test(rec.sub||'');   // only a Stocks liquidation comes out of the Kite wallet
   const d = xd(), key = kind==='expense' ? 'entries' : kind==='income' ? 'incomes' : 'transfers';
   const list = d[key] = d[key] || [];
   let tmp = null, prev = null;
