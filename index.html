@@ -1314,7 +1314,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1485,7 +1485,7 @@ function inRange(daily, r){
 // Cash on Overview comes from Money › Accounts, worked out live in the app, so
 // an expense moves it (and net worth) at once. The sheet's Running accounts
 // table catches up nightly. Until the money data is here, the sheet's numbers show.
-const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Credit card'],['construction','Construction']];
+const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Cards'],['construction','Construction']];
 let accFilt = load('inv.accFilt') || 'all';
 function liveCash(){
   if (!xd() || !(xd().accounts||[]).length) return null;
@@ -1540,7 +1540,7 @@ function renderHome(d){
   if (cash && !kinds.some(([k])=>k===accFilt)) accFilt = 'all';     // until money data is in, keep the saved filter
   const fl = $('#accFlt'); fl.hidden = kinds.length < 3;
   fl.innerHTML = kinds.map(([k,l])=>`<button data-af="${k}" class="${accFilt===k?'on':''}">${l}</button>`).join('');
-  $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); });
+  $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ const y = window.scrollY; accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); holdScroll(y); });
   // Construction: the For Construction table — account rows live from Money, the
   // hand-kept rows (Cash Owed, Invested, INDwallet) editable right here
   const shown = cash ? (accFilt==='construction' ? constrRows(nw) : cash.rows.filter(r=>accFilt==='all' ? r.kind!=='construction' : r.kind===accFilt)) : null;
@@ -2841,7 +2841,19 @@ addEventListener('scroll', ()=>{
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 $('#navBack').onclick = ()=>show('home');
+// A shorter list after a filter tap would pull the page up and move the filter
+// row; pad the bottom just enough to keep the scroll where it was. The pad goes
+// when you switch tabs.
+function holdScroll(y){
+  const view = $('#v-home'); let pad = $('#homePad');
+  if (!pad){ pad = document.createElement('div'); pad.id = 'homePad'; pad.setAttribute('aria-hidden','true'); }
+  view.appendChild(pad); pad.style.height = '0px';
+  const short = y + window.innerHeight - document.documentElement.scrollHeight;
+  if (short > 0) pad.style.height = Math.ceil(short) + 'px';
+  window.scrollTo(0, y);
+}
 function show(v){
+  { const pad = $('#homePad'); if (pad) pad.style.height = '0px'; }
   const prevView = activeView; activeView=v;
   const tabV = v==='trend' ? 'home' : v;                 // Trends opens from Overview, so Overview stays lit
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===tabV));
