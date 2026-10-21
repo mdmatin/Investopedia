@@ -1280,7 +1280,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4113,18 +4113,13 @@ function booksBody(){
   const b = booksNow();
   if (!b) return '<div class="pg-load">Not worked out yet — pull to refresh</div>';
   const off = booksOff(b), when = b.at ? new Date(b.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
-  const why = off
-    ? (b.diff < 0 ? 'Available is lower than Expected: money left an account without a matching entry here or in All Investments — for example an Investment expense whose buy isn’t in All Investments yet.'
-                  : 'Available is higher than Expected: money arrived that isn’t logged as income, or an expense is missing.')
-    : 'Everything you hold, at the money you put in, matches everything earned minus everything spent.';
   const hero = `<div class="card pg-card pg-hero bk-hero">
       <div class="pg-id"><div class="tile" style="${off?'background:rgba(255,159,10,.16);color:#ff9f0a':'background:var(--up-bg);color:var(--up)'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></div>
         <div class="grow"><div class="t">${off?'Books off':'Books balanced'}</div><div class="s">${when?'Checked '+esc(when):''}</div></div></div>
       <div class="pg-big num money ${off?'off':''}">${off ? (b.diff<0?'−':'+')+fINR2(Math.abs(b.diff)) : fINR2(0)}</div>
       <div class="pg-sub"><span class="k">difference</span></div>
       <div class="spstats"><div><span>Available</span><b class="num money">${fINR2(b.avl)}</b></div>
-        <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div>
-      <div class="bk-why">${esc(why)}</div></div>`;
+        <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div></div>`;
   // the Available Balance tab, section by section
   let html = '', cur = null;
   const flush = ()=>{ if (cur) html += `<div class="sechead"><h2>${esc(cur.h)}</h2></div><div class="card hstats xsubs bkrows">${cur.rows.join('')}</div>`; };
