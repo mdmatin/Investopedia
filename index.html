@@ -907,14 +907,26 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .card.hero{position:relative}
 .bkpill{display:flex;align-items:center;gap:10px;width:calc(100% - 32px);padding:11px 16px;margin-top:-4px;text-align:left;cursor:pointer}
 .bkpill[hidden]{display:none}
+.bkpill .bkseg{display:flex;align-items:center;gap:6px;min-width:0}
+.bkpill .bkseg + .bkdiv + .bkseg{flex:1}
+.bkpill .bkseg:first-child{flex:none}
+.bkpill .bkdiv{flex:none;width:1px;height:20px;background:var(--hairline);margin:0 2px}
+.bk-ivrow{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline);background:none;text-align:left}
+.bk-ivrow .bk-ic{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
+.bk-ivrow .bk-ic svg{width:13px;height:13px}
+.bk-ivrow .bk-ic.off{background:rgba(255,159,10,.16);color:#c77700}
+html[data-theme=dark] .bk-ivrow .bk-ic.off{color:#ff9f0a}
+.bk-ivrow .t{flex:1;font-size:15px;font-weight:600;letter-spacing:-.25px;color:var(--ink)}
+.bk-ivrow b{font-size:15px;font-weight:600;color:var(--up)}
+.bk-ivrow b.bk-amber{color:#c77700} html[data-theme=dark] .bk-ivrow b.bk-amber{color:#ff9f0a}
 .bkpill .bk-ic{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
 .bkpill .bk-ic svg{width:13px;height:13px}
-.bkpill .bk-t{flex:1;font-size:15px;font-weight:600;letter-spacing:-.25px;color:var(--ink)}
-.bkpill .bk-v{font-size:14.5px;font-weight:600}
-.bkpill .bk-chev{flex:none;width:14px;height:14px;color:var(--ink-3)}
-.bkpill.off .bk-ic{background:rgba(255,159,10,.16);color:#c77700}
+.bkpill .bk-t{flex:1;font-size:15px;font-weight:600;letter-spacing:-.25px;color:var(--ink);white-space:nowrap}
+.bkpill .bk-v{font-size:14.5px;font-weight:600;white-space:nowrap}
+.bkpill .bk-chev{flex:none;width:14px;height:14px;color:var(--ink-3);margin-left:auto}
+.bkpill .bk-ic.off{background:rgba(255,159,10,.16);color:#c77700}
 .bkpill.off .bk-t,.bkpill.off .bk-v{color:#c77700}
-html[data-theme=dark] .bkpill.off .bk-ic,html[data-theme=dark] .bkpill.off .bk-t,html[data-theme=dark] .bkpill.off .bk-v{color:#ff9f0a}
+html[data-theme=dark] .bkpill .bk-ic.off,html[data-theme=dark] .bkpill.off .bk-t,html[data-theme=dark] .bkpill.off .bk-v{color:#ff9f0a}
 .books{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;margin-top:12px}
 .books .bk-ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--up-bg);color:var(--up)}
 .books .bk-ic svg{width:18px;height:18px}
@@ -1319,7 +1331,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3177,7 +3189,8 @@ function renderPage(){
   if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
   if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
-    const m = $('#bkLogAll'); if (m) m.onclick = ()=>pushPage({ kind:'bklog' }); return; }
+    const m = $('#bkLogAll'); if (m) m.onclick = ()=>pushPage({ kind:'bklog' });
+    const iv = $('#bkIvGo'); if (iv) iv.onclick = ()=>{ const t = $('#bkIvSec'); if (t) t.scrollIntoView({ behavior:'smooth', block:'start' }); }; return; }
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
@@ -4286,10 +4299,15 @@ function paintBooks(){
   const nav = $('.tabs button[data-v="home"]'); if (nav) nav.classList.toggle('bkdot', off);
   if (!el) return;
   if (!b){ el.hidden = true; return; }
-  el.hidden = false; el.classList.toggle('off', off);
-  el.setAttribute('aria-label', off ? `Books off by ${fINR2(Math.abs(b.diff))}` : 'Books balanced');
-  el.innerHTML = `<span class="bk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></span>
-    <span class="bk-t">${off ? 'Books off' : 'Books balanced'}</span>${off ? `<span class="bk-v num money">${b.diff<0?'−':'+'}${fINR2(Math.abs(b.diff))}</span>` : ''}
+  el.hidden = false;
+  // one status for both checks (Available vs Expected, and the Investment log): a tick when both
+  // hold, otherwise the gap — the larger one when both are off
+  const iv = b.inv, ivOff = !!(iv && Math.abs(iv.gap||0) >= 1), bad = off || ivOff;
+  const gap = off && ivOff ? (Math.abs(b.diff) >= Math.abs(iv.gap) ? b.diff : iv.gap) : off ? b.diff : ivOff ? iv.gap : 0;
+  el.classList.toggle('off', bad);
+  el.setAttribute('aria-label', bad ? `Books off by ${fINR2(Math.abs(gap))}` : 'Books balanced');
+  el.innerHTML = `<span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
+    <span class="bk-t">${bad ? 'Books off' : 'Books balanced'}</span>${bad ? `<span class="bk-v num money">${gap<0?'−':'+'}${fINR2(Math.abs(gap))}</span>` : ''}
     <svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
   el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
 }
@@ -4336,7 +4354,10 @@ function booksBody(){
       <div class="pg-big num money ${off?'off':''}">${off ? (b.diff<0?'−':'+')+fINR2(Math.abs(b.diff)) : fINR2(0)}</div>
       <div class="pg-sub"><span class="k">difference</span></div>
       <div class="spstats"><div><span>Available</span><b class="num money">${fINR2(b.avl)}</b></div>
-        <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div></div>`;
+        <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div>
+      ${b.inv ? (()=>{ const g = b.inv.gap||0, bad = Math.abs(g) >= 1;
+        return `<button class="bk-ivrow" id="bkIvGo"><span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
+          <span class="t">Investment log</span><b class="num money ${bad?'bk-amber':''}">${bad ? (g<0?'−':'+')+fINR2(Math.abs(g))+' apart' : 'In step'}</b></button>`; })() : ''}</div>`;
   // what moved the books, newest first (All Investments › Books Log)
   const log = b.log || [];
   let html = '', cur = null;
@@ -4357,7 +4378,7 @@ function booksBody(){
   const iv = b.inv;
   if (iv){
     const g = Math.abs(iv.gap||0) >= 1;
-    html += `<div class="sechead"><h2>Investment log</h2></div><div class="card hstats xsubs bkrows">
+    html += `<div class="sechead" id="bkIvSec"><h2>Investment log</h2></div><div class="card hstats xsubs bkrows">
       <div class="hrow"><span>Logged in Money</span><b class="num money">${fINR2(iv.logged)}</b></div>
       <div class="hrow"><span>All Investments</span><b class="num money">${fINR2(iv.ai)}</b></div>
       <div class="hrow sub"><span>${g ? 'Apart by' : 'In step'}</span><b class="num money ${g?'bk-amber':''}">${g ? fINR2(Math.abs(iv.gap)) : '✓'}</b></div>
