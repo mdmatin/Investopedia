@@ -880,6 +880,8 @@ html[data-theme=dark] .xsug{background:#2c2c2e;box-shadow:0 0 0 .5px #3a3a3c,0 6
 .xfr.drop select{position:absolute;inset:0;width:100%;opacity:0;font-size:16px}
 .xfr.want .ph{color:var(--blue)}
 
+.cfund{margin-bottom:10px}
+.cother{margin-top:10px}
 .kitepay{display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:12px 12px 0;padding:12px 14px;background:var(--canvas);border-radius:var(--r-card);text-align:left}
 .kitepay svg{width:20px;height:20px;padding:7px;box-sizing:content-box;border-radius:50%;background:var(--up-bg);color:var(--up);flex:none}
 .kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
@@ -1237,7 +1239,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-25b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-25d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1408,13 +1410,14 @@ function inRange(daily, r){
 // Cash on Overview comes from Money › Accounts, worked out live in the app, so
 // an expense moves it (and net worth) at once. The sheet's Running accounts
 // table catches up nightly. Until the money data is here, the sheet's numbers show.
-const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Credit card']];
+const ACC_FILT = [['all','All'],['bank','Bank'],['wallet','Wallet'],['card','Credit card'],['construction','Construction']];
 let accFilt = load('inv.accFilt') || 'all';
 function liveCash(){
   if (!xd() || !(xd().accounts||[]).length) return null;
   const rows = (xd().accounts||[]).map(a=>({ name:a.name, kind:accKind(a), amount:Math.round(accBalance(a.name)*100)/100, live:true, hidden:a.active===false }))
     .filter(r=>!r.hidden || Math.abs(r.amount) > 0.004);
-  return { rows, total: rows.reduce((s,r)=>s+r.amount,0) };
+  // construction money is its own fund (Net Worth's For Construction table), not cash
+  return { rows, total: rows.filter(r=>r.kind!=='construction').reduce((s,r)=>s+r.amount,0) };
 }
 function renderHome(d){
   const nw = d.netWorth, h = nw.head||{}, cash = liveCash();
@@ -1461,7 +1464,7 @@ function renderHome(d){
   const fl = $('#accFlt'); fl.hidden = kinds.length < 3;
   fl.innerHTML = kinds.map(([k,l])=>`<button data-af="${k}" class="${accFilt===k?'on':''}">${l}</button>`).join('');
   $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); });
-  const shown = cash ? cash.rows.filter(r=>accFilt==='all' || r.kind===accFilt) : null;
+  const shown = cash ? cash.rows.filter(r=>accFilt==='all' ? r.kind!=='construction' : r.kind===accFilt) : null;
   EL.banks.rows = cash ? shown : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
   const rbal = cash ? shown.reduce((a,r)=>a+r.amount,0) : h.runningBalance;
   EL.banks.foot = rbal!=null
@@ -1515,7 +1518,7 @@ function renderEditList(L){
   el.innerHTML = L.rows.map((b,i)=>{
     if (b.live) return `<div class="row tap" data-acc="${esc(b.name)}">${bankMark(b.name)}
       <div class="l"><div class="n">${esc(b.name)}</div></div>
-      <div class="r"><div class="v num money ${b.amount<0?'down':''}">${fINR(b.amount)}</div></div><span class="chev">›</span></div>`;
+      <div class="r"><div class="v num money ${b.amount<0?'down':''}">${fINR(b.amount)}</div></div></div>`;
     const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
     const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
     return `<div class="row ${can?'tap':''} ${b.saving?'saving':''}" data-i="${i}">${bankMark(b.name)}
@@ -3446,7 +3449,9 @@ const fCmp = v => { v = Math.round(v||0); if (!v) return ''; const a = Math.abs(
 // money moved into investments is logged as an expense but isn't spending
 const NOT_SPEND = /^investments?$/i;
 const isInvest = cat => NOT_SPEND.test(String(cat||'').trim());
-const spendOnly = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isInvest(k)));
+const isConstr = cat => /^construction$/i.test(String(cat||'').trim());
+const personal = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isConstr(k)));      // construction is its own fund
+const spendOnly = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isInvest(k) && !isConstr(k)));
 const investOf = o => Object.entries(o).filter(([k])=>isInvest(k)).reduce((a,[,v])=>a+v,0);
 function xBudget(cat, ym){
   const b = (xd()||{}).budgets || {}, m = (b.by||{})[ym]||{};
@@ -3554,7 +3559,7 @@ function spBudgetHtml(){
   const dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
   const today = ym===ymNow() ? now.getDate()/dim : null;
   const all = xCats().map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) })).filter(x=>x.s || x.b);
-  const cats = all, inv = [];   // investments count as spending (they stay out of Saved only)
+  const cats = all.filter(x=>!isConstr(x.c)), inv = all.filter(x=>isConstr(x.c));   // construction has its own fund
   const budgeted = cats.filter(x=>x.b).sort((a,b)=>(b.s/b.b)-(a.s/a.b));
   const loose = cats.filter(x=>!x.b && x.s).sort((a,b)=>b.s-a.s);
   const bud = budgeted.reduce((a,x)=>a+x.b,0), spent = budgeted.reduce((a,x)=>a+x.s,0), left = bud - spent;
@@ -3574,7 +3579,7 @@ function spBudgetHtml(){
       <div class="vb-all"><span>All expenses<b class="num money">${fINR2(spent + looseSum)}</b></span>${looseSum ? `<span class="num money">${fINR2(looseSum)} not budgeted</span>` : ''}</div></div>
     <div class="card tight vbc">${budgeted.map(x=>row(x.c, x.s, x.b)).join('') || '<div class="empty">No budgets set</div>'}</div>
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
-    ${inv.length ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">Not counted as spending</div></div>
+    ${inv.length ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">From the construction fund</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('')}</div>` : ''}`;
 }
 
@@ -3623,14 +3628,14 @@ function pieSvg(items, total){
   return `<svg class="pie" viewBox="0 ${y0} ${W} ${y1-y0}">${s}</svg>`;
 }
 function spMonthlyHtml(){
-  const ym = spMonth, raw = xMonth(ym), exp = raw, invested = 0, inc = monthIncome(ym);
+  const ym = spMonth, raw = xMonth(ym), exp = personal(raw), invested = Object.entries(raw).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0), inc = monthIncome(ym);
   const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
   const src = spIO==='inc' ? inc : exp, total = spIO==='inc' ? tI : tE;
   const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
   const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR2(tI)}</b></button>
       <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR2(tE)}</b></button></div>`;
-  const invRow = spIO==='exp' && invested>0 ? `<div class="sechead"><h2>Invested</h2></div><div class="card tight"><div class="row tap" data-xcat="${esc(Object.keys(raw).find(isInvest))}" data-ymc="${ym}">${xTile('Investment')}
-      <div class="l"><div class="n">Investment</div><div class="m">Not counted as spending</div></div><div class="r"><div class="v num money">${fINR2(invested)}</div></div></div></div>` : '';
+  const invRow = spIO==='exp' && invested>0 ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight"><div class="row tap" data-xcat="${esc(Object.keys(raw).find(isConstr))}" data-ymc="${ym}">${xTile(Object.keys(raw).find(isConstr))}
+      <div class="l"><div class="n">${esc(Object.keys(raw).find(isConstr))}</div><div class="m">From the construction fund</div></div><div class="r"><div class="v num money">${fINR2(invested)}</div></div></div></div>` : '';
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
   const svg = pieSvg(items, total);
   const rows = items.map(it=>{
@@ -3699,13 +3704,14 @@ function txRow(x){
 }
 function spListHtml(){
   const all = txItems(spMonth);
-  const spent = all.filter(x=>x.k==='ex'||x.k==='rf'||x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
+  const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='iv') && !isConstr(x.e.category);
+  const spent = all.filter(counts).reduce((s,x)=>s+x.e.amount,0);
   const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
   const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
   const days = Object.keys(by).sort().reverse().map(dt=>{
-    const sp = by[dt].filter(x=>x.k==='ex'||x.k==='rf'||x.k==='iv').reduce((s,x)=>s+x.e.amount,0);
+    const sp = by[dt].filter(counts).reduce((s,x)=>s+x.e.amount,0);
     const ii = by[dt].filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
     return `<div class="daygroup tday"><span>${esc(fDate(dt))}</span><span class="num money">${ii?`<em class="up">+${fINR2(ii)}</em>`:''}${sp?fINR2(sp):''}</span></div>
       <div class="card tight">${by[dt].map(txRow).join('')}</div>`;
@@ -3891,8 +3897,8 @@ function wireXPage(p){
    and transfers in, minus expenses paid from it and transfers out — counting
    only entries on or after the account's opening date. A card's balance is
    what you owe, so it runs negative. */
-const ACC_GROUPS = [['bank','Banks & cash'],['card','Credit cards'],['wallet','Wallets']];
-const accKind = a => /card|credit/i.test(a.type) ? 'card' : /wallet/i.test(a.type) ? 'wallet' : 'bank';
+const ACC_GROUPS = [['bank','Banks & cash'],['card','Credit cards'],['wallet','Wallets'],['construction','Construction']];
+const accKind = a => /construction/i.test(a.type) ? 'construction' : /card|credit/i.test(a.type) ? 'card' : /wallet/i.test(a.type) ? 'wallet' : 'bank';
 const xAccounts = () => ((xd()||{}).accounts||[]).filter(a=>a.active!==false);
 const accByName = n => xAccounts().find(a=>a.name===n);
 // every movement touching one account, signed from its point of view
@@ -3918,7 +3924,7 @@ const accIcon = a => {
 function spAccountsHtml(){
   const acc = xAccounts(); if (!acc.length) return '<div class="empty">No accounts yet — add them to the Accounts tab in your sheet</div>';
   // each card on its own: one card in credit must not hide another card's dues
-  const sum = { bank:0, card:0, wallet:0 }, cards = { owed:0, credit:0 };
+  const sum = { bank:0, card:0, wallet:0, construction:0 }, cards = { owed:0, credit:0 };
   acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
   // balances are always today's; Income and Saved follow the month picked above
@@ -3942,10 +3948,33 @@ function spAccountsHtml(){
   if (accSec==='income') return head + seg + accIncomeHtml();
   return head + seg + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
+// The construction fund: Net Worth's For Construction rows, with the rows that
+// have a Construction account taken live from it (ICICI · Construction → ICICI)
+const constrBase = n => String(n||'').replace(/\s*[·\-–|]\s*construction$/i,'').replace(/^construction\s*[·\-–|]\s*/i,'').trim().toLowerCase();
+function constrFund(){
+  const accs = xAccounts().filter(a=>accKind(a)==='construction');
+  const items = ((D && D.data && D.data.netWorth && D.data.netWorth.construction && D.data.netWorth.construction.items) || []);
+  const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===it.name.toLowerCase());
+    return { name:it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null }; });
+  accs.forEach(a=>{ if (!rows.some(r=>r.acc===a.name)) rows.push({ name:constrBase(a.name) || a.name, amount:accBalance(a.name), acc:a.name, unmatched:true }); });
+  const ym = ymNow(), d = xd() || {};
+  const months = new Set(Object.keys(d.monthly||{}).concat((d.entries||[]).map(e=>e.date.slice(0,7))));
+  let spentAll = 0; months.forEach(m=>{ Object.entries(xMonth(m)).forEach(([k,v])=>{ if (isConstr(k)) spentAll += v; }); });
+  const spentM = Object.entries(xMonth(ym)).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0);
+  return { rows, total: rows.reduce((s,r)=>s+r.amount,0), spentM, spentAll };
+}
+function constrFundHtml(part){
+  const f = constrFund(), other = f.rows.filter(r=>!r.acc && r.amount);
+  if (part==='other') return other.length ? `<div class="card tight cother">${other.map(r=>`<div class="row"><div class="tile ch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+      <div class="l"><div class="n">${esc(r.name)}</div><div class="m">Typed on Net Worth</div></div><div class="r"><div class="v num money">${fINR2(r.amount)}</div></div></div>`).join('')}</div>` : '';
+  return `<div class="card spsum cfund"><div class="k">Construction fund</div><div class="big num money">${fINR2(f.total)}</div>
+      <div class="spstats"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
+        <div><span>Spent so far</span><b class="num money">${fINR2(f.spentAll)}</b></div></div></div>`;
+}
 function accGroupsHtml(acc){
   return ACC_GROUPS.map(([k,label])=>{
     const list = acc.filter(a=>accKind(a)===k); if (!list.length) return '';
-    return `<div class="sechead"><h2>${label}</h2></div><div class="card tight">${list.map(a=>{
+    return `<div class="sechead"><h2>${label}</h2></div>${k==='construction' ? constrFundHtml() : ''}<div class="card tight">${list.map(a=>{
       const bal = accBalance(a.name);
       if (k==='card'){
         const owed = Math.max(0,-bal), lim = a.limit||0;
@@ -3954,10 +3983,10 @@ function accGroupsHtml(acc){
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0];
-      return `<div class="row tap" data-acc="${esc(a.name)}">${(k==='bank' && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
+      return `<div class="row tap" data-acc="${esc(a.name)}">${((k==='bank' || k==='construction') && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
         <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
-    }).join('')}</div>`;
+    }).join('')}</div>${k==='construction' ? constrFundHtml('other') : ''}`;
   }).join('');
 }
 let accSec = 'accounts';
@@ -4098,7 +4127,7 @@ function wireCashback(p){
 }
 // the page header names the kind of account; the name itself is in the card below
 function accPageTitle(name){ const a = accByName(name); if (!a) return name;
-  const k = accKind(a); return k==='card' ? 'Credit card' : k==='wallet' ? 'Wallet' : /cash/i.test(a.type) ? 'Cash' : 'Bank account'; }
+  const k = accKind(a); return k==='card' ? 'Credit card' : k==='wallet' ? 'Wallet' : k==='construction' ? 'Construction' : /cash/i.test(a.type) ? 'Cash' : 'Bank account'; }
 function moveTile(kind){
   const p = kind==='income' ? 'M12 19V5M5 12l7-7 7 7' : 'M4 9h13l-3.5-3.5M20 15H7l3.5 3.5';
   return `<div class="tile ${kind==='income'?'in':'us'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg></div>`;
@@ -4133,7 +4162,7 @@ const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset()*6e4)
    Saved to the Accounts tab. A rename is carried into every expense, money-in
    and transfer that names the account (the sheet does the same when you rename
    it there). Removing an account that has entries only hides it. */
-const ACC_TYPES = ['Bank','Cash','Credit card','Wallet'];
+const ACC_TYPES = ['Bank','Cash','Credit card','Wallet','Construction'];
 function accUses(name){
   const d = xd() || {};
   return (d.entries||[]).filter(e=>e.account===name).length + (d.incomes||[]).filter(e=>e.account===name).length
@@ -4153,7 +4182,7 @@ function accFormBody(p){
         <div class="f"><label>Name</label><input id="afName" value="${esc(f.name)}" placeholder="e.g. HDFC Bank" autocomplete="off"></div>
       </div>
       <div class="xlbl">Type</div>
-      <div class="seg afType">${ACC_TYPES.map(t=>`<button data-at="${t}" class="${f.type===t?'on':''}">${t==='Credit card'?'Card':t}</button>`).join('')}</div>
+      <div class="seg afType">${ACC_TYPES.map(t=>`<button data-at="${t}" class="${f.type===t?'on':''}">${t==='Credit card'?'Card':t==='Construction'?'Build':t}</button>`).join('')}</div>
       <div class="fields">
         <div class="f"><label>${card ? 'Owed at start' : 'Opening balance'}</label><input id="afOpen" inputmode="decimal" value="${openVal}" placeholder="0"></div>
         <div class="f"><label>Since</label><input id="afDate" type="date" value="${esc(f.openDate||'')}"></div>
@@ -4425,6 +4454,7 @@ function noteSuggest(el){
 // tapping a category: open its subcategories, or take it if it has none
 function pickCat(c, done){
   if (xCat!==c){ xCat=c; xSub=''; }
+  if (xMode==='expense' && isConstr(c)){ const a = accByName(xAcc); if (!a || accKind(a)!=='construction'){ const ca = xAccounts().find(x=>accKind(x)==='construction' && x.active!==false); if (ca) xAcc = ca.name; } }
   if (xSubs(c).length && xOpenCat!==c){ xOpenCat=c; paintXSheet(); return; }
   xOpenCat=''; done();
 }
