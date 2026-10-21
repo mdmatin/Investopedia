@@ -1209,7 +1209,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-24o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1219,7 +1219,7 @@ let cfg = load(LS.cfg) || null;
 let D = load(LS.data) || null;
 let timer = null, loading = false, activeView = 'home';
 // Profile settings (the ones that aren't stored on their own key)
-const PREF = Object.assign({ lockAfter:60000, blurOnOpen:false, chartRange:'', paise:true, payFrom:'', budgetAlerts:true }, load('inv.prefs') || {});
+const PREF = Object.assign({ lockAfter:60000, blurOnOpen:false, chartRange:'', paise:true, payFrom:'', incomeInto:'', incomeType:'', budgetAlerts:true }, load('inv.prefs') || {});
 function setPref(k, v){ PREF[k] = v; save('inv.prefs', PREF); }
 let range = PREF.chartRange || load(LS.range) || '3M';
 if (!['1W','1M','3M','6M','1Y','All'].includes(range)) range = '3M';   // 1D was dropped
@@ -4167,6 +4167,9 @@ const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money
 
 // tpl: a new entry filled in ahead (a due recurring one) — saved as new, not as an edit
 let xRecPend = null;
+// Profile defaults for new income: the account it goes into and its type
+function xIncomeAcc(){ const bank = (xAccounts().find(a=>accKind(a)==='bank')||{}).name || ''; return PREF.incomeInto && accByName(PREF.incomeInto) ? PREF.incomeInto : bank; }
+function xIncomeType(){ return PREF.incomeType && inTypesList().includes(PREF.incomeType) ? PREF.incomeType : ''; }
 function openXSheet(e, mode, tpl){
   if (e===undefined) return;
   if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; }
@@ -4180,9 +4183,10 @@ function openXSheet(e, mode, tpl){
   xNoteV = s ? (s.note||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
   xCat = s && s.category || ''; xSub = s && s.sub || '';
   const payFrom = PREF.payFrom && xAccounts().some(a=>a.name===PREF.payFrom) ? PREF.payFrom : 'Cash';
-  xAcc = s && s.account || (xMode==='income' ? first('bank') : payFrom);
+  xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : payFrom);
   xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
-  xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : '');
+  xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : !e && xMode==='income' ? xIncomeType() : '');
+  if (!s && xMode==='income' && xAsksCompany()) xSrcV = lastSource(xType);
   xOpenCat = ''; xErrMsg = '';
   xField = s ? null : 'amount'; xStep = s ? 3 : 1;
   paintXSheet();
@@ -4229,7 +4233,9 @@ function xGrid(items, on, attr, opts={}){
   return `<div class="xgrid ${opts.icons?'tiles':''}">${out}</div>`;
 }
 function wireCommon(el){
-  $$('.xseg button', el).forEach(b=>b.onclick=()=>{ xMode=b.dataset.m; xKind=xMode; if (xMode==='income' && !accByName(xAcc)) xAcc=''; xOpenCat=''; xErrMsg='';
+  $$('.xseg button', el).forEach(b=>b.onclick=()=>{ xMode=b.dataset.m; xKind=xMode;
+    if (xMode==='income' && !xEditing){ xAcc = xIncomeAcc(); if (!xType){ xType = xIncomeType(); if (xAsksCompany() && !xSrcV) xSrcV = lastSource(xType); } }
+    if (xMode==='income' && !accByName(xAcc)) xAcc=''; xOpenCat=''; xErrMsg='';
     if (ADD_UI==='flow' && xField && !xFields().includes(xField)) xField='amount'; paintXSheet(); });
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
   bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
@@ -4673,6 +4679,8 @@ const PI = {
   sync:'<path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M5 3v5h5M19 21v-5h-5"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
   bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+  in:'<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+  tag:'<path d="M3 12V4h8l10 10-8 8z"/><path d="M7.5 7.5h.01"/>',
   dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   repeat:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
@@ -4689,6 +4697,9 @@ function profileBody(){
   const blur = document.body.classList.contains('blur'), start = load('inv.start') || 'home', th = themePick();
   const accs = xd() ? xAccounts().filter(a=>accKind(a)!=='wallet').map(a=>[a.name, a.name]) : [];
   if (!accs.some(a=>a[0]==='Cash')) accs.unshift(['Cash','Cash']);
+  const incAccs = xd() ? xAccounts().filter(a=>accKind(a)!=='card').map(a=>[a.name, a.name]) : [];
+  if (PREF.incomeInto && !incAccs.some(a=>a[0]===PREF.incomeInto)) incAccs.push([PREF.incomeInto, PREF.incomeInto]);
+  if (!incAccs.length) incAccs.push(['','—']);
   if (PREF.payFrom && !accs.some(a=>a[0]===PREF.payFrom)) accs.push([PREF.payFrom, PREF.payFrom]);
   const synced = D ? 'synced ' + ago(Date.now()-D.at) : 'not synced yet';
   let host = ''; try{ host = new URL(cfg.url).hostname; }catch(e){}
@@ -4715,6 +4726,8 @@ function profileBody(){
 
    <h3>Money</h3><div class="grp">
     ${row('card','#34c759','Default pay-from', pick('payFrom', PREF.payFrom || 'Cash', accs))}
+    ${row('in','#30d158','Income goes into', pick('incomeInto', PREF.incomeInto || (xd() ? xIncomeAcc() : ''), incAccs))}
+    ${row('tag','#ff9500','Default income type', pick('incomeType', PREF.incomeType, [['','None']].concat(xd() ? inTypesList().filter(t=>t!==XREFUND).map(t=>[t,t]) : [])))}
     ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
    </div>
@@ -4760,6 +4773,7 @@ function wireProfile(){
     if (k==='lockAfter') setPref('lockAfter', Number(v));
     else if (k==='chartRange'){ setPref('chartRange', v); if (v){ range = v; save(LS.range, v); if (D) render(); } }
     else if (k==='payFrom') setPref('payFrom', v==='Cash' ? '' : v);
+    else if (k==='incomeInto' || k==='incomeType') setPref(k, v);
     again();
   });
   $$("#page [data-thm]").forEach(b=>b.onclick=()=>{ save("inv.theme", applyTheme(b.dataset.thm)); again(); });
