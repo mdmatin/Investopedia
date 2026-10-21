@@ -1193,7 +1193,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-24d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-24h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1711,6 +1711,12 @@ function applySearch(list, q){
   list.querySelectorAll('[data-q]').forEach(r=>{
     const ok = terms.every(t=>r.dataset.q.includes(t));
     r.hidden = !ok; r.classList.toggle('sfirst', ok && !shown && terms.length>0); if (ok) shown++;
+  });
+  // a card left with no matching rows goes too, with its date / section header
+  list.querySelectorAll('.card').forEach(c=>{
+    const rows = c.querySelectorAll('[data-q]'); if (!rows.length) return;
+    const empty = [...rows].every(r=>r.hidden); c.hidden = empty;
+    const h = c.previousElementSibling; if (h && (h.classList.contains('daygroup') || h.classList.contains('sechead'))) h.hidden = empty;
   });
   let none = list.querySelector('.srch-none');
   if (terms.length && !shown){
@@ -2686,13 +2692,13 @@ addEventListener('scroll', ()=>{
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 function show(v){
-  activeView=v;
+  const prevView = activeView; activeView=v;
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   moveBlob(true);
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend';
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
-  if (v==='spend'){ spSec = 'list'; renderSpend();   // Spend always opens on Activity
+  if (v==='spend'){ spSec = 'list'; if (prevView!=='spend') spMonth = ymNow(); renderSpend();   // Spend always opens on Activity
     if (!X || Date.now() - X.at > X_STALE) loadExpenses(); }
   window.scrollTo(0,0);
   if(D){ if(v==='trend') renderTrends(D.data.daily,D.data.monthly); if(v==='home') renderHome(D.data); }
@@ -3356,7 +3362,7 @@ async function loadExpenses(fresh){
   if (xLoading || !cfg) return; xLoading = true;
   try{
     const j = await api(fresh ? {action:'expenses', fresh:'1'} : {action:'expenses'});
-    X = { at: Date.now(), data: j.data }; save('inv.exp', X);
+    X = { at: Date.now(), data: j.data }; recApplyMarks(); save('inv.exp', X);
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     const top = pageStack[pageStack.length-1];
@@ -4141,27 +4147,31 @@ const xHint = () => xMode==='expense' ? 'Saved to the Expenses tab in your Money
   : xIsRefund() ? 'A refund is saved as a minus entry on the Expenses tab, so it lowers that category’s spend.'
   : 'Saved to the Income tab in your Money sheet.';
 
-function openXSheet(e, mode){
+// tpl: a new entry filled in ahead (a due recurring one) — saved as new, not as an edit
+let xRecPend = null;
+function openXSheet(e, mode, tpl){
   if (e===undefined) return;
   if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; }
   xEditing = e || null; xMode = mode || 'expense'; xKind = xMode;
+  xRecPend = !e && tpl && tpl.rec || null;
+  const s = e || tpl || null;
   if (e && xMode==='expense' && e.amount < 0){ xMode = 'income'; }   // a refund is a minus expense
   const first = (k)=> (xAccounts().find(a=>accKind(a)===k)||{}).name || '';
-  xExpr = e ? String(Math.abs(e.amount)) : '';
-  xDateV = e ? e.date : todayISO();
-  xNoteV = e ? (e.note||'') : ''; xSrcV = e && e.source || ''; xTaxV = e && e.tax ? String(e.tax) : '';
-  xCat = e && e.category || ''; xSub = e && e.sub || '';
+  xExpr = s ? String(Math.abs(s.amount)) : '';
+  xDateV = s ? s.date : todayISO();
+  xNoteV = s ? (s.note||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
+  xCat = s && s.category || ''; xSub = s && s.sub || '';
   const payFrom = PREF.payFrom && xAccounts().some(a=>a.name===PREF.payFrom) ? PREF.payFrom : 'Cash';
-  xAcc = e && e.account || (xMode==='income' ? first('bank') : payFrom);
-  xFrom = e && e.from || first('bank'); xTo = e && e.to || '';
-  xType = e && e.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : '');
+  xAcc = s && s.account || (xMode==='income' ? first('bank') : payFrom);
+  xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
+  xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? XREFUND : '');
   xOpenCat = ''; xErrMsg = '';
-  xField = e ? null : 'amount'; xStep = e ? 3 : 1;
+  xField = s ? null : 'amount'; xStep = s ? 3 : 1;
   paintXSheet();
   $('#backdrop').hidden=false; $('#xsheet').hidden=false;
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#xsheet').classList.add('show'); });
 }
-function closeXSheet(){ $('#backdrop').classList.remove('show'); $('#xsheet').classList.remove('show');
+function closeXSheet(){ xRecPend = null; $('#backdrop').classList.remove('show'); $('#xsheet').classList.remove('show');
   setTimeout(()=>{ if ($('#xsheet').classList.contains('show')) return; $('#backdrop').hidden=true; $('#xsheet').hidden=true; },280); }
 const chips = (list, on, attr) => list.map(v=>`<button class="${v===on?'on':''}" data-${attr}="${esc(v)}">${esc(v)}</button>`).join('');
 // The amount already there (an edit, or what you typed before leaving the
@@ -4390,6 +4400,7 @@ function budgetAlert(rec, prev){
   return '';
 }
 async function saveMove(kind, rec, was){
+  const recDone = was ? null : xRecPend;
   const d = xd(), key = kind==='expense' ? 'entries' : kind==='income' ? 'incomes' : 'transfers';
   const list = d[key] = d[key] || [];
   let tmp = null, prev = null;
@@ -4402,6 +4413,7 @@ async function saveMove(kind, rec, was){
     else { const r = await apiPost(act[0], rec); if (r && r.row) tmp.row = r.row; }
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
     toast(`${was?'Updated':'Saved'} · ${what} ${fINR2(Math.abs(rec.amount))}` + (kind==='expense' ? budgetAlert(rec, was ? prev : null) : ''));
+    if (recDone) recMarkDone(recDone.id, recDone.ym);
     loadExpenses(true);                        // rows below an insert have moved; re-read them
   }catch(e){
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
@@ -4617,7 +4629,7 @@ function profileBody(){
 
    <h3>Money</h3><div class="grp">
     ${row('card','#34c759','Default pay-from', pick('payFrom', PREF.payFrom || 'Cash', accs))}
-    ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'When a category passes 90% or its budget')}
+    ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
    </div>
 
@@ -4717,7 +4729,14 @@ function recNextYm(r){
 function recDue(){
   const today = todayISO();
   return recList().filter(r=>r.active).map(r=>{ const m = recNextYm(r); return m && recDateC(r,m) <= today ? { r, ym:m, date:recDateC(r,m) } : null; })
-    .filter(Boolean).filter(x=>!x.r.auto);
+    .filter(Boolean).filter(x=>!x.r.auto && !recLogged(x.r, x.ym));
+}
+// already in that month's entries (logged by hand, or saved a moment ago) — don't ask again
+function recLogged(r, ym){
+  const d = xd() || {}, inM = e => e.date && e.date.slice(0,7)===ym && Math.abs(e.amount)===r.amount;
+  if (r.kind==='income') return (d.incomes||[]).some(e=>inM(e) && e.account===r.account && (e.type===r.cat || (e.note||e.remark)===(r.note||r.name)));
+  if (r.kind==='transfer') return (d.transfers||[]).some(e=>inM(e) && e.from===r.account && e.to===r.to);
+  return (d.entries||[]).some(e=>inM(e) && e.account===r.account && (e.category===r.cat || e.note===(r.note||r.name)));
 }
 const dayLbl = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-IN',{ day:'numeric', month:'short' });
 const ordDay = d => d==='Last' ? 'last day' : d + ({1:'st',2:'nd',3:'rd',21:'st',22:'nd',23:'rd',31:'st'}[d] || 'th');
@@ -4843,6 +4862,11 @@ function wireRecForm(p){
     catch(e){ toast(e.message || 'Could not delete'); }
   };
 }
+// months marked done in this session — kept over reloads until the sheet shows them too
+const recMarks = {};
+function recApplyMarks(){
+  ((X && X.data && X.data.recurring) || []).forEach(r=>{ const m = recMarks[r.id]; if (m && (!r.last || r.last < m)) r.last = m; });
+}
 // Activity: manual (confirm) entries that are due
 function recDueHtml(){
   if (spMonth !== ymNow()) return '';
@@ -4852,23 +4876,24 @@ function recDueHtml(){
       <div class="l"><div class="n">${esc(r.name)}</div><div class="m">${esc(dayLbl(x.date))} · ${fINR2(r.amount)}</div></div>
       <div class="rdbtn"><button data-rskip="${esc(r.id)}">Skip</button><button class="ok" data-rok="${esc(r.id)}">Add</button></div></div>`; }).join('')}</div>`;
 }
+function recMarkDone(id, ym){
+  const r = recList().find(x=>x.id===id); recMarks[id] = ym; if (r && (!r.last || r.last < ym)) r.last = ym;
+  rerenderSpendViews();
+  apiPost('markRecurring', { id, ym }).catch(e=>toast(e.message || 'Could not update the recurring entry'));
+}
 function wireRecDue(){
-  const go = async (id, post)=>{
-    const x = recDue().find(d=>d.r.id===id); if (!x) return;
-    const r = x.r, note = r.note || r.name;
-    try{
-      if (post){
-        if (r.kind==='income') await saveMove('income', { date:x.date, account:r.account, type:r.cat||'Other', source:r.sub, tax:0, remark:note, note, amount:r.amount });
-        else if (r.kind==='transfer') await saveMove('transfer', { date:x.date, from:r.account, to:r.to, note, amount:r.amount });
-        else await saveMove('expense', { date:x.date, account:r.account, category:r.cat, sub:r.sub, note, amount:r.amount });
-      }
-      r.last = x.ym; rerenderSpendViews();
-      await apiPost('markRecurring', { id, ym:x.ym });
-      if (!post) toast(`Skipped ${r.name} for ${ymShort(x.ym)}`);
-    }catch(e){ toast(e.message || 'Could not update'); }
-  };
-  $$('#spBody [data-rok]').forEach(b=>b.onclick=()=>{ b.disabled = true; go(b.dataset.rok, true); });
-  $$('#spBody [data-rskip]').forEach(b=>b.onclick=()=>{ b.disabled = true; go(b.dataset.rskip, false); });
+  // Add opens the entry filled in, to check or change before saving; it leaves the card once saved
+  $$('#spBody [data-rok]').forEach(b=>b.onclick=()=>{
+    const x = recDue().find(d=>d.r.id===b.dataset.rok); if (!x) return;
+    const r = x.r, note = r.note || r.name, rec = { id:r.id, ym:x.ym };
+    if (r.kind==='income') openXSheet(null, 'income', { date:x.date, amount:r.amount, type:r.cat, source:r.sub, account:r.account, note, rec });
+    else if (r.kind==='transfer') openXSheet(null, 'transfer', { date:x.date, amount:r.amount, from:r.account, to:r.to, note, rec });
+    else openXSheet(null, 'expense', { date:x.date, amount:r.amount, category:r.cat, sub:r.sub, account:r.account, note, rec });
+  });
+  $$('#spBody [data-rskip]').forEach(b=>b.onclick=()=>{
+    const x = recDue().find(d=>d.r.id===b.dataset.rskip); if (!x) return;
+    recMarkDone(x.r.id, x.ym); toast(`Skipped ${x.r.name} for ${ymShort(x.ym)}`);
+  });
 }
 
 function start(){
