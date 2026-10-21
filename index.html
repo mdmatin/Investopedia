@@ -1058,6 +1058,11 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid b{font-size:16px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asum{padding:14px 16px 12px;margin-bottom:12px}
 .asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
+.asum{position:relative}
+.asum .ccy{position:absolute;top:12px;right:14px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
+.asum .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
+.asum .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .asum .big{font-family:var(--font-disp);font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15;margin-top:2px}
 .asum .big{font-size:26px}
 .asum .dd{font-size:13.5px;letter-spacing:-.15px;margin-top:1px;white-space:nowrap} .asum .dd .arrow{font-size:.82em} .asum .dd .k{color:var(--ink-3)}
@@ -1309,7 +1314,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1874,31 +1879,35 @@ function wireSearch(box, list, get, set){
 }
 let assetQuery = '';
 
+let usInr = false;   // US Stocks in rupees at today's rate; starts in dollars every time
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
   const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
   const two = {minimumFractionDigits:2, maximumFractionDigits:2};
-  const money = h => v => isUSD(h)
+  // US rows read in dollars, or in rupees at today's rate when the US card's toggle says ₹
+  const inD = h => isUSD(h) && !inrMode, kx = h => isUSD(h) && inrMode ? fx : 1;
+  const money = h => v => { v = v * kx(h); return inD(h)
     ? '$' + (v<0?'−':'') + Math.abs(v).toLocaleString('en-US', two)
-    : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN', two);
+    : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN', two); };
   const rup2 = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const money2 = h => v => isUSD(h) ? usd.format(v) : '₹' + rup2.format(v);
+  const money2 = h => v => inD(h) ? usd.format(v) : '₹' + rup2.format(v * kx(h));
   const qtyf = n => n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
   // the fallback when a row's three figures won't fit side by side
-  const short = h => v => { const a=Math.abs(v), sym = isUSD(h) ? '$' : '₹';
-    if (isUSD(h)) return sym + (a>=1e6 ? (a/1e6).toFixed(2)+'M' : a>=1e3 ? (a/1e3).toFixed(2)+'k' : a.toFixed(2));
+  const short = h => v => { const a=Math.abs(v * kx(h)), sym = inD(h) ? '$' : '₹';
+    if (inD(h)) return sym + (a>=1e6 ? (a/1e6).toFixed(2)+'M' : a>=1e3 ? (a/1e3).toFixed(2)+'k' : a.toFixed(2));
     return sym + (a>=1e7 ? (a/1e7).toFixed(2)+'Cr' : a>=1e5 ? (a/1e5).toFixed(2)+'L'
                 : a>=1e3 ? (a/1e3).toFixed(2)+'k' : a.toFixed(2)); };
 
   const cats = CAT_ORDER.filter(c=>all.some(h=>h.category===c));
   $('#assetChips').innerHTML = ['All',...cats].map(c=>
     `<button class="chip ${c===assetCat?'on':''}" data-c="${esc(c)}">${esc(CAT_LABEL[c]||c)}</button>`).join('');
-  $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; renderAssets(all, fx); });
+  $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; usInr=false; renderAssets(all, fx); });
 
   const rows = all.filter(h=>assetCat==='All'||h.category===assetCat)
                   .sort((a,b)=>inInr(b)-inInr(a));
   // one category filtered → total in its own currency; All → converted to ₹
   const native = assetCat!=='All' && rows.length && isUSD(rows[0]);
+  const inrMode = !!(native && haveFx && usInr);
   const sum = rows.reduce((s,h)=> s + (native ? (h.value||0) : inInr(h)), 0);
 
   // summary of whatever the chip shows — in dollars for US alone, otherwise rupees
@@ -1912,8 +1921,9 @@ function renderAssets(holdings, usdInr){
       const nwA = ((D && D.data && D.data.netWorth && D.data.netWorth.assets) || []);
       const nwRow = assetCat==='All' ? nwA.find(a=>a.isTotal) : nwA.find(a=>!a.isTotal && assetCatFor(a.name, all)===assetCat);
       const useNW = !native && nwRow && nwRow.value!=null && nwRow.invested!=null;
-      const conv = h => native ? 1 : (isUSD(h) ? fx : 1);
-      const total = useNW ? nwRow.value : sum;
+      const k = inrMode ? fx : 1;   // US in rupees: every dollar figure × today's rate
+      const conv = h => native ? k : (isUSD(h) ? fx : 1);
+      const total = useNW ? nwRow.value : sum * k;
       const invested = useNW ? nwRow.invested : rows.reduce((s,h)=>s+(h.invested||0)*conv(h),0);
       const ret = useNW && nwRow.currReturns!=null ? nwRow.currReturns : total - invested;
       const rp = useNW && nwRow.currPnlPct!=null ? nwRow.currPnlPct : invested ? ret/invested : null;
@@ -1921,19 +1931,21 @@ function renderAssets(holdings, usdInr){
       const dayRows = rows.filter(h=>h.day!=null);
       const dayInr = dayRows.reduce((s,h)=>s+h.day,0);
       const day = useNW && nwRow.dayChange!=null ? nwRow.dayChange
-                : !dayRows.length ? null : native ? (haveFx ? dayInr/fx : null) : dayInr;
+                : !dayRows.length ? null : native && !inrMode ? (haveFx ? dayInr/fx : null) : dayInr;
       const dp = useNW && nwRow.dayChangePct!=null ? nwRow.dayChangePct : day!=null && (total-day) ? day/(total-day) : null;
-      const mo = native ? (v => usd.format(v)) : (v => fINR(v));
+      const usdOut = native && !inrMode;
+      const mo = usdOut ? (v => usd.format(v)) : (v => fINR(v));
       const sg = v => `${v<0?'−':v>0?'+':''}${mo(Math.abs(v))}`;
       const xr = nwRow && nwRow.xirr!=null ? nwRow.xirr : null;
       el.hidden = false;
       // short side figures: dollars in K / M, rupees in K / L / Cr
       const dp2 = (n, d) => String(+n.toFixed(d));
       const km = v => { const x=Math.abs(v);
-        if (native) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'K' : x.toFixed(0));
+        if (usdOut) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'K' : x.toFixed(0));
         return '₹' + (x>=1e7 ? dp2(x/1e7,2)+'Cr' : x>=1e5 ? dp2(x/1e5, x>=1e6?1:2)+'L' : x>=1e3 ? dp2(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); };
       const skm = v => `${v<0?'−':v>0?'+':''}${km(v)}`;
-      el.innerHTML = `<div class="lbl">${assetCat==='All' ? 'All holdings' : esc(CAT_LABEL[assetCat]||assetCat)} · ${rows.length} holding${rows.length===1?'':'s'}</div>
+      el.innerHTML = `${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
+        <div class="lbl">${assetCat==='All' ? 'All holdings' : esc(CAT_LABEL[assetCat]||assetCat)} · ${rows.length} holding${rows.length===1?'':'s'}${inrMode ? ` · <span class="num">₹${fx.toFixed(2)}/$</span>` : ''}</div>
         <div class="big num money">${mo(total)}</div>
         ${day!=null ? `<div class="dd num money">${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span></div>` : ''}
         <div class="arow num">
@@ -1941,6 +1953,7 @@ function renderAssets(holdings, usdInr){
           <div><span>Returns</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
           <div><span>XIRR</span><b class="${xr!=null?cls(xr):''}">${xr!=null?fPct(xr,false):'—'}</b></div>
         </div>`;
+      $$('#assetSum [data-ccy]').forEach(b=>b.onclick=()=>{ usInr = b.dataset.ccy==='inr'; renderAssets(all, usdInr); });
     }
   }
 
@@ -1952,7 +1965,7 @@ function renderAssets(holdings, usdInr){
     // other figure is in dollars — convert it so the card reads in one currency.
     // Without a rate we'd be printing rupees behind a $ sign, so hide it instead.
     const day = h.day==null ? null
-              : isUSD(h) ? (haveFx ? h.day / fx : null)
+              : isUSD(h) ? (haveFx ? h.day / fx : null)      // to dollars; money() takes it back to ₹ in rupee mode
               : h.day;
     return `<div class="hcard tap" data-t="${esc(h.ticker)}" data-q="${esc(qWords(h.ticker, h.category, CAT_LABEL[h.category], h.platform))}">
       <div class="hc-top">${tickerTile(h)}
@@ -1973,7 +1986,7 @@ function renderAssets(holdings, usdInr){
     </div>`;
   }).join('') + (rows.length
       ? `<div class="listfoot"><span>${rows.length} holding${rows.length===1?'':'s'}</span>
-         <span>${native ? '$'+Math.round(sum).toLocaleString('en-US') : fCompact(sum)}</span></div>`
+         <span>${native && !inrMode ? '$'+Math.round(sum).toLocaleString('en-US') : fCompact(native ? sum*fx : sum)}</span></div>`
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
@@ -2948,7 +2961,7 @@ window.addEventListener('touchend', ()=>{
   if (go){ if (navigator.vibrate) navigator.vibrate(8); ptrSpin(true); refresh(true); }
   else ptrSpin(false);
 }, { passive:true });
-if(load(LS.blur) || PREF.blurOnOpen) document.body.classList.add('blur');
+if(load(LS.blur)) document.body.classList.add('blur');
 let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!D) return;
   if(activeView==='trend') renderTrends(D.data.daily,D.data.monthly); if(activeView==='home') renderHome(D.data); },200); });
 let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show');
@@ -5107,7 +5120,7 @@ const PI = {
   home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
   chart:'<path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/>',
   card:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/>',
-  dec:'<path d="M4 17h.01M8 7h3.5a3.5 3.5 0 0 1 0 7H8zM15 17h5M17.5 14.5v5"/>',
+  dec:'<text x="12" y="12.6" font-size="14.5" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif">.00</text><path d="M3.5 19h16.5M17 15.8l3.2 3.2-3.2 3.2"/>',
   sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
   sync:'<path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M5 3v5h5M19 21v-5h-5"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
@@ -5141,11 +5154,9 @@ function profileBody(){
 
    <h3>Privacy</h3><div class="grp">
     ${row('eye','#8e8e93','Hide amounts', sw('blur', blur))}
-    ${row('eye','#5856d6','Hide amounts on open', sw('blurOnOpen', PREF.blurOnOpen))}
     ${row('face','#34c759','Face ID lock', sw('faceid', !!lockCfg))}
     ${lockCfg ? row('timer','#ff9500','Lock', pick('lockAfter', PREF.lockAfter, LOCK_OPTS)) + row('lock','#007aff','Lock now', '', '', 'data-act="locknow"') : ''}
    </div>
-   <div class="ft">${lockCfg ? 'Face ID asks when Centric opens, and again after it has been in the background for the time above.' : 'With Face ID lock on, Centric asks for Face ID when it opens.'}</div>
 
    <h3>Appearance</h3><div class="grp"><div class="themes">
     ${[['light','l','Light'],['dark','d','Dark'],['auto','a','Automatic']].map(([v,k,l])=>`<button class="th" data-thm="${v}"><div class="mini ${k}"><span style="top:14px"></span><span style="top:30px;height:28px"></span><span style="top:64px"></span></div>${l}<span class="rad ${th===v?'on':''}"></span></button>`).join('')}
