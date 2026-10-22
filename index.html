@@ -1144,9 +1144,12 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid span{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .kgrid b{font-size:16px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asum{padding:14px 16px 12px;margin-bottom:12px}
-.asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
+.asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px;padding-right:44px}
+.asum > .chart-tg{position:absolute;top:10px;right:12px}
+.asum .ccy ~ .lbl{padding-right:130px}
+.asum .hchart{height:160px;margin-top:16px}
 .asum{position:relative}
-.asum .ccy{position:absolute;top:12px;right:14px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
+.asum .ccy{position:absolute;top:12px;right:58px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
 .asum .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
 .asum .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 html[data-theme=dark] .asum .ccy button.on{background:#48484a}
@@ -1398,7 +1401,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-27k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2069,7 +2072,8 @@ function renderAssets(holdings, usdInr){
         if (usdOut) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'K' : x.toFixed(0));
         return '₹' + (x>=1e7 ? dp2(x/1e7,2)+'Cr' : x>=1e5 ? dp2(x/1e5, x>=1e6?1:2)+'L' : x>=1e3 ? dp2(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); };
       const skm = v => `${v<0?'−':v>0?'+':''}${km(v)}`;
-      el.innerHTML = `${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
+      const ck = assetChartKey(assetCat, native && !inrMode);
+      el.innerHTML = `${chartToggle(assetChart)}${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
         <div class="lbl">${assetCat==='All' ? 'All holdings' : esc(CAT_LABEL[assetCat]||assetCat)} · ${rows.length} holding${rows.length===1?'':'s'}${inrMode ? ` · <span class="num">₹${fx.toFixed(2)}/$</span>` : ''}</div>
         <div class="big num money">${mo(total)}</div>
         ${day!=null ? `<div class="dd num money">${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span></div>` : ''}
@@ -2077,8 +2081,12 @@ function renderAssets(holdings, usdInr){
           <div><span>Invested</span><b class="money">${km(invested)}</b></div>
           <div><span>Returns</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
           <div><span>XIRR</span><b class="${xr!=null?cls(xr):''}">${xr!=null?fPct(xr,false):'—'}</b></div>
-        </div>`;
+        </div>${histInner(ck, assetChart, 'assetChart')}`;
       $$('#assetSum [data-ccy]').forEach(b=>b.onclick=()=>{ usInr = b.dataset.ccy==='inr'; renderAssets(all, usdInr); });
+      const tg = $('#assetSum [data-loadchart]');
+      if (tg) tg.onclick = ()=>{ assetChart = !assetChart; save('inv.assetChart', assetChart); renderAssets(all, usdInr); };
+      $$('#assetSum [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; renderAssets(all, usdInr); });
+      if (assetChart){ loadCategory(assetCat); drawHist(ck, native && !inrMode, 'assetChart'); }
     }
   }
 
@@ -3037,6 +3045,8 @@ function showHoldSec(k){
   $$('#holdSeg button').forEach(b=>b.classList.toggle('on', b.dataset.s===k));
   ['assets','platforms','buckets'].forEach(n=>{ const el=$('#s-'+n); if(el) el.hidden = n!==k; });
   window.scrollTo(0,0);
+  // the chart is sized from the card, so draw it again once the card is on screen
+  if (k==='assets' && assetChart && D && D.data) requestAnimationFrame(()=>renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr));
 }
 $$('#holdSeg button').forEach(b=>b.onclick=()=>showHoldSec(b.dataset.s));
 
@@ -3424,7 +3434,7 @@ function histPts(ticker){
 // small round button at the right of the title row: shows / hides the chart
 const chartToggle = on => `<button class="chart-tg ${on?'on':''}" data-loadchart aria-label="${on?'Hide':'Show'} chart" aria-pressed="${on?'true':'false'}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></button>`;
-function histInner(ticker, show){
+function histInner(ticker, show, cid='histChart'){
   if (!show) return '';
   const c = histCache[ticker] || {};
   const all = c.pts || [], pts = histPts(ticker);
@@ -3432,12 +3442,12 @@ function histInner(ticker, show){
   if (!c.pts) return '<div class="pg-load">Loading history…</div>';
   if (all.length < 2) return '<div class="pg-load">Not enough history yet — a point is added every morning</div>';
   // The range buttons stay put even if a short range holds too few points.
-  return `${pts.length < 2 ? '<div class="pg-load">Not enough history for this range</div>' : '<div class="chart hchart" id="histChart"><svg></svg><div class="tip"></div></div>'}
+  return `${pts.length < 2 ? '<div class="pg-load">Not enough history for this range</div>' : `<div class="chart hchart" id="${cid}"><svg></svg><div class="tip"></div></div>`}
     <div class="hlg"><span class="cv"><i></i>Current value</span><span class="iv"><i></i>Invested</span><span class="since">since ${fDate(all[0].date)}</span></div>
     <div class="ranges">${['1W','1M','3M','6M','1Y','All'].map(r=>`<button data-hr="${r}" class="${r===histRange?'on':''}">${r}</button>`).join('')}</div>`;
 }
-function drawHist(ticker, usdRow){
-  const el = $('#histChart'); if(!el) return;
+function drawHist(ticker, usdRow, cid='histChart'){
+  const el = $('#'+cid); if(!el) return;
   const pts = histPts(ticker); if (pts.length < 2) return;
   const m = nativeMoney(usdRow);
   const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
@@ -3464,6 +3474,30 @@ function drawHist(ticker, usdRow){
     + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
   hoverable(el, svg, tip, pts, x, W, p=>{ const g=p.value-p.invested;
     return `<b>${fDate(p.date)}</b><br>Current ${m(p.value)}<br>Invested ${m(p.invested)}<br>${g>=0?'Gain':'Loss'} ${m(Math.abs(g))}`; });
+}
+
+// Assets tab chart: one category's (or All) Invested vs Value, in rupees under
+// 'C:<cat>'; US Stocks also in dollars under 'C$:US Stocks' for the $ view.
+let assetChart = load('inv.assetChart') === true;
+const assetChartKey = (cat, usd) => (usd ? 'C$:' : 'C:') + cat;
+const catLoad = {};
+async function loadCategory(cat){
+  const c = catLoad[cat];
+  if (c && (c.loading || (Date.now() - c.at) < (c.ok ? 6e5 : 2e4))) return;
+  catLoad[cat] = { loading:true, at: Date.now() };
+  try{
+    const j = await api({ action:'category', category:cat });
+    const pts = (j.data && j.data.points) || [];
+    histCache['C:'+cat] = { pts, at: Date.now() };
+    const up = pts.filter(p=>p.usdValue!=null);
+    if (up.length) histCache['C$:'+cat] = { pts: up.map(p=>({ date:p.date, invested:p.usdInvested, value:p.usdValue })), at: Date.now() };
+    catLoad[cat] = { ok:true, at: Date.now() };
+  }catch(e){
+    const msg = /unknown action/i.test(e.message||'') ? 'Chart needs the latest script (2026-10-27a)' : (e.message || 'Could not load');
+    histCache['C:'+cat] = histCache['C$:'+cat] = { err: msg, at: Date.now() };
+    catLoad[cat] = { at: Date.now() };
+  }
+  if (assetCat===cat && D && D.data) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
 }
 
 // One call per platform: its orders and its weekly invested-vs-value history.
