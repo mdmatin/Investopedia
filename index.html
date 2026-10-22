@@ -1401,7 +1401,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-28b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2011,6 +2011,8 @@ let usInr = false;   // US Stocks in rupees at today's rate; starts in dollars e
 function renderAssets(holdings, usdInr){
   const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
   const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
+  // rupee cost: US lots at the rate of their buy dates (h.invInr, from the sheet), never today's rate
+  const invInr = h => isUSD(h) ? (h.invInr!=null ? h.invInr : (h.invested||0) * fx) : (h.invested||0);
   const two = {minimumFractionDigits:2, maximumFractionDigits:2};
   // US rows read in dollars, or in rupees at today's rate when the US card's toggle says ₹
   const inD = h => isUSD(h) && !inrMode, kx = h => isUSD(h) && inrMode ? fx : 1;
@@ -2052,7 +2054,7 @@ function renderAssets(holdings, usdInr){
       const k = inrMode ? fx : 1;   // US in rupees: every dollar figure × today's rate
       const conv = h => native ? k : (isUSD(h) ? fx : 1);
       const total = useNW ? nwRow.value : sum * k;
-      const invested = useNW ? nwRow.invested : rows.reduce((s,h)=>s+(h.invested||0)*conv(h),0);
+      const invested = useNW ? nwRow.invested : rows.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0);
       const ret = useNW && nwRow.currReturns!=null ? nwRow.currReturns : total - invested;
       const rp = useNW && nwRow.currPnlPct!=null ? nwRow.currPnlPct : invested ? ret/invested : null;
       // Day is held in rupees on every row; divide back to dollars only for the US view
@@ -2077,7 +2079,7 @@ function renderAssets(holdings, usdInr){
       const ck0 = assetChartKey(assetCat, native && !inrMode), ck = 'T:' + ck0, base = histCache[ck0];
       if (base && base.pts && base.pts.length){
         const today = new Date().toLocaleDateString('en-CA'), last = base.pts[base.pts.length-1];
-        const live = { date: today, invested: rows.reduce((s,h)=>s+(h.invested||0)*conv(h),0), value: sum * k };
+        const live = { date: today, invested: rows.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0), value: sum * k };
         histCache[ck] = { pts: last.date < today ? [...base.pts, live] : [...base.pts.slice(0,-1), live], at: base.at };
       } else histCache[ck] = base || {};
       el.innerHTML = `${chartToggle(assetChart)}${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
@@ -2099,8 +2101,11 @@ function renderAssets(holdings, usdInr){
 
   $('#assetList').innerHTML = rows.map(h=>{
     const m = money(h), m2 = money2(h);
-    const ret = h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
-    const p   = h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
+    // a US card in ₹: cost at buy-date rates, so returns include what the dollar did since
+    const inrCost = isUSD(h) && inrMode && h.invInr!=null;
+    const inv = inrCost ? h.invInr / fx : h.invested;          // money() multiplies by today's rate again
+    const ret = inrCost ? (h.value||0) - inv : h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
+    const p   = inrCost ? (inv ? ret/inv : null) : h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
     // Master List keeps the Day change in rupees even on US rows, where every
     // other figure is in dollars — convert it so the card reads in one currency.
     // Without a rate we'd be printing rupees behind a $ sign, so hide it instead.
@@ -2115,7 +2120,7 @@ function renderAssets(holdings, usdInr){
       </div>
       <div class="hc-bot">
         <div><div class="k">Invested</div>
-          <div class="vv" data-short="${esc(short(h)(h.invested))}"><span class="amt">${m(h.invested)}</span></div></div>
+          <div class="vv" data-short="${esc(short(h)(inv))}"><span class="amt">${m(inv)}</span></div></div>
         ${day==null ? '' : `<div class="mid">
           <div class="k">Today</div>
           <div class="vv ${cls(day)}" data-short="${esc(short(h)(Math.abs(day)))}"><span class="arrow">${day>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(day))}</span></div></div>`}
