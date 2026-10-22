@@ -1145,11 +1145,14 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid b{font-size:16px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asum{padding:14px 16px 12px;margin-bottom:12px}
 .asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px;padding-right:44px}
-.asum > .chart-tg{position:absolute;top:10px;right:12px}
+.asum > .chart-tg{position:absolute;top:13px;right:14px;width:30px;height:30px}
+.asum > .chart-tg svg{width:16px;height:16px}
+.asum .big{padding-right:44px}
+.asum .ccy + .big{padding-right:122px}
 .asum .ccy ~ .lbl{padding-right:130px}
 .asum .hchart{height:160px;margin-top:16px}
 .asum{position:relative}
-.asum .ccy{position:absolute;top:12px;right:58px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
+.asum .ccy{position:absolute;top:13px;right:52px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
 .asum .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
 .asum .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 html[data-theme=dark] .asum .ccy button.on{background:#48484a}
@@ -1181,7 +1184,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
 .hcard.tap,.row.tap{cursor:pointer}
-.platrow .r .v{font-weight:600}
+.platrow .r .v,.bkrow .r .v{font-weight:600}
 .platrow .r .s{margin-top:3px}
 .platrow .r .s.up{color:var(--up)} .platrow .r .s.down{color:var(--down)}
 .platrow .arrow{font-size:.82em}
@@ -1401,7 +1404,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-28c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1636,7 +1639,7 @@ function renderHome(d){
   fl.innerHTML = kinds.map(([k,l])=>`<button data-af="${k}" class="${accFilt===k?'on':''}">${l}</button>`).join('');
   $$('#accFlt [data-af]').forEach(b=>b.onclick=()=>{ const y = window.scrollY; accFilt = b.dataset.af; save('inv.accFilt', accFilt); renderHome(d); holdScroll(y); });
   // Construction: the For Construction table — account rows live from Money, the
-  // hand-kept rows (Cash Owed, Invested, INDwallet) editable right here
+  // hand-kept rows (Cash Owed, Invested, INDmoney · C) editable right here
   const shown = cash ? (accFilt==='construction' ? constrRows(nw) : cash.rows.filter(r=>accFilt==='all' ? r.kind!=='construction' : r.kind===accFilt)) : null;
   EL.banks.rows = cash ? shown : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
   const rbal = cash ? shown.reduce((a,r)=>a+(r.amount||0),0) : h.runningBalance;
@@ -1657,9 +1660,9 @@ function renderHome(d){
   renderEditList(EL.wal);
 
   // construction fund (Net Worth AB/AC) — same editor; formula rows are read-only,
-  // except INDwallet, whose dollar balance (C23) is edited instead
+  // except INDmoney · C (construction INDmoney wallet), whose dollar balance (C23) is edited instead
   const cons = nw.construction || {items:[], summary:[]};
-  cons.items.forEach(it=>{ if (/indwallet/i.test(it.name) && W.construction && !W.construction.formula) {
+  cons.items.forEach(it=>{ if (/^(indwallet|indmoney · c)$/i.test(it.name) && W.construction && !W.construction.formula) {
     it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; it.src = W.construction; it.fx = fx; } });
   $('#consHead').hidden = $('#construction').hidden = true;      // shown under Accounts › Construction now
 }
@@ -1685,7 +1688,7 @@ const fUSD = v => '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigi
 function editRowMeta(b){
   // a dollar wallet in the Wallets list: its rupee value underneath
   if (b.wccy==='USD' && b.usd==null && b.amount!=null) return '≈ ' + fINR(b.amount);
-  // INDwallet: its dollar balance (Net Worth C23), not a gain
+  // INDmoney · C: its dollar balance (Net Worth C23), not a gain
   if (b.usd!=null) return `$${b.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   // only the Invested row (it has a Current value) carries a real gain
   if (b.pnl==null || b.current==null) return '';
@@ -1895,7 +1898,7 @@ function bucketMark(name, i){
 // Bank names carry account digits and spacing ("Jupiter  ●●●2433"), so the
 // logo is matched on the brand inside the name — all three Jupiter rows share
 // one file. Drop a PNG in /logos and add a line here to use it.
-const BANK_LOGOS = [[/sbi/i,'SBI'],[/icici/i,'ICICI'],[/jupiter/i,'JUPITER'],[/deel/i,'DEEL']];
+const BANK_LOGOS = [[/sbi/i,'SBI'],[/icici/i,'ICICI'],[/jupiter/i,'JUPITER'],[/deel/i,'DEEL'],[/indmoney|indwallet/i,'INDMONEY']];
 // platforms (Holdings ▸ Platforms) use their name: Kite → logos/KITE.png, INDmoney → logos/INDMONEY.png
 function logoMark(name, list, [svg,tint]){
   let file = list ? '' : logoSafe(name);
@@ -1904,7 +1907,7 @@ function logoMark(name, list, [svg,tint]){
     src="logos/${file}.png" alt="" onload="this.classList.add('ok')" onerror="this.remove()">` : ''}</div>`;
 }
 // known banks by pattern (names carry masked account digits); anything else by
-// its own name, e.g. INDwallet → logos/INDWALLET.png
+// its own name; INDmoney · C uses the INDmoney logo
 function bankMark(name){
   return BANK_LOGOS.some(([re])=>re.test(name))
     ? logoMark(name, BANK_LOGOS, iconFor(name, FB_BANK))
@@ -2083,9 +2086,9 @@ function renderAssets(holdings, usdInr){
         histCache[ck] = { pts: last.date < today ? [...base.pts, live] : [...base.pts.slice(0,-1), live], at: base.at };
       } else histCache[ck] = base || {};
       el.innerHTML = `${chartToggle(assetChart)}${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
-        <div class="lbl">${assetCat==='All' ? 'All holdings' : esc(CAT_LABEL[assetCat]||assetCat)} · ${rows.length} holding${rows.length===1?'':'s'}${inrMode ? ` · <span class="num">₹${fx.toFixed(2)}/$</span>` : ''}</div>
         <div class="big num money">${mo(total)}</div>
-        ${day!=null ? `<div class="dd num money">${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span></div>` : ''}
+        ${(()=>{ const rate = native && haveFx ? `<span class="k">${day!=null?' · ':''}₹${fx.toFixed(2)}/$</span>` : '';   // the dollar rate, only on US Stocks
+          return day!=null || rate ? `<div class="dd num money">${day!=null ? `${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span>` : ''}${rate}</div>` : ''; })()}
         <div class="arow num">
           <div><span>Invested</span><b class="money">${km(invested)}</b></div>
           <div><span>Returns</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
