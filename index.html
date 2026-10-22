@@ -1128,6 +1128,9 @@ body.paged{overflow:hidden}
 em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid.k2{grid-template-columns:auto auto;justify-content:space-between}
 .kgrid.k2 span{white-space:nowrap}
+.kgrid:not(.k2) > div:nth-child(3n+2){align-items:center;text-align:center}
+.kgrid:not(.k2) > div:nth-child(3n){align-items:flex-end;text-align:right}
+.kgrid.k2 > div:nth-child(2n){align-items:flex-end;text-align:right}
 .pg-id .grow{flex:1;min-width:0}
 .chart-tg{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--parchment);color:var(--ink-2);transition:background .2s,color .2s}
 .chart-tg svg{width:18px;height:18px}
@@ -1395,7 +1398,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-27j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-27k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4581,7 +4584,7 @@ function booksBody(){
       ${b.inv ? (()=>{ const g = b.inv.gap||0, bad = Math.abs(g) >= 1;
         return `<button class="bk-ivrow" id="bkIvGo"><span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
           <span class="t">Investment log</span><b class="num money ${bad?'bk-amber':''}">${bad ? (g<0?'−':'+')+fINR2(Math.abs(g))+' apart' : 'In step'}</b></button>`; })() : ''}</div>`;
-  // what moved the books, newest first (All Investments › Books Log)
+  // what moved the books, newest first (All Investments › Activity log)
   const log = (b.log || []).filter(e=>!e.same);
   let html = '', cur = null;
   if (log.length) html += `<div class="sechead"><h2>Activity</h2><button id="bkLogAll">All</button></div><div class="card tight bklog">${bkLogRows(log.slice(0, 3))}</div>`;
