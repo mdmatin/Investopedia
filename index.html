@@ -214,11 +214,13 @@ main{padding:0}
 .hc-name .sub{font-size:13.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .hc-stats{text-align:right;font-size:13px;color:var(--ink-3);line-height:1.5;white-space:nowrap}
 .hc-stats b{font-weight:400;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.hc-bot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+.hc-bot{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
   align-items:flex-end;margin-top:11px;gap:8px}
 .hc-bot .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px;white-space:nowrap}
 /* same weight and size as the value column on the By type rows below, so the
    three figures sit quieter than the ticker itself */
+.hc-bot .right{text-align:right}
+.hc-bot .mid{text-align:center}
 .hc-bot .vv{font-size:16px;font-weight:600;letter-spacing:-.35px;font-variant-numeric:tabular-nums;
   line-height:1.25;white-space:nowrap}
 /* sized in em so the arrow scales with whatever it sits in — the small label
@@ -229,6 +231,7 @@ main{padding:0}
 @media (max-width:400px){
   .card.tight{padding:6px 14px;margin:0 12px 14px}
   .hc-bot{gap:6px}
+  .hc-bot .k{font-size:11px}
   .hc-bot .vv{font-size:15px;letter-spacing:-.3px}
 }
 .loadmore{display:block;width:calc(100% - 32px);margin:4px 16px 0;padding:13px;border-radius:14px;
@@ -484,7 +487,6 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .xchips button{padding:7px 13px;border-radius:999px;background:var(--canvas);border:1px solid var(--card-edge);font-size:14.5px;color:var(--ink);letter-spacing:-.2px}
 .xchips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .xchips[hidden],.xlbl[hidden]{display:none}
-.accseg{margin:14px 16px 4px}
 .addacc{display:block;margin:14px 16px 0;width:calc(100% - 32px);padding:13px;border-radius:var(--r-mid);background:var(--canvas);color:var(--blue);font-weight:600;font-size:16px;box-shadow:0 0 0 1px var(--card-edge)}
 .accbtns{display:flex;gap:18px;flex-wrap:wrap}
 .accform .seg{margin-bottom:14px}
@@ -495,8 +497,33 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .tsum span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px} .tsum b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.35px;margin-top:3px;white-space:nowrap}
 .tsum .up{color:var(--up)} .tsum .down{color:var(--down)}
 .tflt{display:flex;gap:7px;margin:0 16px 10px;overflow:auto;scrollbar-width:none}
+/* Activity: Income · Spent · Net as three plain figures (no card), then search with a filter button beside it */
+.tline{display:flex;justify-content:space-between;gap:12px;margin:0 24px 14px}
+.tline > div + div{border-left:1px solid var(--hairline);padding-left:12px}
+.tline span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
+.tline b{display:block;font-size:15px;color:var(--ink);font-weight:600;letter-spacing:-.3px;margin-top:2px;white-space:nowrap}
+.tline b.up{color:var(--up)}.tline b.down{color:var(--down)}
+.srow{display:flex;gap:8px;align-items:center;margin:0 16px 12px}
+.srow .search{flex:1;margin:0;min-width:0}
+.fbtn{flex:none;width:44px;height:44px;border-radius:50%;background:var(--canvas);border:1px solid var(--card-edge);display:grid;place-items:center;color:var(--ink);position:relative}
+.fbtn svg{width:20px;height:20px}
+.fbtn.on{background:rgba(0,102,204,.12);border-color:rgba(0,102,204,.3);color:var(--blue)}
+html[data-theme=dark] .fbtn.on{background:rgba(41,151,255,.18);border-color:rgba(41,151,255,.35)}
+.fbtn .dot{position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--parchment)}
+.fchip{margin:-2px 16px 12px}
+.fchip button{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;border-radius:999px;background:rgba(0,102,204,.12);color:var(--blue);font-size:13px;font-weight:600}
+html[data-theme=dark] .fchip button{background:rgba(41,151,255,.16)}
+.fchip button span{font-size:11px;opacity:.85}
+.fmenu-bd{position:fixed;inset:0;z-index:60}
+.fmenu{position:fixed;z-index:61;width:210px;background:var(--canvas);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25),0 0 0 1px var(--card-edge);overflow:hidden}
+html[data-theme=dark] .fmenu{background:#2c2c2e;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.fmenu button{display:flex;justify-content:space-between;align-items:center;width:100%;padding:12px 16px;font-size:15px;color:var(--ink);border-top:1px solid var(--hairline);text-align:left}
+.fmenu button:first-child{border-top:0}
+.fmenu i{font-style:normal;color:var(--blue);font-weight:600}.fmenu small{font-size:13px;color:var(--ink-2)}
 .tflt button{padding:6px 12px;border-radius:999px;background:var(--canvas);border:1px solid var(--card-edge);font-size:13.5px;color:var(--ink);white-space:nowrap}
 .tflt button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+#accFlt{gap:6px}
+#accFlt button{flex:1 1 auto;text-align:center;padding:6px 8px;font-size:13px;min-width:0}   /* Overview accounts filter: pills share the full width */
 .tarw{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;vertical-align:-3px;margin-right:6px;flex:none}
 .tarw svg{width:11px;height:11px}
 .trow .m{display:flex;align-items:center}      /* badge and text on one centre line */
@@ -1149,8 +1176,6 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .platrow .r .s{margin-top:3px}
 .platrow .r .s.up{color:var(--up)} .platrow .r .s.down{color:var(--down)}
 .platrow .arrow{font-size:.82em}
-.bkrow .chev{width:10px;text-align:center}
-.bkrow.open .chev{color:var(--ink)}
 /* open bucket: holdings full width on white, a thin rule on the left, and an
    empty slot where the bucket row has its chevron so the amounts line up */
 .bkin{border-top:1px solid var(--hairline)}
@@ -1368,7 +1393,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-27b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-27d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2097,8 +2122,7 @@ function renderAssets(holdings, usdInr){
 // the ones that actually overflow, fall back to the compact form (₹2.45L).
 function fitAssetRows(){
   $$('#assetList .hc-bot').forEach(row=>{
-    // three equal columns now, so check each figure against its own column
-    const overflows = () => [...row.querySelectorAll('.vv')].some(v => v.scrollWidth > v.clientWidth + 1);
+    const overflows = () => row.scrollWidth > row.clientWidth + 1;
     if (!overflows()) return;
     row.querySelectorAll('.vv[data-short]').forEach(v=>{
       const amt = v.querySelector('.amt');
@@ -2190,8 +2214,7 @@ function renderBreakdown(bd, bk){
       <div class="l"><div class="n">${esc(b.name)}</div>
         <div class="m num money">Invested ${fCompact(b.invested)}</div></div>
       <div class="r"><div class="v num money">${fINR(b.value)}</div>
-        <div class="p"><span class="pill sm ${cls(b.currPnl)} num money">${fPct(b.currPnlPct)}</span></div></div>
-      <span class="chev">›</span></div>`).join('') || '<div class="empty">No buckets</div>';
+        <div class="p"><span class="pill sm ${cls(b.currPnl)} num money">${fPct(b.currPnlPct)}</span></div></div></div>`).join('') || '<div class="empty">No buckets</div>';
   $$('#buckets .bkrow').forEach(r=>r.onclick=()=>pushPage({ kind:'bucket', bucket:r.dataset.bk, list: buckets.map(x=>x.name) }));
 }
 
@@ -3894,18 +3917,16 @@ function renderSpend(){
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   el.innerHTML = sw + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
-  $$('#spBody [data-accsec]').forEach(b=>b.onclick=()=>{ accSec = b.dataset.accsec; renderSpend(); });
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
   $$('#spBody [data-constr]').forEach(b=>b.onclick=()=>pushPage({ kind:'constr' }));
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
+  $$('#spBody [data-fmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openTxMenu(b); });
   $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
     const [k,row] = r.dataset.tx.split(':'), d = xd();
     const inc = k==='in' || k==='adj', pool = k==='tr' ? d.transfers : inc ? d.incomes : d.entries;
     openXSheet((pool||[]).find(e=>String(e.row)===row), k==='tr' ? 'transfer' : inc ? 'income' : 'expense');
   });
-  $$('#spBody [data-mvt]').forEach(r=>r.onclick=()=>openXSheet((xd().transfers||[]).find(e=>String(e.row)===r.dataset.mvt), 'transfer'));
-  $$('#spBody [data-mvi]').forEach(r=>r.onclick=()=>openXSheet((xd().incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
   $$('#spBody [data-ym]').forEach(b=>b.onclick=()=>{ spMonth = ymAdd(spMonth, Number(b.dataset.ym)); renderSpend(); });
   $$('#spBody [data-mpick]').forEach(b=>b.onclick=()=>monthPicker(spMonth, m=>{ spMonth = m; renderSpend(); }));
   $$('#spBody [data-xcat]').forEach(r=>r.onclick=()=>pushPage({ kind:'expcat', cat:r.dataset.xcat, ym:r.dataset.ymc||spMonth }));
@@ -4112,7 +4133,22 @@ function xDayGroups(list, showCat){
 /* Transactions — expenses, transfers and money in for the month, newest first.
    A small badge says which: ↓ red money out, ↑ green money in, ⇄ blue transfer,
    ↑ amber refund. */
-let txFilter = 'ex';                 // Activity opens on Expenses
+let txFilter = 'all', txCounts = {};   // Activity opens on everything; the filter button narrows it
+const TXF = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' };
+const TXF_LBL = { all:'All', ex:'Expenses', tr:'Transfers', in:'Income' };
+const FILTER_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg>';
+// small menu under the filter button: All / Expenses / Transfers / Income with this month's counts
+function openTxMenu(btn){
+  closeTxMenu();
+  const r = btn.getBoundingClientRect();
+  const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
+  const m = document.createElement('div'); m.className = 'fmenu';
+  m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+  m.innerHTML = ['all','ex','tr','in'].map(k=>`<button data-txm="${k}"><span>${TXF_LBL[k]}</span>${txFilter===k ? '<i>✓</i>' : `<small class="num">${txCounts[k]||0}</small>`}</button>`).join('');
+  m.querySelectorAll('[data-txm]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txm; closeTxMenu(); renderSpend(); });
+  document.body.append(bd, m);
+}
+function closeTxMenu(){ document.querySelectorAll('.fmenu,.fmenu-bd').forEach(e=>e.remove()); }
 const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', lq:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
 const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund', lq:'Liquidation' };
 function txItems(ym){
@@ -4152,7 +4188,7 @@ function spListHtml(){
   const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv') && !isConstr(x.e.category);
   const spent = all.filter(counts).reduce((s,x)=>s+x.e.amount,0);
   const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
-  const keep = { all:()=>true, ex:x=>x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv', tr:x=>x.k==='tr', in:x=>x.k==='in' }[txFilter];
+  const keep = TXF[txFilter] || TXF.all;
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
   const days = Object.keys(by).sort().reverse().map(dt=>{
@@ -4161,13 +4197,14 @@ function spListHtml(){
     return `<div class="daygroup tday"><span>${esc(fDate(dt))}</span><span class="num money">${ii?`<em class="up">+${fINR2(ii)}</em>`:''}${sp?fINR2(sp):''}</span></div>
       <div class="card tight">${by[dt].map(txRow).join('')}</div>`;
   }).join('');
-  const chipsHtml = [['all','All'],['ex','Expenses'],['tr','Transfers'],['in','Income']]
-    .map(([k,l])=>`<button data-txf="${k}" class="${txFilter===k?'on':''}">${l}</button>`).join('');
-  return `<div class="tsum"><div><span>Income</span><b class="num money up">${fINR2(inn)}</b></div><div><span>Spent</span><b class="num money">${fINR2(spent)}</b></div>
-      <div><span>Net</span><b class="num money ${inn-spent<0?'down':''}">${fINR2(inn-spent)}</b></div></div>
+  // the filter lives behind a button beside search; counts are for this month
+  txCounts = { all: all.length, ex: all.filter(TXF.ex).length, tr: all.filter(TXF.tr).length, in: all.filter(TXF.in).length };
+  const fOn = txFilter !== 'all', net = inn - spent;
+  return `<div class="tline num money"><div><span>Income</span><b class="up">${fINR(inn)}</b></div><div><span>Spent</span><b>${fINR(spent)}</b></div><div><span>Net</span><b class="${net<0?'down':''}">${fINR(net)}</b></div></div>
     ${recDueHtml()}
-    <div class="tflt">${chipsHtml}</div>
-    <div class="search" id="xSearch"></div>
+    <div class="srow"><div class="search" id="xSearch"></div>
+      <button class="fbtn ${fOn?'on':''}" data-fmenu aria-label="Filter">${FILTER_IC}${fOn?'<span class="dot"></span>':''}</button></div>
+    ${fOn ? `<div class="fchip"><button data-txf="all">${esc(TXF_LBL[txFilter])}<span aria-hidden="true">✕</span></button></div>` : ''}
     <div id="xList">${days || `<div class="empty">Nothing ${txFilter==='all'?'recorded':'here'} in ${esc(ymLabel(spMonth))}</div>`}</div>`;
 }
 
@@ -4377,21 +4414,15 @@ function spAccountsHtml(){
   // saved = income this month minus what was spent — leaving investments out (money invested is still saved); refunds reduce it
   const mOut = xTotal(spendOnly(xMonth(ym)));
   const saved = mIn - mOut;
-  const cardLine = [cards.owed>0.004 ? fINR2(cards.owed)+' owed on cards' : '', cards.credit>0.004 ? fINR2(cards.credit)+' card credit' : '']
-    .filter(Boolean).join(' · ') || 'Nothing owed on cards';
   const head = `<div class="card spsum">
       <div class="k">Banks &amp; cash</div>
       <div class="big num money">${fINR2(sum.bank)}</div>
-      <div class="of num money">${cardLine}</div>
       <div class="spstats">
         <div><span>Income · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money">${fINR2(mIn)}</b></div>
         <div><span>Saved · ${esc(ymShort(ym).slice(0,3))}</span><b class="num money ${saved<0?'down':''}">${fINR2(saved)}${mIn>0?` <em class="pct">(${Math.round(saved/mIn*100)}%)</em>`:''}</b></div>
       </div></div>`;
-  const seg = `<div class="seg accseg">${[['accounts','Accounts'],['transfers','Transfers'],['income','Income']]
-    .map(([k,l])=>`<button data-accsec="${k}" class="${accSec===k?'on':''}">${l}</button>`).join('')}</div>`;
-  if (accSec==='transfers') return head + seg + accTransfersHtml();
-  if (accSec==='income') return head + seg + accIncomeHtml();
-  return head + seg + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
+  // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
+  return head + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
 // have a Construction account taken live from it (ICICI · Construction → ICICI)
@@ -4583,27 +4614,6 @@ function accGroupsHtml(acc){
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}</div>`;
   }).join('');
-}
-let accSec = 'accounts';
-// newest first, one card per month with its total
-function monthCards(list, rowFn, empty){
-  if (!list.length) return `<div class="card tight"><div class="empty">${empty}</div></div>`;
-  const by = {}; list.forEach(e=>(by[e.date.slice(0,7)] = by[e.date.slice(0,7)] || []).push(e));
-  return Object.keys(by).sort().reverse().map(ym=>{
-    const items = by[ym].sort((x,y)=>x.date<y.date?1:x.date>y.date?-1:0);
-    return `<div class="daygroup xday"><span>${esc(ymLabel(ym))}</span><span class="num money">${fINR2(items.reduce((s,e)=>s+(e.type==='Adjustment' ? 0 : (e.amount||0)),0))}</span></div>
-      <div class="card tight">${items.map(rowFn).join('')}</div>`;
-  }).join('');
-}
-function accTransfersHtml(){
-  return monthCards((xd().transfers||[]).slice(), e=>`<button class="row" data-mvt="${e.row}">${moveTile('transfer')}
-      <div class="l"><div class="n">${esc(e.from)} → ${esc(e.to)}</div><div class="m">${[e.note, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
-      <div class="r"><div class="v num money">${fINR2(e.amount)}</div></div></button>`, 'No transfers yet. Tap + to move money between accounts.');
-}
-function accIncomeHtml(){
-  return monthCards((xd().incomes||[]).slice(), e=>`<button class="row" data-mvi="${e.row}">${moveTile('income')}
-      <div class="l"><div class="n">${esc(e.type==='Adjustment' ? 'Balance adjustment' : (e.source || e.type || 'Income'))}</div><div class="m">${[e.source ? e.type : '', e.account, e.remark, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
-      <div class="r"><div class="v num money ${e.amount<0?'down':'up'}">${fINR2(e.amount)}</div>${e.tax?`<div class="s num money">tax ${fINR2(e.tax)}</div>`:''}</div></button>`, 'No income recorded yet.');
 }
 const ordinal = n => n + (['th','st','nd','rd'][((n%100)-20)%10] || ['th','st','nd','rd'][n%100] || 'th');
 
