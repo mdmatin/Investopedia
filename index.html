@@ -153,7 +153,7 @@ main{padding:0}
 .kpirow > div{flex:1;text-align:left;border-left:1px solid var(--hairline);padding:0 4px 0 12px}
 .kpirow > div:first-child{padding-left:0}
 .kpirow > div:first-child{border-left:0}
-.kpirow .k{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.kpirow .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .kpirow .v{font-size:16px;font-weight:600;letter-spacing:-.3px;margin-top:3px}
 
 /* ---------- rows ---------- */
@@ -216,7 +216,7 @@ main{padding:0}
 .hc-stats b{font-weight:400;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .hc-bot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   align-items:flex-end;margin-top:11px;gap:8px}
-.hc-bot .k{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px;white-space:nowrap}
+.hc-bot .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px;white-space:nowrap}
 /* same weight and size as the value column on the By type rows below, so the
    three figures sit quieter than the ticker itself */
 .hc-bot .vv{font-size:16px;font-weight:600;letter-spacing:-.35px;font-variant-numeric:tabular-nums;
@@ -281,7 +281,7 @@ main{padding:0}
 .nwp .nwp-note{margin-top:6px;line-height:1.4}
 .nwp-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
 .nwp-g2 .card{margin:0;padding:16px}
-.nwp-g2 .t{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.nwp-g2 .t{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .nwp-g2 .n{font-size:18px;font-weight:700;margin-top:3px}
 .nwp-g2 .m{font-size:12px;color:var(--ink-3);margin-top:2px}
 :root{--cashc:#5ac8fa} html[data-theme=dark]{--cashc:#64d2ff}
@@ -420,11 +420,11 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .spstats > div{flex:1;display:flex;flex-direction:column;gap:3px}
 .spstats > div + div{padding-left:12px;border-left:1px solid var(--hairline)}
 /* one look for every strip of figures: small grey label, value under it, left aligned */
-.spstats span{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
-.spstats b{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.spstats span{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
+.spstats b{font-size:16px;font-weight:600;letter-spacing:-.3px;white-space:nowrap}
 .spstats b em{font-style:normal}
 .spstats em.rate{font-style:normal;font-size:11.5px;color:var(--ink-3)}
-.spstats b em.pct{font-size:12.5px;font-weight:500;color:var(--ink-3);letter-spacing:0}
+.spstats b em.pct{font-size:12.5px;font-weight:500;color:var(--ink-3);letter-spacing:0;white-space:nowrap}
 .xsubs .hrow:first-child{border-top:0}
 .xsubs.hstats{padding-top:4px}
 .mb .mv{font-size:9.5px;font-weight:600;color:var(--ink-3);margin-bottom:3px;white-space:nowrap;letter-spacing:-.2px;font-variant-numeric:tabular-nums;min-height:12px}
@@ -489,9 +489,9 @@ html[data-theme=dark]{--pc0:#0a84ff;--pc1:#5e5ce6;--pc2:#64d2ff;--pc3:#30d158;--
 .accform .seg{margin-bottom:14px}
 .accform .seg button{font-size:14px;padding:8px 4px}
 /* Transactions list */
-.tsum{display:grid;grid-template-columns:repeat(3,1fr);margin:0 16px 10px;background:var(--canvas);border-radius:var(--r-card);padding:12px 16px;box-shadow:0 0 0 1px var(--card-edge)}
-.tsum div{text-align:left;border-left:1px solid var(--hairline);padding-left:12px} .tsum div:first-child{border-left:0}
-.tsum span{display:block;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px} .tsum b{display:block;font-size:16px;font-weight:600;letter-spacing:-.3px;margin-top:3px}
+.tsum{display:grid;grid-template-columns:repeat(3,minmax(0,auto));justify-content:space-between;column-gap:10px;margin:0 16px 10px;background:var(--canvas);border-radius:var(--r-card);padding:12px 16px;box-shadow:0 0 0 1px var(--card-edge)}
+.tsum div{text-align:left;border-left:1px solid var(--hairline);padding-left:10px} .tsum div:first-child{border-left:0}
+.tsum span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px} .tsum b{display:block;font-size:15px;font-weight:600;letter-spacing:-.3px;margin-top:3px;white-space:nowrap}
 .tsum .up{color:var(--up)} .tsum .down{color:var(--down)}
 .tflt{display:flex;gap:7px;margin:0 16px 10px;overflow:auto;scrollbar-width:none}
 .tflt button{padding:6px 12px;border-radius:999px;background:var(--canvas);border:1px solid var(--card-edge);font-size:13.5px;color:var(--ink);white-space:nowrap}
@@ -896,7 +896,7 @@ html[data-theme=dark] .prof .sw.on{background:var(--up)}
 @keyframes bkspin{to{transform:rotate(360deg)}}
 .rec .sum{margin:4px 16px 0;background:var(--canvas);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr}
 .rec .sum div+div{border-left:1px solid var(--hairline);padding-left:12px}
-.rec .sum div span{display:block;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.rec .sum div span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .rec .sum div b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}
 .rec .in{color:var(--up)}
 .rec .rr{display:flex;align-items:center;gap:12px;padding:10px 14px;position:relative;width:100%;text-align:left}
@@ -1015,7 +1015,7 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.4px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
 .cbk .st{display:flex;margin:6px 12px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
 .cbk .st div{flex:1;text-align:left}.cbk .st div+div{border-left:1px solid var(--hairline);padding-left:12px}
-.cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
+.cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
 .cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:12px 20px 4px}
 .cbk .bars i{flex:1;background:var(--up);opacity:.7;border-radius:4px 4px 1px 1px}.cbk .bars i.cur{opacity:1}
 .cbk .bl{display:flex;gap:6px;margin:0 20px;font-size:10px;color:var(--ink-3)}.cbk .bl span{flex:1;text-align:center}
@@ -1107,7 +1107,7 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid.k2 span em,.hrow span em{font-style:normal;font-size:12.5px}
 .kgrid.k2 b i{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:2px}
 .kgrid.kfit b{overflow:visible}
-.kgrid span{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.kgrid span{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .kgrid b{font-size:16px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asum{padding:14px 16px 12px;margin-bottom:12px}
 .asum .lbl{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
@@ -1135,11 +1135,11 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .kvlist > div > span:first-child{color:var(--ink-2)}
 .kvlist > div > span:last-child{font-weight:600;text-align:right}
 .pg-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
-.pg-two .k{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.pg-two .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .pg-two .v{font-size:16px;font-weight:600;letter-spacing:-.3px;margin-top:1px;white-space:nowrap}
 .pg-two .arrow{font-size:.82em}
 .pg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--hairline)}
-.pg-grid .k{font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:-.05px}
+.pg-grid .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
 .pg-grid .v{font-size:15px;font-weight:600;letter-spacing:-.3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sechead .cnt{font-size:13px;color:var(--ink-3);letter-spacing:-.08px}
 .pg-load{padding:22px 0;text-align:center;color:var(--ink-3);font-size:14px}
@@ -1367,7 +1367,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26z';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-27a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
