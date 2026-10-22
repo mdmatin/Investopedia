@@ -288,9 +288,6 @@ main{padding:0}
 .nwp-g2 .n{font-size:18px;font-weight:700;margin-top:3px}
 .nwp-g2 .m{font-size:12px;color:var(--ink-3);margin-top:2px}
 :root{--cashc:#5ac8fa} html[data-theme=dark]{--cashc:#64d2ff}
-.chleg{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--ink-3)}
-.chleg i{display:inline-block;width:14px;border-top:2px solid var(--blue);vertical-align:middle;margin-right:5px}
-.chleg i.dash{border-top:2px dashed var(--ink-3)}
 .chart svg{width:100%;height:100%;display:block;overflow:visible}
 .gridline{stroke:var(--hairline);stroke-width:1}
 .axis{font-size:10.5px;fill:var(--ink-3);font-variant-numeric:tabular-nums}
@@ -314,8 +311,8 @@ td{padding:10px 0;border-top:1px solid var(--hairline);vertical-align:top}
 th.r,td.r{text-align:right}
 
 /* ---------- search ---------- */
-.search{display:flex;align-items:center;gap:8px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-pill);padding:10px 16px;margin:0 16px 12px}
-.search input{flex:1;border:0;background:none;outline:none;font-size:16px}
+.search{display:flex;align-items:center;gap:8px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-pill);padding:0 16px;height:44px;box-sizing:border-box;margin:0 16px 12px}   /* same height as the filter button */
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:16px;padding:0;height:100%}
 .search svg{width:15px;height:15px;color:var(--ink-3);flex:none}
 .search .sx{display:none;width:18px;height:18px;border-radius:50%;background:var(--ink-3);color:#fff;place-items:center;flex:none;padding:0}
 .search .sx svg{width:9px;height:9px;color:#fff}
@@ -371,7 +368,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vbc .vb-sum{padding:12px 0}
 .vbc .vb-row.total{padding:26px 0 12px}
 .vb-mo{border-top:1px solid var(--hairline)}
-.vb-mo .vb-row.total{padding-top:30px}
+.vb-mo .vb-row.total{padding-top:16px}
 .vb-l span{display:block;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vb-l b{display:block;font-size:14px;font-weight:600;letter-spacing:-.2px}
 .vb-tr{position:relative;height:18px;border-radius:5px;background:var(--sunken)}
@@ -388,19 +385,21 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-row.slim .vb-l span{font-size:13px}.vb-row.slim .vb-l b{font-size:15px;margin-top:2px}
 .vb-pc{text-align:right;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink-2)}
 /* Budget graph card: Daily (this month vs last, cumulative) | Monthly (last 6 months) */
-.card.tight.vbg{padding:14px 16px 2px}
-.vbg-tg{position:absolute;top:12px;right:14px;z-index:3;display:flex;width:76px;background:var(--sunken);border-radius:9px;padding:2px}
-.vbg-tg button{flex:1;padding:5px 0;font-size:12.5px;font-weight:600;color:var(--ink-2);border-radius:7px}
-.vbg-tg button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-html[data-theme=dark] .vbg-tg button.on{background:#48484a}
-.vbg{position:relative}
-.vbg-ch{position:relative;height:140px;margin-top:34px;touch-action:pan-y}
+.vbg-ch{position:relative;height:140px;margin-top:4px;touch-action:pan-y}
 .vbg-ch svg{width:100%;height:100%;display:block;overflow:hidden}
 .vbg-ch text{font-size:10px;fill:var(--ink-2)}
-.vbg-lg{display:flex;gap:14px;font-size:11.5px;color:var(--ink-2);margin-top:6px}
+/* under the graph: legend (Daily only) and the two dots that say which graph is showing; swipe the graph to switch */
+.vbg-ft{display:flex;justify-content:space-between;align-items:center;min-height:18px;margin-top:6px;padding-bottom:16px}
+.vbg-lg{display:flex;gap:14px;font-size:11.5px;color:var(--ink-2)}
 .vbg-lg i{display:inline-block;width:12px;border-top:2px solid var(--blue);vertical-align:middle;margin-right:5px}
 .vbg-lg i.dots{border:0;height:8px;background:radial-gradient(var(--ink-3) .8px,transparent 1px) 0 0/4px 4px}
-.vbg .spstats{margin-top:12px;padding-bottom:12px}
+.vbg-dots{display:flex;gap:2px;margin-left:auto}
+.vbg-dots button{width:16px;height:16px;display:grid;place-items:center;padding:0}
+.vbg-dots button::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink-3);opacity:.5}
+.vbg-dots button.on::after{background:var(--ink);opacity:1}
+.vbc .spstats{margin-top:0;padding-bottom:14px}
+.vbc .spstats b{font-size:12px;letter-spacing:-.2px}
+.vbc .spstats span{font-size:11px}
 .vb-row.slim .vb-tr{height:8px;border-radius:99px}.vb-row.slim .vb-tr i{border-radius:99px}
 .vb-row.slim .vb-tr em{top:-4px;bottom:-4px}
 .vb-row.slim .vb-n{font-size:12.5px;margin-top:6px}
@@ -1248,7 +1247,6 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
         <div class="big num money" id="nw">—</div>
         <div id="nwSub"></div>
         <div class="chart" id="homeChart"><svg></svg><div class="tip"></div></div>
-        <div class="chleg" id="homeLeg"><span><i></i>Net worth</span><span><i class="dash"></i>Investments</span></div>
         <div class="ranges" id="homeRanges"></div>
         <div class="kpirow" id="kpis"></div>
       </div>
@@ -1393,7 +1391,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-27e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-27i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2320,7 +2318,6 @@ function areaChart(el, pts){
   const P={t:8,r:6,b:8,l:6};
   // Investment value (Daily Change F — Net Worth's D24, the excluded rows left out) as a dashed line
   const inv=pts.map(p=>p.investment>0?p.investment:null), hasInv=inv.some(v=>v!=null);
-  $('#homeLeg') && ($('#homeLeg').hidden = !hasInv);
   const vals=pts.map(p=>p.netWorth).concat(inv.filter(v=>v!=null)); let lo=Math.min(...vals), hi=Math.max(...vals);
   const pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
   const x=i=>P.l+(i/(pts.length-1))*(W-P.l-P.r), y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
@@ -3934,7 +3931,17 @@ function renderSpend(){
   $$('#spBody [data-budgets]').forEach(b=>b.onclick=()=>pushPage({ kind:'budgets', ym:spMonth }));
   $$('#spBody [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
   $$('#spBody [data-io]').forEach(b=>b.onclick=()=>{ spIO = b.dataset.io; renderSpend(); });
-  if (spSec==='budget'){ $$('#spBody [data-vbv]').forEach(b=>b.onclick=()=>{ vbView=b.dataset.vbv; save('inv.vbView',vbView); const y=window.scrollY; renderSpend(); window.scrollTo(0,y); }); drawBudgetChart(); }
+  if (spSec==='budget'){
+    const setV = v => { if (v===vbView) return; vbView=v; save('inv.vbView',vbView); const y=window.scrollY; renderSpend(); window.scrollTo(0,y); };
+    $$('#spBody [data-vbv]').forEach(b=>b.onclick=()=>setV(b.dataset.vbv));
+    drawBudgetChart();
+    // a quick sideways swipe on the graph switches Daily ↔ Monthly; a slow drag still reads values
+    const ch = $('#spBody .vbg-ch');
+    if (ch){ let sx=0, sy=0, st=0;
+      ch.addEventListener('touchstart', e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now(); }, {passive:true});
+      ch.addEventListener('touchend', e=>{ const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+        if (Date.now()-st < 400 && Math.abs(dx) > 50 && Math.abs(dy) < 40) setV(dx < 0 ? 'monthly' : 'daily'); }, {passive:true}); }
+  }
   if (spSec==='list'){ wireRecDue();
     const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner(xQuery, 'Search activity');
     wireSearch(sb, ()=>$('#xList'), ()=>xQuery, v=>xQuery=v);
@@ -3959,7 +3966,7 @@ function spBudgetHtml(){
     const u = b ? s/b : 0, over = s > b;
     return `<div class="vb-row ${total?'total':'tap slim'}" ${total?'':`data-xcat="${esc(lbl)}"`}>
       <div class="vb-l"><span>${esc(lbl)}</span><b class="num money">${fINR2(b)}</b></div>
-      <div>${total?'':`<div class="vb-pc num">${Math.round(u*100)}%</div>`}<div class="vb-tr ${over?'over':''} ${u>=0.97?'full':''}"><i style="width:${Math.min(100,u*100).toFixed(1)}%"></i>${today!=null?`<em style="left:${(today*100).toFixed(1)}%">${total?'<b>Today</b>':''}</em>`:''}${total?`<span>${Math.round(u*100)}%</span>`:''}</div>
+      <div>${total?'':`<div class="vb-pc num">${Math.round(u*100)}%</div>`}<div class="vb-tr ${over?'over':''} ${u>=0.97?'full':''}"><i style="width:${Math.min(100,u*100).toFixed(1)}%"></i>${today!=null?`<em style="left:${(today*100).toFixed(1)}%"></em>`:''}${total?`<span>${Math.round(u*100)}%</span>`:''}</div>
       <div class="vb-n"><span class="num money ${over?'down':'sp'}">${fINR2(s)}</span><span class="num money ${total?'':over?'down':''}">${fINR2(b-s)}</span></div></div></div>`;
   };
   // data for the graph card, drawn by drawBudgetChart() once the page is on screen
@@ -3969,19 +3976,19 @@ function spBudgetHtml(){
   const spends = Object.keys(mo).filter(c=>!isInvest(c) && !isConstr(c)).reduce((a,c)=>a+(mo[c]||0),0);
   const invested = Object.keys(mo).filter(isInvest).reduce((a,c)=>a+(mo[c]||0),0);
   const incoming = xTotal(monthIncome(ym));
-  const graph = `<div class="card tight vbg"><div class="vbg-tg">${['daily','monthly'].map(v=>`<button data-vbv="${v}" class="${vbView===v?'on':''}" aria-label="${v==='daily'?'Daily':'Monthly'}">${v==='daily'?'D':'M'}</button>`).join('')}</div>
-      <div class="vbg-ch"><svg></svg><div class="tip"></div></div>
-      ${vbView==='daily' ? `<div class="vbg-lg"><span><i></i>This month</span><span><i class="dots"></i>Last month</span></div>` : ''}
-      <div class="spstats"><div><span>Spends</span><b class="num money">${fINR(spends)}</b></div><div><span>Investment</span><b class="num money">${fINR(invested)}</b></div><div><span>Incoming</span><b class="num money">${fINR(incoming)}</b></div></div></div>`;
-  const over = budgeted.filter(x=>x.s > x.b), track = budgeted.filter(x=>x.s <= x.b);
+  const graph = `<div class="vbg-ch" aria-label="Spending graph — swipe for ${vbView==='daily'?'monthly':'daily'}"><svg></svg><div class="tip"></div></div>
+      <div class="vbg-ft">${vbView==='daily' ? `<div class="vbg-lg"><span><i></i>This month</span><span><i class="dots"></i>Last month</span></div>` : ''}
+        <div class="vbg-dots">${['daily','monthly'].map(v=>`<button data-vbv="${v}" class="${vbView===v?'on':''}" aria-label="${v==='daily'?'Daily':'Monthly'} graph"></button>`).join('')}</div></div>`;
+  const figs = `<div class="spstats"><div><span>Spends</span><b class="num money">${fINR(spends)}</b></div><div><span>Investment</span><b class="num money">${fINR(invested)}</b></div><div><span>Incoming</span><b class="num money">${fINR(incoming)}</b></div></div>`;
   const looseRows = loose.map(x=>`<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">No budget</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('');
-  return `${graph}<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
+  return `<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
       <button data-budgets class="bset" aria-label="Budget settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
-      <div class="vb-mo">${row('Monthly', spent, bud, true)}</div></div>
+      ${graph}
+      <div class="vb-mo">${row('Monthly', spent, bud, true)}</div>
+      ${figs}</div>
     ${!budgeted.length ? '<div class="card tight vbc"><div class="empty">No budgets set</div></div>' : ''}
-    ${over.length ? `<div class="sechead"><h2>Over budget</h2><span class="cnt">${over.length} ${over.length===1?'category':'categories'}</span></div><div class="card tight vbc">${over.map(x=>row(x.c, x.s, x.b)).join('')}</div>` : ''}
-    ${track.length ? `<div class="sechead"><h2>On track</h2><span class="cnt">${track.length} ${track.length===1?'category':'categories'}</span></div><div class="card tight vbc">${track.map(x=>row(x.c, x.s, x.b)).join('')}</div>` : ''}
+    ${budgeted.length ? `<div class="card tight vbc">${budgeted.map(x=>row(x.c, x.s, x.b)).join('')}</div>` : ''}
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
     ${inv.length ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">From the construction fund</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('')}</div>` : ''}`;
