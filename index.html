@@ -269,6 +269,24 @@ main{padding:0}
 /* ---------- chart ---------- */
 .chart{position:relative;margin:18px -4px 0;height:120px;touch-action:pan-y}
 .chart.tall{height:150px}
+/* Net worth page */
+.nwp .k{font-size:13px;color:var(--ink-2);font-weight:600}
+.nwp .big{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.nwp-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin:12px 0 6px}
+.nwp-bar i{display:block;min-width:3px}
+.nwp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--hairline);font-size:15px}
+.nwp-row:first-child{border-top:0}
+.nwp-row .l{display:flex;align-items:center;gap:8px}.nwp-row .v{font-weight:600}
+.nwp-row .m,.nwp .nwp-note{font-size:12px;color:var(--ink-3);font-weight:500}
+.nwp-dot{width:9px;height:9px;border-radius:3px;flex:none}
+.nwp .seg{margin-bottom:6px}.nwp .seg button{font-size:13.5px;padding:6px 4px}
+.nwp .nwp-note{margin-top:6px;line-height:1.4}
+.nwp-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nwp-g2 .card{margin:0;padding:14px}
+.nwp-g2 .t{font-size:12px;color:var(--ink-2);font-weight:600}
+.nwp-g2 .n{font-size:18px;font-weight:700;margin-top:3px}
+.nwp-g2 .m{font-size:12px;color:var(--ink-3);margin-top:2px}
+:root{--cashc:#5ac8fa} html[data-theme=dark]{--cashc:#64d2ff}
 .chleg{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--ink-3)}
 .chleg i{display:inline-block;width:14px;border-top:2px solid var(--blue);vertical-align:middle;margin-right:5px}
 .chleg i.dash{border-top:2px dashed var(--ink-3)}
@@ -1185,7 +1203,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
     <!-- OVERVIEW -->
     <section class="view active" id="v-home">
       <div class="card hero">
-        <button class="cap nwgo" data-go="trend" aria-label="Net worth trends">Net worth<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="cap nwgo" data-go="trend" aria-label="Net worth details">Net worth<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
         <div class="big num money" id="nw">—</div>
         <div id="nwSub"></div>
         <div class="chart" id="homeChart"><svg></svg><div class="tip"></div></div>
@@ -1237,12 +1255,11 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 
     <!-- TRENDS -->
     <section class="view" id="v-trend">
-      <div class="sechead"><h2>Net worth</h2></div>
-      <div class="card">
-        <div class="chart tall" id="lineChart"><svg></svg><div class="tip"></div></div>
-        <div class="ranges" id="rangeChips"></div>
-        <div class="legend"><span><i style="background:var(--blue)"></i>Net worth</span><span><i style="background:var(--ink-3)"></i>Investments</span></div>
-      </div>
+      <div class="card nwp" id="nwComp"></div>
+      <div class="sechead"><h2>What moved it</h2></div>
+      <div class="card nwp" id="nwMove"></div>
+      <div class="sechead"><h2>Highs and lows</h2></div>
+      <div class="nwp-g2" id="nwHigh"></div>
       <div class="sechead"><h2>Monthly gains</h2></div>
       <div class="card">
         <div class="chart" id="barChart"><svg></svg><div class="tip"></div></div>
@@ -1335,7 +1352,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26r';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26s';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2154,15 +2171,64 @@ function renderBreakdown(bd, bk){
   $$('#buckets .bkrow').forEach(r=>r.onclick=()=>pushPage({ kind:'bucket', bucket:r.dataset.bk, list: buckets.map(x=>x.name) }));
 }
 
+// Net worth page (opens from the chevron on Overview): what it is made of, what
+// moved it over a period, highs and lows, then the monthly market gains
+let nwMoveR = load('inv.nwMove') || '3M';
+const NW_MOVE = ['1M','3M','YTD','1Y','All'];
 function renderTrends(daily, monthly){
-  $('#rangeChips').innerHTML = Object.keys(RANGES).map(r=>`<button class="${r===range?'on':''}" data-r="${r}">${r}</button>`).join('');
-  $$('#rangeChips button').forEach(b=>b.onclick=()=>{ range=b.dataset.r; save(LS.range,range);
-    renderTrends(daily,monthly); if(D) renderHome(D.data); });
-  lineChart($('#lineChart'), inRange(daily, range));
+  const d = D && D.data, nw = d && d.netWorth, h = (nw && nw.head) || {}, cash = liveCash();
+  const cashV = cash ? cash.total : (h.runningBalance || 0);
+  const invV = h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance : h.investmentValue;
+  const total = (invV||0) + cashV, pc = v => total ? Math.round(v/total*100)+'%' : '';
+  $('#nwComp').innerHTML = `<div class="k">Net worth today</div><div class="big num money">${fINR(total)}</div>
+    <div class="nwp-bar"><i style="flex:${Math.max(invV,0)};background:var(--blue)"></i><i style="flex:${Math.max(cashV,0)};background:var(--cashc)"></i></div>
+    <div class="nwp-row"><span class="l"><span class="nwp-dot" style="background:var(--blue)"></span>Investments</span><span class="v num money">${fINR(invV)} <span class="m">${pc(invV)}</span></span></div>
+    <div class="nwp-row"><span class="l"><span class="nwp-dot" style="background:var(--cashc)"></span>Cash in accounts</span><span class="v num money">${fINR(cashV)} <span class="m">${pc(cashV)}</span></span></div>`;
+
+  // What moved it: net worth from the Daily Change log, split into the
+  // investments line (F) and everything else (cash: income, spending, moves)
+  const all = (daily||[]).filter(p=>p.netWorth!=null);
+  let pts = all;
+  if (all.length){
+    const last = new Date(all[all.length-1].date+'T00:00:00');
+    const cut = nwMoveR==='All' ? 0 : nwMoveR==='YTD' ? new Date(last.getFullYear(),0,1).getTime()
+      : last.getTime() - ({'1M':30,'3M':91,'1Y':365}[nwMoveR])*864e5;
+    pts = all.filter(p=>new Date(p.date+'T00:00:00').getTime() >= cut);
+    if (pts.length < 2) pts = all.slice(-2);
+  }
+  const seg = `<div class="seg">${NW_MOVE.map(r=>`<button data-nm="${r}" class="${r===nwMoveR?'on':''}">${r}</button>`).join('')}</div>`;
+  if (pts.length >= 2){
+    const a = pts[0], b = pts[pts.length-1], chg = b.netWorth - a.netWorth;
+    const dInv = (b.investment!=null && a.investment!=null) ? b.investment - a.investment : null;
+    const dCash = dInv==null ? null : chg - dInv;
+    const pct = a.netWorth ? chg/a.netWorth : null;
+    const mag = Math.abs(dInv||0) + Math.abs(dCash||0);
+    $('#nwMove').innerHTML = seg + `
+      <div class="nwp-row"><span>On ${fDate(a.date)}</span><span class="v num money">${fINR(a.netWorth)}</span></div>
+      ${dInv==null ? '' : `<div class="nwp-row"><span class="l"><span class="nwp-dot" style="background:var(--blue)"></span>Investments</span><span class="v num money ${cls(dInv)}">${fINRs(dInv)}</span></div>
+      <div class="nwp-row"><span class="l"><span class="nwp-dot" style="background:var(--cashc)"></span>Cash in accounts</span><span class="v num money ${cls(dCash)}">${fINRs(dCash)}</span></div>`}
+      <div class="nwp-row"><span><b>On ${fDate(b.date)}</b></span><span class="v num money">${fINR(b.netWorth)}</span></div>
+      ${mag ? `<div class="nwp-bar"><i style="flex:${Math.abs(dInv)};background:var(--blue)"></i><i style="flex:${Math.abs(dCash)};background:var(--cashc)"></i></div>` : ''}
+      <div class="nwp-note">${chg>=0?'Up':'Down'} <span class="num money ${cls(chg)}">${fINR(Math.abs(chg))}</span>${pct!=null?` (${fPct(pct)})`:''}. Investments counts market moves and money put in; cash counts income, spending and money moved out, like to the construction fund.</div>`;
+  } else $('#nwMove').innerHTML = seg + '<div class="empty">Not enough days logged yet</div>';
+  $$('#nwMove [data-nm]').forEach(b=>b.onclick=()=>{ nwMoveR=b.dataset.nm; save('inv.nwMove',nwMoveR); renderTrends(daily,monthly); });
+
+  // Highs and lows: the high from the daily log, best/worst from Monthly Gains
+  const ms = (monthly||[]).filter(m=>m.gain!=null);
+  const hi = all.reduce((x,p)=>!x || p.netWorth > x.netWorth ? p : x, null);
+  const now = all.length ? all[all.length-1] : null;
+  const best = ms.reduce((x,m)=>!x || m.gain > x.gain ? m : x, null), worst = ms.reduce((x,m)=>!x || m.gain < x.gain ? m : x, null);
+  const off = hi && now ? now.netWorth - hi.netWorth : null;
+  const tile = (t,n,c,m) => `<div class="card"><div class="t">${t}</div><div class="n num money ${c}">${n}</div><div class="m">${m}</div></div>`;
+  $('#nwHigh').innerHTML = hi ? tile('All-time high', fINR(hi.netWorth), '', fDate(hi.date))
+    + tile('From the high', off>=0 ? 'At the high' : fPct(off/hi.netWorth), off<0?'down':'', off<0 ? `<span class="num money">${fINRs(off)}</span>` : 'Today is the high')
+    + (best ? tile('Best month', fCompact(best.gain).replace(/^(?=₹)/,'+'), cls(best.gain), `${esc(best.month)} · ${fPct(best.returnPct)}`) : '')
+    + (worst ? tile('Worst month', fCompact(worst.gain).replace(/^(?=₹)/,'+'), cls(worst.gain), `${esc(worst.month)} · ${fPct(worst.returnPct)}`) : '') : '';
+
   barChart($('#barChart'), monthly||[]);
-  const ms=[...(monthly||[])].reverse();
-  $('#monthlyTable').innerHTML = `<tr><th>Month</th><th class="r">Closing</th><th class="r">Gain</th><th class="r">Return</th></tr>` +
-    ms.map(m=>`<tr><td>${esc(m.month)}</td><td class="r num money">${fCompact(m.closing)}</td>
+  const mr=[...(monthly||[])].reverse();
+  $('#monthlyTable').innerHTML = `<tr><th>Month</th><th class="r">Added</th><th class="r">Gain</th><th class="r">Return</th></tr>` +
+    mr.map(m=>`<tr><td>${esc(m.month)}</td><td class="r num money">${fCompact(m.netContribution)}</td>
       <td class="r num money ${cls(m.gain)}">${fCompact(m.gain)}</td>
       <td class="r num ${cls(m.returnPct)}">${fPct(m.returnPct)}</td></tr>`).join('');
 }
@@ -2743,7 +2809,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Overview',break:'Holdings',trend:'Trends',spend:'Spend',txn:'Trades'};
+const TITLES={home:'Overview',break:'Holdings',trend:'Net worth',spend:'Spend',txn:'Trades'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
@@ -3696,6 +3762,7 @@ async function loadExpenses(fresh){
     X = { at: Date.now(), data: j.data }; recApplyMarks(); save('inv.exp', X);
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
+    if (activeView==='trend' && D) renderTrends(D.data.daily, D.data.monthly);   // cash in accounts is live
     const top = pageStack[pageStack.length-1];
     if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
