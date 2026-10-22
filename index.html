@@ -1189,7 +1189,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
         <div class="big num money" id="nw">—</div>
         <div id="nwSub"></div>
         <div class="chart" id="homeChart"><svg></svg><div class="tip"></div></div>
-        <div class="chleg" id="homeLeg"><span><i></i>Net worth</span><span><i class="dash"></i>Invested</span></div>
+        <div class="chleg" id="homeLeg"><span><i></i>Net worth</span><span><i class="dash"></i>Investments</span></div>
         <div class="ranges" id="homeRanges"></div>
         <div class="kpirow" id="kpis"></div>
       </div>
@@ -1335,7 +1335,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-26o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-26r';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2205,8 +2205,8 @@ function areaChart(el, pts){
   const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
   if(pts.length<2){ svg.innerHTML=`<text class="axis" x="${W/2}" y="${H/2}" text-anchor="middle">Not enough data yet</text>`; return; }
   const P={t:8,r:6,b:8,l:6};
-  // Invested (Daily Change BK) runs underneath as a dashed reference line
-  const inv=pts.map(p=>p.invested>0?p.invested:null), hasInv=inv.some(v=>v!=null);
+  // Investment value (Daily Change F — Net Worth's D24, the excluded rows left out) as a dashed line
+  const inv=pts.map(p=>p.investment>0?p.investment:null), hasInv=inv.some(v=>v!=null);
   $('#homeLeg') && ($('#homeLeg').hidden = !hasInv);
   const vals=pts.map(p=>p.netWorth).concat(inv.filter(v=>v!=null)); let lo=Math.min(...vals), hi=Math.max(...vals);
   const pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
@@ -2223,7 +2223,7 @@ function areaChart(el, pts){
     ${inv[li]!=null?`<circle cx="${x(li)}" cy="${y(inv[li])}" r="3" fill="var(--ink-3)" stroke="var(--canvas)" stroke-width="2"/>`:''}
     <circle cx="${x(pts.length-1)}" cy="${y(pts[pts.length-1].netWorth)}" r="3.6" fill="var(--blue)" stroke="var(--canvas)" stroke-width="2"/>
     <line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
-  hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}${p.invested>0?`<br>Invested ${fINR(p.invested)}`:''}`);
+  hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}${p.investment>0?`<br>Investments ${fINR(p.investment)}`:''}`);
 }
 
 function lineChart(el, pts, perDay){
