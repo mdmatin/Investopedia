@@ -282,6 +282,29 @@ main{padding:0}
 .nwp-dot{width:9px;height:9px;border-radius:3px;flex:none}
 .nwp .seg{margin-bottom:6px}.nwp .seg button{font-size:13.5px;padding:6px 4px}
 .nwp .nwp-note{margin-top:6px;line-height:1.4}
+/* Net worth › Day by day: 30 up/down bars (tap one to read it) + the list of days */
+.dsel{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:6px}
+.dsel .k{font-size:12px;color:var(--ink-2)}
+.dsel .v{font-family:var(--font-disp);font-size:20px;font-weight:600;letter-spacing:-.4px;white-space:nowrap}
+.dsel .v small{font-size:14px;font-weight:500;letter-spacing:-.1px}
+.dsel .s{font-size:12px;color:var(--ink-3);text-align:right;line-height:1.4;white-space:nowrap}
+.dbars{display:flex;gap:3px;height:110px;position:relative;margin:6px 0 4px}
+.dbars:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--hairline)}
+.dbars{justify-content:center}
+.dbars i{flex:1;max-width:26px;position:relative;cursor:pointer}
+.dbars i b{position:absolute;left:0;right:0;border-radius:2px;min-height:2px;opacity:.75}
+.dbars i b.up{bottom:50%;background:var(--up)} .dbars i b.down{top:50%;background:var(--down)}
+.dbars i.sel b{opacity:1;outline:2px solid var(--ink);outline-offset:1px}
+.dax{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)}
+.dl{padding:4px 16px}
+.dl .r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--hairline)}
+.dl .r:first-child{border-top:0}
+.dl .a{font-size:15px;font-weight:500;letter-spacing:-.2px;white-space:nowrap}
+.dl .a small,.dl .z small{display:block;font-size:12px;color:var(--ink-3);font-weight:400;margin-top:1px;letter-spacing:-.05px}
+.dl .z{text-align:right;font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.dl .z .p{font-weight:500;font-size:13px}
+.dl .z .arrow{font-size:.8em}
+.dl .more{display:block;width:100%;text-align:center;color:var(--blue);font-size:14px;padding:12px 0 8px;border-top:1px solid var(--hairline)}
 .nwp-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
 .nwp-g2 .card{margin:0;padding:16px}
 .nwp-g2 .t{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}
@@ -1033,6 +1056,14 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .bklog .r{text-align:right;flex:none}
 .pg-note{font-size:13px;color:var(--ink-2);line-height:1.4;padding:4px 24px 12px}
 .cfund.tap{cursor:pointer}
+/* Accounts top: two tiles */
+.acctiles{display:flex;gap:10px;margin:0 16px 14px}
+.acctiles .card{flex:1;min-width:0;margin:0;padding:12px 14px}
+.acctiles .k{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:2px}
+.acctiles .k svg{width:11px;height:11px}
+.acctiles .b2{font-family:var(--font-disp);font-size:20px;font-weight:600;letter-spacing:-.4px;margin-top:1px;white-space:nowrap}
+.acctiles .s{font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.35;white-space:nowrap}
+.acctiles .s b{font-weight:500;color:var(--ink-2)}
 .spsum .sp2{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .spsum .sp2 .r{text-align:right}
 /* Accounts top card: same type as the Budget page's "Remaining (monthly)" */
@@ -1332,6 +1363,9 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
       <div class="card nwp" id="nwComp"></div>
       <div class="sechead"><h2>What moved it</h2></div>
       <div class="card nwp" id="nwMove"></div>
+      <div class="sechead"><h2>Change</h2></div>
+      <div class="card nwp nwd" id="nwDays"></div>
+      <div class="card dl" id="nwDayList"></div>
       <div class="sechead"><h2>Highs and lows</h2></div>
       <div class="nwp-g2" id="nwHigh"></div>
       <div class="sechead"><h2>Monthly gains</h2></div>
@@ -1426,7 +1460,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-28q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2272,6 +2306,7 @@ function renderBreakdown(bd, bk){
 // Net worth page (opens from the chevron on Overview): what it is made of, what
 // moved it over a period, highs and lows, then the monthly market gains
 let nwMoveR = load('inv.nwMove') || '3M';
+let nwDaySel = null, nwDayAll = false, nwPer = load('inv.nwPer') || 'D';   // Day by day: the tapped bar, and whether the list shows every day
 const NW_MOVE = ['1M','3M','YTD','1Y','All'];
 function renderTrends(daily, monthly){
   const d = D && D.data, nw = d && d.netWorth, h = (nw && nw.head) || {}, cash = liveCash();
@@ -2310,6 +2345,47 @@ function renderTrends(daily, monthly){
       <div class="nwp-note">${chg>=0?'Up':'Down'} <span class="num money ${cls(chg)}">${fINR(Math.abs(chg))}</span>${pct!=null?` (${fPct(pct)})`:''}. Investments counts market moves and money put in; cash counts income, spending and money moved out, like to the construction fund.</div>`;
   } else $('#nwMove').innerHTML = seg + '<div class="empty">Not enough days logged yet</div>';
   $$('#nwMove [data-nm]').forEach(b=>b.onclick=()=>{ nwMoveR=b.dataset.nm; save('inv.nwMove',nwMoveR); renderTrends(daily,monthly); });
+
+  // Day by day: change per day, week (Mon–Sun) or month — each period's last logged
+  // net worth against the previous period's — with the % and its split into
+  // investments (F) and cash (everything else), like What moved it
+  const perKey = p => { if (nwPer==='D') return p.date; if (nwPer==='M') return p.date.slice(0,7);
+    const d = new Date(p.date+'T00:00:00'); d.setDate(d.getDate() - (d.getDay()+6)%7);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };   // local, not UTC (IST would slip a day)
+  const ends = []; all.forEach(p=>{ const k = perKey(p); if (ends.length && ends[ends.length-1].k===k) ends[ends.length-1] = { k, p }; else ends.push({ k, p }); });
+  // the first period counts from the first logged day (so July shows, from 3 Jul)
+  const days = ends.map((e,i)=>({ e, q: i ? ends[i-1].p : all[0] })).filter(o=>o.e.p!==o.q).map(({e,q})=>{ const p = e.p, chg = p.netWorth - q.netWorth;
+    const inv = p.investment!=null && q.investment!=null ? p.investment - q.investment : null;
+    return { date:e.k, last:p.date, nw:p.netWorth, chg, pct: q.netWorth ? chg/q.netWorth : null, inv, cash: inv==null ? null : chg - inv }; });
+  const dd = s => new Date(s+'T00:00:00');
+  const dLab = x => { if (nwPer==='D') return dd(x.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    if (nwPer==='M') return dd(x.date+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    const a = dd(x.date), b = new Date(a.getTime()+6*864e5), sm = a.getMonth()===b.getMonth();
+    return a.toLocaleDateString('en-GB',{day:'numeric',month: sm ? undefined : 'short'}) + '–' + b.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); };
+  const axLab = x => nwPer==='M' ? dd(x.date+'-01').toLocaleDateString('en-GB',{month:'short',year:'2-digit'}) : fDate(x.date);
+  const split = x => [x.inv!=null && Math.round(x.inv) ? `Inv ${fCompact(x.inv).replace(/^₹/,'+₹')}` : '', x.cash!=null && Math.round(x.cash) ? `Cash ${fCompact(x.cash).replace(/^₹/,'+₹')}` : ''];
+  const PER = [['D','Daily',30,'days'],['W','Weekly',12,'weeks'],['M','Monthly',12,'months']], per = PER.find(x=>x[0]===nwPer);
+  const pseg = `<div class="seg">${PER.map(x=>`<button data-per="${x[0]}" class="${x[0]===nwPer?'on':''}">${x[1]}</button>`).join('')}</div>`;
+  if (days.length){
+    const b30 = days.slice(-per[2]), mx = Math.max(...b30.map(x=>Math.abs(x.chg)), 1);
+    if (nwDaySel==null || !days.some(x=>x.date===nwDaySel)) nwDaySel = days[days.length-1].date;
+    const x = days.find(y=>y.date===nwDaySel), sp = split(x).filter(Boolean);
+    const sofar = x===days[days.length-1] && nwPer!=='D' ? ' <span class="faint">· so far</span>' : '';
+    $('#nwDays').innerHTML = pseg + `<div class="dsel"><div><div class="k">${esc(dLab(x))}${sofar}</div>
+        <div class="v num money ${cls(x.chg)}">${fINRs(x.chg)}${x.pct!=null?` <small>(${fPct(Math.abs(x.pct),false)})</small>`:''}</div></div>
+        <div class="s num money">${sp.join('<br>')}</div></div>
+      <div class="dbars">${b30.map(y=>`<i data-dd="${y.date}" class="${y.date===nwDaySel?'sel':''}"><b class="${y.chg<0?'down':'up'}" style="height:${(Math.abs(y.chg)/mx*50).toFixed(1)}%"></b></i>`).join('')}</div>
+      <div class="dax"><span>${esc(axLab(b30[0]))}</span><span>Last ${b30.length} ${per[3]}</span><span>${esc(axLab(b30[b30.length-1]))}</span></div>`;
+    const list = days.filter(y=>y.date!==nwDaySel).reverse(), shown = nwDayAll ? list : list.slice(0,5);
+    $('#nwDayList').innerHTML = shown.map(y=>{ const t = split(y).filter(Boolean).join(' · ');
+      return `<div class="r"><div class="a">${esc(dLab(y))}<small class="num money">${fINR(y.nw)}</small></div>
+        <div class="z num money ${cls(y.chg)}"><span class="arrow">${y.chg<0?'▼':'▲'}</span> ${fINR(Math.abs(y.chg))}${y.pct!=null?` <span class="p">(${fPct(Math.abs(y.pct),false)})</span>`:''}${t?`<small>${t}</small>`:''}</div></div>`; }).join('')
+      + (list.length > 5 ? `<button class="more" data-dall>${nwDayAll ? 'Show fewer' : 'Show all ' + per[3]}</button>` : '');
+    $('#nwDayList').hidden = !list.length;
+    $$('#nwDays [data-dd]').forEach(b=>b.onclick=()=>{ nwDaySel=b.dataset.dd; renderTrends(daily,monthly); });
+    const m = $('#nwDayList [data-dall]'); if (m) m.onclick=()=>{ nwDayAll=!nwDayAll; renderTrends(daily,monthly); };
+  } else { $('#nwDays').innerHTML = pseg + '<div class="empty">Not enough days logged yet</div>'; $('#nwDayList').hidden = true; }
+  $$('#nwDays [data-per]').forEach(b=>b.onclick=()=>{ if (b.dataset.per===nwPer) return; nwPer=b.dataset.per; save('inv.nwPer',nwPer); nwDaySel=null; nwDayAll=false; renderTrends(daily,monthly); });
 
   // Highs and lows: the high from the daily log, best/worst from Monthly Gains
   const ms = (monthly||[]).filter(m=>m.gain!=null);
@@ -4497,23 +4573,26 @@ function spAccountsHtml(){
   const sum = { bank:0, card:0, wallet:0, construction:0 }, cards = { owed:0, credit:0 };
   acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
-  // Bank & wallet (bank accounts + wallets and cash, today) beside Construction (the whole fund — the same Total as its section below)
-  const head = `<div class="card spsum"><div class="sp2">
-      <div><div class="k">Bank &amp; wallet</div><div class="b2 num money">${fINR2(sum.bank + sum.wallet)}</div></div>
-      ${acc.some(a=>accKind(a)==='construction') ? `<div class="r"><div class="k">Construction</div><div class="b2 num money">${fINR2(constrFund().total)}</div></div>` : ''}</div></div>`;
+  // two tiles: Bank & wallet (with its parts) beside Construction (whole fund, this month's and all-time spend; opens its page)
+  const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(spMonth) : null;  // the month switcher picks the Spent month
+  const head = `<div class="acctiles">
+      <div class="card"><div class="k">Bank &amp; wallet</div><div class="b2 num money">${fINR(sum.bank + sum.wallet)}</div>
+        <div class="s">Bank <b class="num money">${fINR(sum.bank)}</b><br>Wallet <b class="num money">${fINR(sum.wallet)}</b></div></div>
+      ${hasC ? `<div class="card tap" data-constr role="button"><div class="k">Construction${chev('M9 5l7 7-7 7')}</div><div class="b2 num money">${fINR(cf.total)}</div>
+        <div class="s">Spent · ${esc(ymShort(spMonth).slice(0,3) + (spMonth.slice(0,4)===ymNow().slice(0,4) ? '' : ' ’'+spMonth.slice(2,4)))} <b class="num money">${fINR(cf.spentM)}</b><br>So far <b class="num money">${fINR(cf.spentAll)}</b></div></div>` : ''}</div>`;
   // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
   return head + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
 // have a Construction account taken live from it (ICICI · Construction → ICICI)
 const constrBase = n => String(n||'').replace(/\s*[·\-–|]\s*construction$/i,'').replace(/^construction\s*[·\-–|]\s*/i,'').trim().toLowerCase();
-function constrFund(){
+function constrFund(ymSel){
   const accs = xAccounts().filter(a=>accKind(a)==='construction');
   const items = ((D && D.data && D.data.netWorth && D.data.netWorth.construction && D.data.netWorth.construction.items) || []);
   const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===it.name.toLowerCase());
     return { name:it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null, item: it }; });
   accs.forEach(a=>{ if (!rows.some(r=>r.acc===a.name)) rows.push({ name:constrBase(a.name) || a.name, amount:accBalance(a.name), acc:a.name, unmatched:true }); });
-  const ym = ymNow(), d = xd() || {};
+  const ym = ymSel || ymNow(), d = xd() || {};
   const months = new Set(Object.keys(d.monthly||{}).concat((d.entries||[]).map(e=>e.date.slice(0,7))));
   let spentAll = 0; months.forEach(m=>{ Object.entries(xMonth(m)).forEach(([k,v])=>{ if (isConstr(k)) spentAll += v; }); });
   const spentM = Object.entries(xMonth(ym)).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0);
