@@ -1460,7 +1460,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-28u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2352,11 +2352,21 @@ function renderTrends(daily, monthly){
   const perKey = p => { if (nwPer==='D') return p.date; if (nwPer==='M') return p.date.slice(0,7);
     const d = new Date(p.date+'T00:00:00'); d.setDate(d.getDate() - (d.getDay()+6)%7);
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };   // local, not UTC (IST would slip a day)
-  const ends = []; all.forEach(p=>{ const k = perKey(p); if (ends.length && ends[ends.length-1].k===k) ends[ends.length-1] = { k, p }; else ends.push({ k, p }); });
+  // The morning log (≈6 AM) holds the previous day's close, so each row belongs to the
+  // day before its date. Today's move isn't logged until tomorrow: it's added live
+  // from Net Worth (the same day change the Overview shows), marked "so far".
+  const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const prevDay = s => { const d = new Date(s+'T00:00:00'); d.setDate(d.getDate()-1); return ymd(d); };
+  const mkt = all.map(p=>({ ...p, date: prevDay(p.date) }));
+  const today = ymd(new Date()), lastP = mkt[mkt.length-1], totA = ((nw && nw.assets) || []).find(a=>a.isTotal);
+  if (lastP && h.netWorthDay!=null && lastP.date < today)
+    mkt.push({ date: today, live: true, netWorth: lastP.netWorth + h.netWorthDay,
+      investment: lastP.investment!=null && totA && totA.dayChange!=null ? lastP.investment + totA.dayChange : null });
+  const ends = []; mkt.forEach(p=>{ const k = perKey(p); if (ends.length && ends[ends.length-1].k===k) ends[ends.length-1] = { k, p }; else ends.push({ k, p }); });
   // the first period counts from the first logged day (so July shows, from 3 Jul)
-  const days = ends.map((e,i)=>({ e, q: i ? ends[i-1].p : all[0] })).filter(o=>o.e.p!==o.q).map(({e,q})=>{ const p = e.p, chg = p.netWorth - q.netWorth;
+  const days = ends.map((e,i)=>({ e, q: i ? ends[i-1].p : mkt[0] })).filter(o=>o.e.p!==o.q).map(({e,q})=>{ const p = e.p, chg = p.netWorth - q.netWorth;
     const inv = p.investment!=null && q.investment!=null ? p.investment - q.investment : null;
-    return { date:e.k, last:p.date, nw:p.netWorth, chg, pct: q.netWorth ? chg/q.netWorth : null, inv, cash: inv==null ? null : chg - inv }; });
+    return { date:e.k, last:p.date, live:!!p.live, nw:p.netWorth, chg, pct: q.netWorth ? chg/q.netWorth : null, inv, cash: inv==null ? null : chg - inv }; });
   const dd = s => new Date(s+'T00:00:00');
   const dLab = x => { if (nwPer==='D') return dd(x.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
     if (nwPer==='M') return dd(x.date+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
@@ -2370,7 +2380,7 @@ function renderTrends(daily, monthly){
     const b30 = days.slice(-per[2]), mx = Math.max(...b30.map(x=>Math.abs(x.chg)), 1);
     if (nwDaySel==null || !days.some(x=>x.date===nwDaySel)) nwDaySel = days[days.length-1].date;
     const x = days.find(y=>y.date===nwDaySel), sp = split(x).filter(Boolean);
-    const sofar = x===days[days.length-1] && nwPer!=='D' ? ' <span class="faint">· so far</span>' : '';
+    const sofar = x.live ? ' <span class="faint">· so far</span>' : '';
     $('#nwDays').innerHTML = pseg + `<div class="dsel"><div><div class="k">${esc(dLab(x))}${sofar}</div>
         <div class="v num money ${cls(x.chg)}">${fINRs(x.chg)}${x.pct!=null?` <small>(${fPct(Math.abs(x.pct),false)})</small>`:''}</div></div>
         <div class="s num money">${sp.join('<br>')}</div></div>
@@ -4544,6 +4554,8 @@ function wireXPage(p){
    what you owe, so it runs negative. */
 const ACC_GROUPS = [['bank','Bank'],['card','Credit cards'],['wallet','Wallets'],['construction','Construction']];
 // a "Cash" account (type Cash in Money › Accounts) sits with the wallets, not the banks
+// physical cash: grouped with the wallets, but spent from like a bank account
+const isCashAcc = a => /^\s*cash\s*$/i.test((a && a.type) || '');
 const accKind = a => /construction/i.test(a.type) ? 'construction' : /card|credit/i.test(a.type) ? 'card' : /wallet|^\s*cash\s*$/i.test(a.type) ? 'wallet' : 'bank';
 const xAccounts = () => ((xd()||{}).accounts||[]).filter(a=>a.active!==false);
 const accByName = n => xAccounts().find(a=>a.name===n);
@@ -4896,7 +4908,7 @@ function wireCashback(p){
 }
 // the page header names the kind of account; the name itself is in the card below
 function accPageTitle(name){ const a = accByName(name); if (!a) return name;
-  const k = accKind(a); return k==='card' ? 'Credit card' : k==='wallet' ? 'Wallet' : k==='construction' ? 'Construction' : /cash/i.test(a.type) ? 'Cash' : 'Bank account'; }
+  const k = accKind(a); return k==='card' ? 'Credit card' : isCashAcc(a) ? 'Cash' : k==='wallet' ? 'Wallet' : k==='construction' ? 'Construction' : 'Bank account'; }
 function moveTile(kind){
   const p = kind==='income' ? 'M12 19V5M5 12l7-7 7 7' : 'M4 9h13l-3.5-3.5M20 15H7l3.5 3.5';
   return `<div class="tile ${kind==='income'?'in':'us'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg></div>`;
@@ -5079,7 +5091,7 @@ function xKeypad(okLabel){
 }
 
 /* what can be picked */
-const xSpendable = () => xAccounts().filter(a=>accKind(a)!=='wallet').map(a=>a.name);
+const xSpendable = () => xAccounts().filter(a=>accKind(a)!=='wallet' || isCashAcc(a)).map(a=>a.name);
 const xAllAcc = () => xAccounts().map(a=>a.name);
 function xCatsByUse(){
   const used = {}; ((xd()||{}).entries||[]).forEach(e=>used[e.category]=(used[e.category]||0)+1);
@@ -5665,7 +5677,7 @@ function profileBody(){
       <select data-pick="${k}" aria-label="${k}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
   const blur = document.body.classList.contains('blur'), start = load('inv.start') || 'home', th = themePick();
   acctPrefsMigrate();
-  const accs = xd() ? xAccounts().filter(a=>accKind(a)!=='wallet').map(a=>[a.name, a.name]) : [];
+  const accs = xd() ? xAccounts().filter(a=>accKind(a)!=='wallet' || isCashAcc(a)).map(a=>[a.name, a.name]) : [];
   if (!accs.some(a=>a[0]==='Cash')) accs.unshift(['Cash','Cash']);
   const incAccs = xd() ? xAccounts().filter(a=>accKind(a)!=='card').map(a=>[a.name, a.name]) : [];
   if (PREF.incomeInto && !incAccs.some(a=>a[0]===PREF.incomeInto)) incAccs.push([PREF.incomeInto, PREF.incomeInto]);
