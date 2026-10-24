@@ -702,7 +702,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
    its chromatic fringe and a specular highlight, not by a blur of its own. */
 .tabs{position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(10px + env(safe-area-inset-bottom));
-  display:flex;width:auto;padding:10px 10px;gap:2px;border-radius:30px;z-index:6;border:0;
+  display:flex;width:auto;padding:10px 10px;gap:2px;border-radius:var(--r-pill);z-index:6;border:0;
   background:rgba(255,255,255,.34);
   backdrop-filter:blur(15px) saturate(200%) brightness(1.07);
   -webkit-backdrop-filter:blur(15px) saturate(200%) brightness(1.07);
@@ -734,7 +734,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
 /* At rest the selection is quiet: a plain neutral capsule sitting inside the
    bar. The lens — taller than the bar, with its rim and chromatic fringe —
    only appears while it is travelling, then settles back down. */
-.tabblob{position:absolute;top:50%;left:0;height:52px;border-radius:21px;pointer-events:none;z-index:0;
+.tabblob{position:absolute;top:50%;left:0;height:52px;border-radius:var(--r-pill);pointer-events:none;z-index:0;
   transform:translate(var(--bx,0px),-50%) scaleX(var(--sx,1)) scaleY(var(--sy,1));
   background:rgba(120,120,128,.13);
   box-shadow:none;
@@ -787,8 +787,8 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
 .tabs.min{padding:8px 8px}
 .tabs.min button{min-width:50px}
 .tabs.min .tl{max-height:0;opacity:0}
-.tabs.min .tabblob{height:42px;border-radius:21px}
-.tabs.min .tabblob.moving{height:56px;border-radius:28px}
+.tabs.min .tabblob{height:42px;border-radius:var(--r-pill)}
+.tabs.min .tabblob.moving{height:56px;border-radius:var(--r-pill)}
 
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .tabs{background:rgba(255,255,255,.96)}
@@ -798,7 +798,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
   .tabs{background:rgba(255,255,255,.98);backdrop-filter:none;-webkit-backdrop-filter:none;
         box-shadow:0 8px 26px rgba(0,0,0,.14), inset 0 0 0 .5px rgba(0,0,0,.08)}
   .tabs::before,.tabs::after{display:none}
-  .tabblob{background:rgba(0,102,204,.12);box-shadow:none;height:56px;border-radius:28px}
+  .tabblob{background:rgba(0,102,204,.12);box-shadow:none;height:56px;border-radius:var(--r-pill)}
   .tabblob::before,.tabblob::after{display:none}
 }
 @media (prefers-contrast: more){
@@ -1546,7 +1546,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
