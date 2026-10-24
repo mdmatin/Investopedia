@@ -586,6 +586,26 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
    screen with its title bar; a long list scrolls inside it */
 .xpb{height:44vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
 .xpb > .xgrid{flex:none}
+/* category picker: icon tiles; arrow in the corner opens the subcategories */
+.xpb > .xgrid.tiles{padding:2px 16px 16px;gap:8px}
+.xpb > .xgrid.tiles > button{position:relative;background:var(--canvas);border-radius:12px;min-height:80px;padding:8px 4px}
+.xpb > .xgrid.tiles > button .tile{width:34px;height:34px}
+.xpb > .xgrid.tiles > button.on{background:#eaf2fc;box-shadow:inset 0 0 0 2px var(--blue);color:var(--blue);font-weight:600}
+.xpb > .xgrid.tiles > button.op{box-shadow:inset 0 0 0 1.5px #d2d2d7}
+.xpb > .xgrid.tiles .xsubrow{background:none;padding:2px 0 4px}
+.xgrid > button i.cv{position:absolute;top:8px;right:8px;width:13px;height:13px;color:var(--ink-3);line-height:0}
+.xgrid > button i.cv svg{width:13px;height:13px}
+/* Paid via: icon pills in groups */
+.xpb > .xacc{flex:none;padding:0 16px 16px}
+.xgh{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3);padding:12px 2px 6px}
+.xgh:first-child{padding-top:2px}
+.xgrid.pills{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;background:none}
+.xgrid.pills > button{flex-direction:row;justify-content:flex-start;gap:10px;min-height:52px;padding:0 10px;border-radius:12px;text-align:left}
+.xgrid.pills > button span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.xgrid.pills .tile{flex:0 0 32px;width:32px;height:32px;border-radius:9px}
+.xgrid.pills .tile svg{width:18px;height:18px}
+.xgrid.pills .tile img{border-radius:9px}
+.xgrid.pills > button.on{background:#eaf2fc;box-shadow:inset 0 0 0 2px var(--blue);color:var(--blue);font-weight:600}
 .xpb > .xkp{flex:1;grid-auto-rows:1fr}
 .xpb > .xkp button{height:auto;min-height:52px}
 .xkp{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hairline)}
@@ -1510,7 +1530,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-29g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-29h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1922,6 +1942,7 @@ const cap = n => S(`<path d="M3 20.4h18"/>
   <rect x="10.1" y="9.6" width="4.2" height="8.6" rx="1" ${n===2?'fill="currentColor"':''}/>
   <rect x="15.6" y="5.4" width="4.2" height="12.8" rx="1" ${n===3?'fill="currentColor"':''}/>`);
 const ICONS = {
+  cash:    S(`<rect x="2.8" y="6.5" width="18.4" height="11" rx="1.8"/><circle cx="12" cy="12" r="2.4"/><path d="M6 9.5v.01M18 14.5v.01"/>`),
   stocks:  S(`<path d="M7 4v3M7 17v3M17 4v2M17 16v4"/><rect x="4.5" y="7" width="5" height="10" rx="1.4"/><rect x="14.5" y="6" width="5" height="10" rx="1.4"/>`),
   us:      S(`<circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8"/><ellipse cx="12" cy="12" rx="3.7" ry="8.4"/>`),
   mf:      S(`<rect x="3.4" y="4.2" width="17.2" height="4.4" rx="1.6"/><rect x="3.4" y="9.8" width="17.2" height="4.4" rx="1.6"/><rect x="3.4" y="15.4" width="17.2" height="4.4" rx="1.6"/>`),
@@ -5303,7 +5324,7 @@ function xGrid(items, on, attr, opts={}){
   for (let i=0;i<items.length;i+=3){
     const row = items.slice(i,i+3);
     out += row.map(v=>{ const subs = opts.subs ? xSubs(v) : [];
-      return `<button class="${v===on?'on':''}" data-${attr}="${esc(v)}">${opts.icons ? xTile(v) : ''}<span>${esc(v)}</span>${subs.length?`<i>${v===xOpenCat?'⌃':'⌄'}</i>`:''}</button>`; }).join('');
+      return `<button class="${v===on?'on':''} ${opts.subs&&v===xOpenCat?'op':''}" data-${attr}="${esc(v)}">${opts.icons ? xTile(v) : ''}<span>${esc(v)}</span>${subs.length?(opts.icons?`<i class="cv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${v===xOpenCat?'M6 15l6-6 6 6':'M6 9l6 6 6-6'}"/></svg></i>`:`<i>${v===xOpenCat?'⌃':'⌄'}</i>`):''}</button>`; }).join('');
     for (let k=row.length;k<3;k++) out += '<b></b>';
     if (opts.subs && row.includes(xOpenCat)){
       const subs = xSubs(xOpenCat);
@@ -5429,27 +5450,27 @@ function xNext(){
   xField = null; paintXSheet();
   const inp = $(nxt==='note' ? '#xNote' : nxt==='desc' ? '#xDesc' : nxt==='source' ? '#xSource' : '#xTax'); if (inp) inp.focus();
 }
-// Paid via, one group per line: SBI · ICICI · Jupiter Bank first, the other banks,
-// the cards, Cash on its own, then the construction accounts
-const ACC_FIRST = ['SBI','Jupiter Bank'];   // row 1 (+ Cash); other banks go after the cards
+// Paid via as icon pills, two per row, under small headings: Everyday (SBI ·
+// Jupiter Bank · Cash), Cards, Other banks, Construction (shown as "SBI · C")
+const ACC_FIRST = ['SBI','Jupiter Bank'];
+const xAccLabel = n => /construction/i.test(n) ? n.replace(/\s*[·\-–]?\s*construction\b\s*/i,'').trim() + ' · C' : n;
+const xAccMark = a => isCashAcc(a) && accKind(a)!=='construction' ? `<div class="tile in">${ICONS.cash}</div>` : bankMark(a.name);
 function xAccGrid(names, on){
   const accs = names.map(n=>accByName(n)).filter(Boolean);
   const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : 'bank';
   const rank = a => { const i = ACC_FIRST.indexOf(a.name); return i < 0 ? 99 : i; };
   const banks = accs.filter(a=>kind(a)==='bank').sort((a,b)=>rank(a)-rank(b));
-  const groups = [banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash')), accs.filter(a=>kind(a)==='card'), banks.filter(a=>rank(a)===99), accs.filter(a=>kind(a)==='con')];
-  let out = '';
-  groups.forEach(g=>{ for (let i=0;i<g.length;i+=3){ const row = g.slice(i,i+3);
-    out += row.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}"><span>${esc(a.name)}</span></button>`).join('');
-    for (let k=row.length;k<3;k++) out += '<b></b>'; } });
-  return `<div class="xgrid">${out}</div>`;
+  const groups = [['Everyday', banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash'))], ['Cards', accs.filter(a=>kind(a)==='card')],
+    ['Other banks', banks.filter(a=>rank(a)===99)], ['Construction', accs.filter(a=>kind(a)==='con')]];
+  return `<div class="xacc">${groups.filter(g=>g[1].length).map(([h,g])=>`<div class="xgh">${h}</div><div class="xgrid pills">${
+    g.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}">${xAccMark(a)}<span>${esc(xAccLabel(a.name))}</span></button>`).join('')}</div>`).join('')}</div>`;
 }
 function flowPanel(){
   const f = xField; if (!f || !xGridField(f)) return '';
   let body = '', head = xLabel(f);
   if (f==='amount') body = xKeypad('Next');
   else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
-  else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense' });
+  else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense', icons: true });
   else if (f==='account') body = xMode==='income' ? xGrid(xAllAcc(), xAcc, 'a') : xAccGrid(xSpendable(), xAcc);
   else if (f==='from') body = xGrid(xAllAcc(), xFrom, 'a');
   else if (f==='to') body = xGrid(xAllAcc().filter(n=>n!==xFrom), xTo, 'a');
