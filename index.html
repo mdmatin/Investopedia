@@ -657,6 +657,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
 .dmenu .chk{font-size:11px;font-weight:600;color:#b26a00;background:rgba(255,159,10,.16);border-radius:6px;padding:1px 6px;flex:none}
 .dmenu .dx{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3)}
 .dmenu .dx svg{width:15px;height:15px}
+.dmenu .dx.arm{width:auto;padding:0 12px;border-radius:16px;background:var(--down);color:#fff;font-size:13px;font-weight:600}   /* asks once: tap again to discard */
 .dmenu .tarw{width:30px;height:30px;margin:0;vertical-align:0}.dmenu .tarw svg{width:15px;height:15px}
 /* ── Liquid Glass navigation bar ───────────────────────────────────────────
    The bar is the only glass surface. Apple's rule is that glass never samples
@@ -1504,7 +1505,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-29a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-29b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4398,6 +4399,7 @@ function draftLine(d){
   const up = d.kind==='income';
   return { k, title, meta, amt: (up?'+':'') + fINR2(d.amount), up };
 }
+const DX_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function openDrafts(){
   closeDrafts(); const list = xDrafts(); if (!list.length) return;
   const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeDrafts;
@@ -4407,9 +4409,11 @@ function openDrafts(){
         <span class="tarw ${x.k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${TX_ARW[x.k]}"/></svg></span>
         <div class="l"><div class="n">${esc(x.title)}</div><div class="m">${d.check?'<span class="chk">Check</span>':''}<span>${esc(x.meta)}</span></div></div>
         <div class="v num money ${x.up?'up':''}">${x.amt}</div></button>
-      <button class="dx" data-dx="${esc(d.id)}" aria-label="Discard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`; }).join('');
+      <button class="dx" data-dx="${esc(d.id)}" aria-label="Discard">${DX_IC}</button></div>`; }).join('');
   m.querySelectorAll('[data-dopen]').forEach(b=>b.onclick=()=>{ const d = xDrafts().find(x=>x.id===b.dataset.dopen); closeDrafts(); if (d) openDraft(d); });
-  m.querySelectorAll('[data-dx]').forEach(b=>b.onclick=()=>discardDraft(b.dataset.dx));
+  m.querySelectorAll('[data-dx]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+    if (!b.classList.contains('arm')){ m.querySelectorAll('.dx.arm').forEach(x=>{ x.classList.remove('arm'); x.innerHTML = DX_IC; }); b.classList.add('arm'); b.textContent = 'Discard'; return; }
+    discardDraft(b.dataset.dx); });
   document.body.append(bd, m);
 }
 function closeDrafts(){ document.querySelectorAll('.dmenu').forEach(e=>e.remove()); if (!document.querySelector('.fmenu')) document.querySelectorAll('.fmenu-bd').forEach(e=>e.remove()); }
@@ -5582,6 +5586,8 @@ async function saveMove(kind, rec, was){
   let tmp = null, prev = null;
   if (was){ prev = { ...was }; Object.assign(was, rec); }
   else { tmp = { ...rec, row:'new'+Date.now() }; list.unshift(tmp); list.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0); }
+  const draftKeep = draftDone ? xDrafts().slice() : null;         // a draft goes the moment Save is tapped; back if the save fails
+  if (draftDone) dropDraft(draftDone);
   closeXSheet(); rerenderSpendViews(); save('inv.exp', X);     // kept on the phone now, so a reopen shows it before the reload
   const act = { expense:['addExpense','editExpense'], income:['addIncome','editIncome'], transfer:['addTransfer','editTransfer'] }[kind];
   xSeq++; xPending++; let held = true;
@@ -5589,7 +5595,6 @@ async function saveMove(kind, rec, was){
     let reply;
     if (was) reply = await apiPost(act[1], { row:was.row, before:{ date:prev.date, amount:prev.amount }, ...rec });
     else { reply = await apiPost(act[0], draftDone ? { ...rec, draftId:draftDone } : rec); if (reply && reply.row) tmp.row = reply.row; }
-    if (draftDone) dropDraft(draftDone);
     held = false; xPending--; xSeq++;
     applyBooks(reply && reply.books); save('inv.exp', X);
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
@@ -5601,6 +5606,7 @@ async function saveMove(kind, rec, was){
   }catch(e){
     if (held){ held = false; xPending--; xSeq++; }
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
+    if (draftKeep && xd() && !xDrafts().some(x=>x.id===draftDone)) xd().drafts = draftKeep;
     save('inv.exp', X); rerenderSpendViews(); toast(e.message || 'Could not save');
     if (xAgain && !xLoading){ xAgain = false; loadExpenses(true); }
   }
