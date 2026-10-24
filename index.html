@@ -1530,7 +1530,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-29h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1795,9 +1795,9 @@ function renderHome(d){
 // rows of the For Construction table: accounts live, the rest as the sheet has them
 function constrRows(nw){
   const items = (nw && nw.construction && nw.construction.items) || [], accs = xAccounts().filter(a=>accKind(a)==='construction');
-  const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===String(it.name).toLowerCase());
-    return a ? { name:a.name, label:it.name, kind:'construction', amount:Math.round(accBalance(a.name)*100)/100, live:true } : it; });
-  accs.forEach(a=>{ if (!rows.some(r=>r.live && r.name===a.name)) rows.unshift({ name:a.name, label:constrBase(a.name) ? a.name.replace(/\s*[·\-–|]\s*construction$/i,'') : a.name, kind:'construction', amount:accBalance(a.name), live:true }); });
+  const rows = items.map(it=>{ const a = accs.find(x=>constrIs(x.name, it.name));
+    return a ? { name:a.name, label:a.name, kind:'construction', amount:Math.round(accBalance(a.name)*100)/100, live:true } : it; });
+  accs.forEach(a=>{ if (!rows.some(r=>r.live && r.name===a.name)) rows.unshift({ name:a.name, label:a.name, kind:'construction', amount:accBalance(a.name), live:true }); });
   return rows;
 }
 
@@ -4076,7 +4076,7 @@ const xSubs = cat => (((xd()||{}).categories||[]).find(c=>c.name===cat)||{}).sub
 // the window the app holds (so edits show at once), else from the server totals
 function xMonth(ym){
   const d = xd(); if (!d) return {};
-  if (ym >= d.entriesFrom){ const o={}; d.entries.forEach(e=>{ if (e.date.slice(0,7)===ym) o[e.category]=(o[e.category]||0)+(e.amount||0); }); return o; }
+  if (ym >= d.entriesFrom){ const o={}; d.entries.forEach(e=>{ if (e.date.slice(0,7)===ym && !constrMoney(e)) o[e.category]=(o[e.category]||0)+(e.amount||0); }); return o; }
   return (d.monthly||{})[ym] || {};
 }
 const xTotal = o => Object.values(o).reduce((a,v)=>a+v,0);
@@ -4087,6 +4087,11 @@ const fCmp = v => { v = Math.round(v||0); if (!v) return ''; const a = Math.abs(
 const NOT_SPEND = /^investments?$/i;
 const isInvest = cat => NOT_SPEND.test(String(cat||'').trim());
 const isConstr = cat => /^construction$/i.test(String(cat||'').trim());
+// a construction account is one typed Construction on Money › Accounts (never judged by name);
+// anything paid from or received into one is construction money, not personal — except the
+// Construction category itself, which the construction views count
+const constrAcc = name => { const a = typeof accByName==='function' && accByName(name); return !!(a && accKind(a)==='construction'); };
+const constrMoney = e => constrAcc(e.account) && !isConstr(e.category);
 const personal = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isConstr(k)));      // construction is its own fund
 const spendOnly = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isInvest(k) && !isConstr(k)));
 const investOf = o => Object.entries(o).filter(([k])=>isInvest(k)).reduce((a,[,v])=>a+v,0);
@@ -4311,7 +4316,7 @@ function drawBudgetChart(){
 const PIE_N = 12, pieCol = i => `var(--pc${i % PIE_N})`;   // iOS system colours, per theme (CSS)
 let spIO = 'exp';
 function monthIncome(ym){
-  const o = {}; ((xd()||{}).incomes||[]).forEach(i=>{ if (i.date.slice(0,7)===ym && i.type!=='Adjustment' && i.amount>0) o[i.type||'Other']=(o[i.type||'Other']||0)+i.amount; });
+  const o = {}; ((xd()||{}).incomes||[]).forEach(i=>{ if (i.date.slice(0,7)===ym && i.type!=='Adjustment' && i.amount>0 && !constrAcc(i.account)) o[i.type||'Other']=(o[i.type||'Other']||0)+i.amount; });
   return o;
 }
 function pieSvg(items, total){
@@ -4494,9 +4499,9 @@ function txRow(x){
 }
 function spListHtml(){
   const all = txItems(spMonth);
-  const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv') && !isConstr(x.e.category);
+  const counts = x => (x.k==='ex'||x.k==='rf'||x.k==='lq'||x.k==='iv') && !isConstr(x.e.category) && !constrAcc(x.e.account);
   const spent = all.filter(counts).reduce((s,x)=>s+x.e.amount,0);
-  const inn = all.filter(x=>x.k==='in').reduce((s,x)=>s+x.e.amount,0);
+  const inn = all.filter(x=>x.k==='in' && !constrAcc(x.e.account)).reduce((s,x)=>s+x.e.amount,0);
   const keep = TXF[txFilter] || TXF.all;
   const list = all.filter(keep).sort((a,b)=>a.e.date<b.e.date?1:a.e.date>b.e.date?-1:0);
   const by = {}; list.forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
@@ -4581,7 +4586,7 @@ function monthLineChart(months, vals, sel, budFn, bud){
    Same layout as a category page: the month, a sideways-scrolling graph of
    every month, and that month's entries. No budget. */
 function inccatBody(p){
-  const t = p.cat, ym = p.ym, all = ((xd()||{}).incomes||[]).filter(i=>(i.type||'Other')===t && i.type!=='Adjustment');
+  const t = p.cat, ym = p.ym, all = ((xd()||{}).incomes||[]).filter(i=>(i.type||'Other')===t && i.type!=='Adjustment' && !constrAcc(i.account));
   const list = all.filter(i=>i.date.slice(0,7)===ym), total = list.reduce((a,i)=>a+i.amount,0);
   const firstYm = [ym, ymAdd(ymNow(),-11)].concat(all.map(i=>i.date.slice(0,7))).sort()[0];   // at least a year
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
@@ -4732,14 +4737,17 @@ function spAccountsHtml(){
   return head + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
-// have a Construction account taken live from it (ICICI · Construction → ICICI)
-const constrBase = n => String(n||'').replace(/\s*[·\-–|]\s*construction$/i,'').replace(/^construction\s*[·\-–|]\s*/i,'').trim().toLowerCase();
+// have a Construction account taken live from it. The table's rows carry the account's
+// own name; an older short label ("ICICI" for "ICICI · Construction") still matches until
+// the next sync rewrites it.
+const constrIs = (acc, label) => { const a = String(acc||'').trim().toLowerCase(), l = String(label||'').trim().toLowerCase();
+  return a===l || a.replace(/\s*[·\-–|]\s*construction$/,'')===l; };
 function constrFund(ymSel){
   const accs = xAccounts().filter(a=>accKind(a)==='construction');
   const items = ((D && D.data && D.data.netWorth && D.data.netWorth.construction && D.data.netWorth.construction.items) || []);
-  const rows = items.map(it=>{ const a = accs.find(x=>constrBase(x.name)===it.name.toLowerCase());
-    return { name:it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null, item: it }; });
-  accs.forEach(a=>{ if (!rows.some(r=>r.acc===a.name)) rows.push({ name:constrBase(a.name) || a.name, amount:accBalance(a.name), acc:a.name, unmatched:true }); });
+  const rows = items.map(it=>{ const a = accs.find(x=>constrIs(x.name, it.name));
+    return { name: a ? a.name : it.name, amount: a ? accBalance(a.name) : (it.amount||0), acc: a ? a.name : null, item: it }; });
+  accs.forEach(a=>{ if (!rows.some(r=>r.acc===a.name)) rows.push({ name:a.name, amount:accBalance(a.name), acc:a.name, unmatched:true }); });
   const ym = ymSel || ymNow(), d = xd() || {};
   const months = new Set(Object.keys(d.monthly||{}).concat((d.entries||[]).map(e=>e.date.slice(0,7))));
   let spentAll = 0; months.forEach(m=>{ Object.entries(xMonth(m)).forEach(([k,v])=>{ if (isConstr(k)) spentAll += v; }); });
@@ -4782,9 +4790,8 @@ function constrBody(p){
   const subs = {}; list.forEach(e=>{ const k = e.sub || 'Other'; subs[k] = (subs[k]||0) + e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
   const by = {}; list.forEach(e=>{ (by[e.date.slice(0,7)] = by[e.date.slice(0,7)] || []).push(e); });
-  const shortAcc = n => String(n||'').replace(/\s*[·\-–|]\s*construction$/i,'');
   const row = e => { const title = e.note || e.sub || 'Construction';
-    const meta = [fDate(e.date), e.sub && e.sub!==title ? e.sub : null, e.account ? shortAcc(e.account) : null].filter(Boolean).map(esc).join(' · ');
+    const meta = [fDate(e.date), e.sub && e.sub!==title ? e.sub : null, e.account || null].filter(Boolean).map(esc).join(' · ');
     return `<button class="row" data-xrow="${e.row}">${xTile(e.category)}
       <div class="l"><div class="n">${esc(title)}</div><div class="m">${meta}</div></div>
       <div class="r"><div class="v num money ${e.amount<0?'up':''}">${e.amount<0?'+'+fINR2(-e.amount):fINR2(e.amount)}</div></div></button>`; };
@@ -5188,7 +5195,8 @@ const XREFUND = 'Refund';
 const XLIQ = 'Liquidation';
 const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!=='Adjustment' && t!==XREFUND && t!==XLIQ).concat(XLIQ, XREFUND);
 // the most recent Source used for a type (Salary → your employer, and so on)
-const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
+// the company on your latest income of that type (by date): Salary → your current company, picked by default
+const lastSource = type => (((xd()||{}).incomes||[]).filter(i=>i.type===type && i.source).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0]||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
 let xExpr = '', xDateV = '', xNoteV = '', xDescV = '', xSrcV = '', xTaxV = '', xField = null, xStep = 1, xOpenCat = '', xKind = 'expense', xErrMsg = '';
 
@@ -5401,9 +5409,9 @@ function xFields(){
 }
 // Company is only asked for salary
 const xAsksCompany = () => xMode==='income' && /^salary$/i.test(xType||'');
-const X_PICK = { amount:1, category:1, account:1, from:1, to:1, type:1 };
-// no subcategories here, so a plain dropdown (the iOS picker) instead of the tile grid
-const xIsDrop = f => (xMode==='transfer' && (f==='from' || f==='to')) || (xMode==='income' && (f==='type' || f==='account' || (f==='source' && !xIsRefund() && !xIsLiq())));
+const X_PICK = { amount:1, category:1, account:1, from:1, to:1, type:1, source:1 };
+// every picker is a pill panel now (accounts, income type, company); no plain dropdowns left
+const xIsDrop = f => false;
 // companies you've had income from, most used first
 function xCompanies(){ const n = {}; ((xd()||{}).incomes||[]).forEach(i=>{ const c = String(i.source||'').trim(); if (c) n[c] = (n[c]||0) + 1; });
   return Object.keys(n).sort((a,b)=>n[b]-n[a] || a.localeCompare(b)); }
@@ -5434,7 +5442,7 @@ function xValue(f){
   if (f==='from') return xFrom ? esc(xFrom) : ph('Pick one');
   if (f==='to') return xTo ? esc(xTo) : ph('Pick one');
   if (f==='type') return xType ? esc(xType) : ph('Pick one');
-  if (f==='source') return `<input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}`;
+  if (f==='source') return xSrcV ? esc(xSrcV) : ph('None');
   if (f==='tax') return `<input id="xTax" inputmode="decimal" placeholder="optional" value="${xTaxV ? esc(groupNum(xTaxV,'en-IN')) : ''}">`;
   if (f==='note') return `<input id="xNote" placeholder="optional" enterkeyhint="next" value="${esc(xNoteV)}">`;
   if (f==='desc') return `<input id="xDesc" placeholder="optional" enterkeyhint="done" value="${esc(xDescV)}">`;
@@ -5453,7 +5461,6 @@ function xNext(){
 // Paid via as icon pills, two per row, under small headings: Everyday (SBI ·
 // Jupiter Bank · Cash), Cards, Other banks, Construction (shown as "SBI · C")
 const ACC_FIRST = ['SBI','Jupiter Bank'];
-const xAccLabel = n => /construction/i.test(n) ? n.replace(/\s*[·\-–]?\s*construction\b\s*/i,'').trim() + ' · C' : n;
 const xAccMark = a => isCashAcc(a) && accKind(a)!=='construction' ? `<div class="tile in">${ICONS.cash}</div>` : bankMark(a.name);
 function xAccGrid(names, on){
   const accs = names.map(n=>accByName(n)).filter(Boolean);
@@ -5463,7 +5470,33 @@ function xAccGrid(names, on){
   const groups = [['Everyday', banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash'))], ['Cards', accs.filter(a=>kind(a)==='card')],
     ['Other banks', banks.filter(a=>rank(a)===99)], ['Construction', accs.filter(a=>kind(a)==='con')]];
   return `<div class="xacc">${groups.filter(g=>g[1].length).map(([h,g])=>`<div class="xgh">${h}</div><div class="xgrid pills">${
-    g.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}">${xAccMark(a)}<span>${esc(xAccLabel(a.name))}</span></button>`).join('')}</div>`).join('')}</div>`;
+    g.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}">${xAccMark(a)}<span>${esc(a.name)}</span></button>`).join('')}</div>`).join('')}</div>`;
+}
+// Income type as icon pills, grouped like the accounts
+const XT_ICON = {
+  salary:  [XI.trip, 'us'], freelanc: [XI.tv, 'cr'], interest: ['M18 6L6 18M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z', 'lq'],
+  cashback:[ 'M3 6.5h18v11H3zM3 10.5h18M7 14.5h3', 'mf'], dividend: [XI.leaf, 'in'], gift: [XI.gift, 'gd'],
+  liquid:  ['M3 7l6 6 4-4 8 8M14 17h7v-7', 'rt'], refund: ['M9 14l-5-5 5-5M4 9h11a5 5 0 0 1 0 10h-3', 'bk'], other: [XI.more, 'ch'] };
+const xtKey = t => { const s = String(t||'').toLowerCase(); return Object.keys(XT_ICON).find(k=>s.startsWith(k) || (k==='gift' && /gift|transfer/.test(s)) || (k==='liquid' && /liquid/.test(s))) || 'other'; };
+const xtTile = t => { const [d,tint] = XT_ICON[xtKey(t)]; return `<div class="tile ${tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${xtKey(t)==='other'?3:1.7}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></div>`; };
+function xTypeGrid(types, on){
+  const g = { Earnings:[], Returns:[], 'Back to you':[], Other:[] };
+  types.forEach(t=>{ const k = xtKey(t); (k==='salary'||k==='freelanc' ? g.Earnings : k==='interest'||k==='dividend'||k==='cashback' ? g.Returns : k==='liquid'||k==='refund' ? g['Back to you'] : g.Other).push(t); });
+  return `<div class="xacc">${Object.entries(g).filter(([,l])=>l.length).map(([h,l])=>`<div class="xgh">${h}</div><div class="xgrid pills">${
+    l.map(t=>`<button class="${t===on?'on':''}" data-t="${esc(t)}">${xtTile(t)}<span>${esc(t)}</span></button>`).join('')}</div>`).join('')}</div>`;
+}
+// Company (salary): your companies as pills, most used first, logo when /logos has one
+function xCompanyGrid(on){
+  // your current company (the one on your latest salary) first, then the rest by use
+  const L = xCompanies(), cur = lastSource('Salary');
+  if (cur && L.includes(cur)) { L.splice(L.indexOf(cur), 1); L.unshift(cur); }
+  if (on && !L.includes(on)) L.unshift(on);
+  const pill = (v, mark, label, cls='') => `<button class="${cls}" data-src="${esc(v)}">${mark}<span>${esc(label)}</span></button>`;
+  const none = `<div class="tile ch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>`;
+  const plus = `<div class="tile us"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>`;
+  return `<div class="xacc">${L.length ? `<div class="xgh">Companies</div><div class="xgrid pills">${
+    L.map(c=>pill(c, logoMark(c, null, [S(`<path d="${XI.rent}"/>`), 'us']), c, c===on?'on':'')).join('')}</div>` : ''}
+    <div class="xgh">Other</div><div class="xgrid pills">${pill('', none, 'None', on?'':'on')}${pill('__new', plus, 'New company')}</div></div>`;
 }
 function flowPanel(){
   const f = xField; if (!f || !xGridField(f)) return '';
@@ -5471,10 +5504,12 @@ function flowPanel(){
   if (f==='amount') body = xKeypad('Next');
   else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense', icons: true });
-  else if (f==='account') body = xMode==='income' ? xGrid(xAllAcc(), xAcc, 'a') : xAccGrid(xSpendable(), xAcc);
-  else if (f==='from') body = xGrid(xAllAcc(), xFrom, 'a');
-  else if (f==='to') body = xGrid(xAllAcc().filter(n=>n!==xFrom), xTo, 'a');
-  else if (f==='type') body = xGrid(inTypesList(), xType, 't');
+  // every account picker (Paid via, Into, From, To) is the same grouped pill panel
+  else if (f==='account') body = xAccGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc);
+  else if (f==='from') body = xAccGrid(xAllAcc(), xFrom);
+  else if (f==='to') body = xAccGrid(xAllAcc().filter(n=>n!==xFrom), xTo);
+  else if (f==='type') body = xTypeGrid(inTypesList(), xType);
+  else if (f==='source') body = xCompanyGrid(xSrcV);
   return `<div class="xpanel"><div class="xph"><span>${esc(head)}</span><button data-hide>Done</button></div><div class="xpb">${body}</div></div>`;
 }
 function paintFlow(){
@@ -5512,6 +5547,9 @@ function paintFlow(){
     if (xField==='to') xTo=v; else xAcc=v;
     // paid via / to / into is the last pick: close the panel instead of jumping on to note or description
     xField = null; paintXSheet(); if (document.activeElement) document.activeElement.blur(); });
+  $$('.xgrid [data-src]', el).forEach(b=>b.onclick=()=>{ let v = b.dataset.src;
+    if (v==='__new'){ v = (prompt('Company name') || '').trim(); if (!v) return; }
+    xSrcV = v; xField = null; paintXSheet(); if (document.activeElement) document.activeElement.blur(); });
   $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; xNext(); });
 }
 
