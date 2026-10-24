@@ -586,6 +586,9 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
    screen with its title bar; a long list scrolls inside it */
 .xpb{height:44vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
 .xpb > .xgrid{flex:none}
+/* Defaults page: every subtitle on one line */
+.prof.defs .lb{min-width:0}
+.prof.defs .lb small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* category picker: icon tiles; arrow in the corner opens the subcategories */
 .xpb > .xgrid.tiles{padding:2px 16px 16px;gap:8px}
 .xpb > .xgrid.tiles > button{position:relative;background:var(--canvas);border-radius:12px;min-height:80px;padding:8px 4px}
@@ -1530,7 +1533,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3472,7 +3475,7 @@ function stepper(p){
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
   : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
-  : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
+  : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
   const up = String(ticker).toUpperCase();
@@ -3514,7 +3517,7 @@ function renderPage(){
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
-    : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='recurring' ? recurringBody()
+    : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
@@ -3531,6 +3534,7 @@ function renderPage(){
   if (p.kind==='accform'){ wireAccForm(p); return; }
   if (p.kind==='profile'){ wireProfile(); return; }
   if (p.kind==='recurring'){ wireRecurring(); return; }
+  if (p.kind==='defaults'){ wireDefaults(); return; }
   if (p.kind==='recform'){ wireRecForm(p); return; }
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
   // prev / next swap the ticker in place, so Back still returns to the list
@@ -5265,7 +5269,7 @@ function xKiteToggle(){
 function openLiquidation(cat){
   const d = xd() || {}, inv = cat || invCat();
   const last = (d.entries||[]).find(e=>isInvest(e.category) && e.amount>0 && accByName(e.account) && accKind(accByName(e.account))==='bank');
-  openXSheet(null, 'income', { type:XLIQ, category:inv, account: last ? last.account : xIncomeAcc(), note:'' });
+  openXSheet(null, 'income', { type:XLIQ, category:inv, account: accOk(DEF('exp.investAccount')) ? DEF('exp.investAccount') : last ? last.account : xIncomeAcc(), note:'' });
 }
 // …and the same amount leaves the Kite wallet on Net Worth
 async function kiteWalletDown(amount){
@@ -5277,10 +5281,42 @@ async function kiteWalletDown(amount){
     if (D) save(LS.data, D); toast(`Kite wallet → ${fINR(w.amount)}`); refresh(false, true); }
   catch(e){ toast('Kite wallet: ' + (e.message || 'could not update')); }
 }
-// Profile defaults for new income: the account it goes into and its type
-function xIncomeAcc(){ acctPrefsMigrate(); return PREF.incomeInto && accByName(PREF.incomeInto) ? PREF.incomeInto : ''; }
-function xExpenseAcc(){ acctPrefsMigrate(); return PREF.payFrom && (PREF.payFrom==='Cash' || accByName(PREF.payFrom)) ? PREF.payFrom : ''; }
-function xIncomeType(){ return PREF.incomeType && inTypesList().includes(PREF.incomeType) ? PREF.incomeType : ''; }
+/* Defaults (Profile › Money › Defaults), kept in Money › Defaults so every device
+   shares them. DEF(k) reads one; the old per-phone settings are the fallback and
+   are copied to the sheet once. */
+const DEF = k => { const d = (xd()||{}).defaults; return d && d[k]!=null ? String(d[k]) : ''; };
+const accOk = n => !!n && (n==='Cash' || !!accByName(n));
+async function setDef(k, v){
+  const d = xd(); if (!d) return; d.defaults = d.defaults || {}; const was = d.defaults[k];
+  d.defaults[k] = v; save('inv.exp', X);
+  try { await apiPost('setDefault', { key:k, value:v }); }
+  catch(e){ d.defaults[k] = was; save('inv.exp', X); toast('Default not saved: ' + (e.message||'try again')); renderPageKeep(); }
+}
+function renderPageKeep(){ const top = pageStack[pageStack.length-1]; if (top && top.kind==='defaults'){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; } }
+function defsMigrate(){
+  const d = xd(); if (!d || !d.defaults || load('inv.defsMoved')) return;
+  acctPrefsMigrate();
+  [['exp.account', PREF.payFrom], ['inc.account', PREF.incomeInto], ['inc.type', PREF.incomeType]].forEach(([k,v])=>{ if (v && !DEF(k)) setDef(k, v); });
+  save('inv.defsMoved', true);
+}
+function xIncomeAcc(){ const v = DEF('inc.account') || PREF.incomeInto; return accOk(v) ? v : ''; }
+function xExpenseAcc(){ const v = DEF('exp.account') || PREF.payFrom; return accOk(v) ? v : ''; }
+function xIncomeType(){ const v = DEF('inc.type') || PREF.incomeType; return v && inTypesList().includes(v) ? v : ''; }
+// the account a category brings with it: Construction → a construction account, Investment → your investing bank
+function xCatAcc(c){
+  if (xMode!=='expense') return;
+  if (isConstr(c)){ const a = accByName(xAcc); if (!a || accKind(a)!=='construction'){
+    const pref = DEF('exp.constrAccount'), ca = accOk(pref) ? pref : (xAccounts().find(x=>accKind(x)==='construction' && x.active!==false)||{}).name; if (ca) xAcc = ca; } }
+  else if (isInvest(c) && accOk(DEF('exp.investAccount'))) xAcc = DEF('exp.investAccount');
+}
+// an income type's own account (and Salary's company)
+function xTypeRule(t){
+  const acc = DEF('income:' + t + ':account'); if (accOk(acc)) xAcc = acc;
+  if (/^salary$/i.test(t)){ const co = DEF('income:Salary:company'); if (co) xSrcV = co; else if (!xSrcV) xSrcV = lastSource(t); }
+  return accOk(acc);
+}
+const xLastCat = () => (((xd()||{}).entries||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0]||{}).category || '';
+const xLastTr = () => ((xd()||{}).transfers||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0] || {};
 function openXSheet(e, mode, tpl){
   if (e===undefined) return;
   if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; }
@@ -5294,11 +5330,15 @@ function openXSheet(e, mode, tpl){
   xNoteV = s ? (s.note||'') : ''; xDescV = s ? (s.desc||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
   xCat = s && s.category || ''; xSub = s && s.sub || '';
   xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : xExpenseAcc());
-  xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
+  const dF = DEF('tr.from'), dT = DEF('tr.to'), lt = xLastTr();
+  xFrom = s && s.from || (dF==='__last' ? lt.from : accOk(dF) ? dF : '') || first('bank');
+  xTo = s && s.to || (dT==='__last' ? lt.to : accOk(dT) ? dT : '') || ''; if (xTo===xFrom) xTo = '';
   xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? (isInvest(e.category) ? XLIQ : XREFUND) : !e && xMode==='income' ? xIncomeType() : '');
   if (!s && xMode==='income' && xAsksCompany()) xSrcV = lastSource(xType);
+  if (!e && xMode==='income' && xType && !(s && s.account)) xTypeRule(xType);
+  if (!s && xMode==='expense'){ const sc = DEF('exp.startCategory'), c = sc==='__last' ? xLastCat() : sc; if (c && xCats().includes(c)){ xCat = c; xCatAcc(c); } }
   xOpenCat = ''; xErrMsg = '';
-  xField = s && s.amount ? null : 'amount'; xStep = s && s.amount ? 3 : 1;
+  xField = s && s.amount ? null : (DEF('form.keypad')==='FALSE' ? null : 'amount'); xStep = s && s.amount ? 3 : 1;
   paintXSheet();
   $('#backdrop').hidden=false; $('#xsheet').hidden=false;
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#xsheet').classList.add('show'); });
@@ -5395,7 +5435,7 @@ function noteSuggest(el){
 // tapping a category: open its subcategories, or take it if it has none
 function pickCat(c, done){
   if (xCat!==c){ xCat=c; xSub=''; }
-  if (xMode==='expense' && isConstr(c)){ const a = accByName(xAcc); if (!a || accKind(a)!=='construction'){ const ca = xAccounts().find(x=>accKind(x)==='construction' && x.active!==false); if (ca) xAcc = ca.name; } }
+  xCatAcc(c);
   if (xSubs(c).length && xOpenCat!==c){ xOpenCat=c; paintXSheet(); return; }
   xOpenCat=''; done();
 }
@@ -5550,7 +5590,10 @@ function paintFlow(){
   $$('.xgrid [data-src]', el).forEach(b=>b.onclick=()=>{ let v = b.dataset.src;
     if (v==='__new'){ v = (prompt('Company name') || '').trim(); if (!v) return; }
     xSrcV = v; xField = null; paintXSheet(); if (document.activeElement) document.activeElement.blur(); });
-  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; xNext(); });
+  $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = '';
+    // the type's own account (Salary → ICICI and your company): with nothing left to pick, the panel closes
+    if (!xEditing && xTypeRule(xType) && (!xAsksCompany() || xSrcV)){ xField = null; paintXSheet(); if (document.activeElement) document.activeElement.blur(); return; }
+    xNext(); });
 }
 
 /* ===== layout 3: steps ===== */
@@ -5998,9 +6041,7 @@ function profileBody(){
    </div>
 
    <h3>Money</h3><div class="grp">
-    ${row('card','#34c759','Default expense account', pick('payFrom', PREF.payFrom, [['','None']].concat(accs)))}
-    ${row('in','#30d158','Default income account', pick('incomeInto', PREF.incomeInto, [['','None']].concat(incAccs)))}
-    ${row('tag','#ff9500','Default income type', pick('incomeType', PREF.incomeType, [['','None']].concat(xd() ? inTypesList().filter(t=>t!==XREFUND).map(t=>[t,t]) : [])))}
+    ${row('tag','#ff9500','Defaults', `<span class="vl">${chv}</span>`, 'What new entries start with', 'data-act="defaults"')}
     ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
    </div>
@@ -6033,6 +6074,54 @@ async function refreshSheet(after){
 function rerenderAll(){
   if (D) render();
   if (activeView==='spend') renderSpend();
+}
+function defaultsBody(){
+  defsMigrate();
+  const chv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+  const pic = (p,c)=>`<span class="ic" style="background:${c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg></span>`;
+  const row = (i,c,l,right,sub)=>`<div class="r">${pic(i,c)}<div class="lb">${l}${sub?`<small>${sub}</small>`:''}</div>${right}</div>`;
+  const pick = (k, opts)=>{ const cur = DEF(k); if (cur && !opts.some(o=>o[0]===cur)) opts = opts.concat([[cur, cur + ' (missing)']]);
+    return `<span class="vl">${esc((opts.find(o=>o[0]===cur)||opts[0])[1])}${chv}</span><select data-def="${esc(k)}" aria-label="${esc(k)}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`; };
+  const sw = (k,on)=>`<button class="sw ${on?'on':''}" role="switch" aria-checked="${on}" data-defsw="${esc(k)}"></button>`;
+  const A = xAccounts().filter(a=>a.active!==false).map(a=>[a.name,a.name]), AS = xAccounts().filter(a=>a.active!==false && (accKind(a)!=='wallet' || isCashAcc(a))).map(a=>[a.name,a.name]);
+  const AC = xAccounts().filter(a=>a.active!==false && accKind(a)==='construction').map(a=>[a.name,a.name]), AB = xAccounts().filter(a=>a.active!==false && accKind(a)==='bank').map(a=>[a.name,a.name]);
+  const I = { card:PI.card, in:PI.in, tag:PI.tag, home:'<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>', inv:'<path d="M3 17l6-6 4 4 8-8M14 7h7v7"/>',
+    cat:'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>', co:'<path d="M5 21V5.5L12 3l7 2.5V21M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>',
+    from:'<path d="M17 7L7 17M7 9v8h8"/>', to:'<path d="M7 17L17 7M9 7h8v8"/>', kp:'<path d="M5 4h14v16H5zM8 8h8M8 12h2M12 12h2M8 16h2M12 16h2"/>', cloud:'<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.5 3.5 0 0 0 7 18z"/>' };
+  const tint = { us:'#0b5fc1', in:'#177245', cr:'#5b3bc4', mf:'#a35a07', gd:'#8a6a00', ch:'#6e6e73', lq:'#0b6b7d', rt:'#4a44a8', bk:'#2d6b5c' };
+  const types = inTypesList().filter(t=>t!==XREFUND && t!==XLIQ);
+  const cos = xCompanies();
+  const typeRows = types.map(t=>{ const [d, tn] = XT_ICON[xtKey(t)];
+    if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), '<span class="vl">The card it’s for</span>');
+    let r = row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into']].concat(A)));
+    if (/^salary$/i.test(t)) r += row(I.co, '#0b5fc1', 'Salary company', pick('income:Salary:company', [['', 'Latest' + (lastSource('Salary') ? ' (' + lastSource('Salary') + ')' : '')]].concat(cos.map(c=>[c,c]))));
+    return r; }).join('');
+  return `<div class="prof defs">
+   <h3>Expense</h3><div class="grp">
+    ${row(I.card,'#34c759','Paid via', pick('exp.account', [['','None']].concat(AS)))}
+    ${row(I.home,'#a35a07','Construction', pick('exp.constrAccount', [['','First one']].concat(AC)), 'Category Construction')}
+    ${row(I.inv,'#5856d6','Investment', pick('exp.investAccount', [['','Last used bank']].concat(AB)), 'Sent to Kite / INDmoney')}
+    ${row(I.cat,'#ff9500','Start on category', pick('exp.startCategory', [['','None'],['__last','Last used']].concat(xCats().map(c=>[c,c]))))}
+   </div>
+   <h3>Income</h3><div class="grp">
+    ${row(I.in,'#30d158','Into', pick('inc.account', [['','None']].concat(A)), 'If the type has none below')}
+    ${row(I.tag,'#ff9500','Type', pick('inc.type', [['','None']].concat(inTypesList().filter(t=>t!==XREFUND).map(t=>[t,t]))))}
+   </div>
+   <h3>Income, by type</h3><div class="grp">${typeRows}</div>
+   <h3>Transfer</h3><div class="grp">
+    ${row(I.from,'#007aff','From', pick('tr.from', [['','First bank'],['__last','Last used']].concat(A)))}
+    ${row(I.to,'#007aff','To', pick('tr.to', [['','None'],['__last','Last used']].concat(A)))}
+   </div>
+   <h3>Form</h3><div class="grp">
+    ${row(I.kp,'#8e8e93','Open on the amount keypad', sw('form.keypad', DEF('form.keypad')!=='FALSE'))}
+   </div>
+   <h3>Saved in</h3><div class="grp">
+    ${row(I.cloud,'#0f9d58','Money sheet', '<span class="vl">Defaults tab</span>', 'Same on every device')}
+   </div></div>`;
+}
+function wireDefaults(){
+  $$('#page [data-def]').forEach(sel=>sel.onchange=()=>{ setDef(sel.dataset.def, sel.value); renderPageKeep(); });
+  $$('#page [data-defsw]').forEach(b=>b.onclick=()=>{ const k = b.dataset.defsw; setDef(k, DEF(k)==='FALSE' ? 'TRUE' : 'FALSE'); renderPageKeep(); });
 }
 function wireProfile(){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
@@ -6067,6 +6156,7 @@ function wireProfile(){
     else if (a==='export') exportMoneyCsv();
     else if (a==='refreshsheet') refreshSheet(again);
     else if (a==='recurring'){ if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; } pushPage({ kind:'recurring' }); }
+    else if (a==='defaults'){ if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; } pushPage({ kind:'defaults' }); }
     else if (a==='clear'){
       if (!confirm('Clear cached data?\n\nCentric will download everything again from your sheet. Your connection and settings stay.')) return;
       ['inv.data','inv.exp'].forEach(k=>localStorage.removeItem(k)); location.reload();
