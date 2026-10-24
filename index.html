@@ -1510,7 +1510,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-29f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-29g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5474,7 +5474,11 @@ function paintFlow(){
       else if (f==='type'){ xType = v; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; }
       else if (f==='source'){ if (v==='__new'){ const n = (prompt('Company name') || '').trim(); if (n) xSrcV = n; } else xSrcV = v; }
       else xAcc = v;
-      xErrMsg=''; paintXSheet(); };
+      // stay put after a pick: keep the scroll and drop focus, so iOS doesn't jump on to note / description
+      const sc = $('.xscroll', el), y = sc ? sc.scrollTop : 0;
+      xErrMsg=''; paintXSheet();
+      const sc2 = $('.xscroll'); if (sc2) sc2.scrollTop = y;
+      if (document.activeElement) document.activeElement.blur(); };
   });
   $$('.xkp button', el).forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
     if (k==='OK'){ if (xHasOp(xExpr)) xExpr = String(xAmt()); xNext(); return; }
@@ -5483,7 +5487,10 @@ function paintFlow(){
   $$('.xgrid [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; if (!/^stocks?$/i.test(xSub)) xKitePay = false; xNext(); });
   $$('.xgrid [data-sub]', el).forEach(b=>b.onclick=()=>{ xSub=b.dataset.sub; xCat=xOpenCat||xCat; xOpenCat=''; xNext(); });
   $$('.xgrid [data-a]', el).forEach(b=>b.onclick=()=>{ const v=b.dataset.a;
-    if (xField==='from'){ xFrom=v; if (xTo===v) xTo=''; } else if (xField==='to') xTo=v; else xAcc=v; xNext(); });
+    if (xField==='from'){ xFrom=v; if (xTo===v) xTo=''; xNext(); return; }
+    if (xField==='to') xTo=v; else xAcc=v;
+    // paid via / to / into is the last pick: close the panel instead of jumping on to note or description
+    xField = null; paintXSheet(); if (document.activeElement) document.activeElement.blur(); });
   $$('.xgrid [data-t]', el).forEach(b=>b.onclick=()=>{ xType=b.dataset.t; if (xAsksCompany()){ if (!xSrcV) xSrcV = lastSource(xType); } else if (!xEditing) xSrcV = ''; xNext(); });
 }
 
