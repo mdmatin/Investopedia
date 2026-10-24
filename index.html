@@ -580,12 +580,18 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
 .xscroll{flex:1;min-height:0;overflow:auto;padding:0 16px 16px;overscroll-behavior:contain}
 .xseg{margin-bottom:10px}
 .xpanel{flex:none;background:var(--parchment);border-top:1px solid var(--hairline);padding-bottom:env(safe-area-inset-bottom)}
-.xph{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.xph{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:13px;font-weight:600;color:#0b5fc1;background:#eaf2fc}
 .xph button{color:var(--blue);font-size:15px;font-weight:500}
 /* every picker (keypad, categories, accounts) gets the same fixed height — about half the
    screen with its title bar; a long list scrolls inside it */
 .xpb{height:44vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
 .xpb > .xgrid{flex:none}
+/* clear (×) for any free-text field while you're typing in it */
+#xclr{position:fixed;z-index:9999;width:22px;height:22px;border-radius:50%;background:#c7c7cc;color:#fff;display:none;align-items:center;justify-content:center;padding:0;border:0}
+#xclr.show{display:flex}
+#xclr svg{width:10px;height:10px}
+html[data-theme=dark] #xclr{background:#636366}
+input.has-clr{padding-right:30px !important}
 /* Defaults page: every subtitle on one line */
 .prof.defs .lb{min-width:0}
 .prof.defs .lb small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -844,6 +850,7 @@ html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
 html[data-theme=dark] .tarw.rf,html[data-theme=dark] .tarw.lq{background:rgba(255,159,10,.18);color:#ffb340}
 html[data-theme=dark] .tarw.iv{background:rgba(191,90,242,.2);color:#d08bff}
 html[data-theme=dark] .xkp button.op{background:#2c2c2e}
+html[data-theme=dark] .xph{background:rgba(41,151,255,.16);color:#64b5ff}
 html[data-theme=dark] .xgrid > button.on,html[data-theme=dark] .xgrid.tiles > button.on{background:rgba(41,151,255,.16)}
 html[data-theme=dark] .xsubrow{background:#111113}
 html[data-theme=dark] .grab{background:#48484a}
@@ -1533,7 +1540,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5338,7 +5345,7 @@ function openXSheet(e, mode, tpl){
   if (!e && xMode==='income' && xType && !(s && s.account)) xTypeRule(xType);
   if (!s && xMode==='expense'){ const sc = DEF('exp.startCategory'), c = sc==='__last' ? xLastCat() : sc; if (c && xCats().includes(c)){ xCat = c; xCatAcc(c); } }
   xOpenCat = ''; xErrMsg = '';
-  xField = s && s.amount ? null : (DEF('form.keypad')==='FALSE' ? null : 'amount'); xStep = s && s.amount ? 3 : 1;
+  xField = s && s.amount ? null : (/^false$/i.test(DEF('form.keypad')) ? null : 'amount'); xStep = s && s.amount ? 3 : 1;
   paintXSheet();
   $('#backdrop').hidden=false; $('#xsheet').hidden=false;
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#xsheet').classList.add('show'); });
@@ -6113,7 +6120,7 @@ function defaultsBody(){
     ${row(I.to,'#007aff','To', pick('tr.to', [['','None'],['__last','Last used']].concat(A)))}
    </div>
    <h3>Form</h3><div class="grp">
-    ${row(I.kp,'#8e8e93','Open on the amount keypad', sw('form.keypad', DEF('form.keypad')!=='FALSE'))}
+    ${row(I.kp,'#8e8e93','Open on the amount keypad', sw('form.keypad', !/^false$/i.test(DEF('form.keypad'))))}
    </div>
    <h3>Saved in</h3><div class="grp">
     ${row(I.cloud,'#0f9d58','Money sheet', '<span class="vl">Defaults tab</span>', 'Same on every device')}
@@ -6121,7 +6128,7 @@ function defaultsBody(){
 }
 function wireDefaults(){
   $$('#page [data-def]').forEach(sel=>sel.onchange=()=>{ setDef(sel.dataset.def, sel.value); renderPageKeep(); });
-  $$('#page [data-defsw]').forEach(b=>b.onclick=()=>{ const k = b.dataset.defsw; setDef(k, DEF(k)==='FALSE' ? 'TRUE' : 'FALSE'); renderPageKeep(); });
+  $$('#page [data-defsw]').forEach(b=>b.onclick=()=>{ const k = b.dataset.defsw; setDef(k, /^false$/i.test(DEF(k)) ? 'TRUE' : 'FALSE'); renderPageKeep(); });
 }
 function wireProfile(){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
@@ -6377,6 +6384,32 @@ function start(){
   if (load('inv.start')==='spend') show('spend');     // "Open on" in the profile menu
 }
 if(cfg) start(); else $('#setup').hidden=false;
+</script>
+
+<script>
+/* One floating × for whichever free-text field has focus and some text: tap it to
+   empty the field (an input event follows, so the app sees the change). Date, month,
+   search (it has its own), checkbox and file fields are left alone. */
+(function(){
+  const btn = document.createElement('button'); btn.id = 'xclr'; btn.type = 'button'; btn.setAttribute('aria-label','Clear');
+  btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>';
+  document.body.appendChild(btn);
+  let cur = null;
+  const ok = el => el && el.tagName==='INPUT' && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
+  const place = ()=>{
+    if (!cur || !document.body.contains(cur) || !cur.value){ btn.classList.remove('show'); return; }
+    const r = cur.getBoundingClientRect(); if (!r.width){ btn.classList.remove('show'); return; }
+    btn.style.left = (r.right - 26) + 'px'; btn.style.top = (r.top + r.height/2 - 11) + 'px'; btn.classList.add('show');
+  };
+  document.addEventListener('focusin', e=>{ if (cur && cur!==e.target) cur.classList.remove('has-clr'); cur = ok(e.target) ? e.target : null; if (cur) cur.classList.add('has-clr'); place(); });
+  document.addEventListener('focusout', e=>{ setTimeout(()=>{ if (document.activeElement!==cur){ if (cur) cur.classList.remove('has-clr'); cur = null; place(); } }, 0); });
+  document.addEventListener('input', e=>{ if (e.target===cur) place(); });
+  window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
+  // keep focus on the field while tapping ×
+  btn.addEventListener('pointerdown', e=>e.preventDefault());
+  btn.addEventListener('mousedown', e=>e.preventDefault());
+  btn.addEventListener('click', ()=>{ if (!cur) return; cur.value = ''; cur.dispatchEvent(new Event('input', {bubbles:true})); cur.dispatchEvent(new Event('change', {bubbles:true})); cur.focus(); place(); });
+})();
 </script>
 </body>
 </html>
