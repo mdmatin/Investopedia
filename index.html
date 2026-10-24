@@ -1352,6 +1352,10 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 .selbar .sd svg{width:17px;height:17px}
 .selbar .sd.arm{background:var(--down);color:#fff}
 .selbar .sd:disabled{opacity:.4}
+
+/* segmented tabs, everywhere: fully rounded */
+.seg, .prof .seg2, .recf .segw{border-radius:var(--r-pill)}
+.seg button, .prof .seg2 button, .recf .segw button{border-radius:var(--r-pill)}
 </style>
 </head>
 <body>
@@ -1542,7 +1546,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
