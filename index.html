@@ -582,7 +582,12 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
 .xpanel{flex:none;background:var(--parchment);border-top:1px solid var(--hairline);padding-bottom:env(safe-area-inset-bottom)}
 .xph{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:13px;font-weight:600;color:var(--ink-2)}
 .xph button{color:var(--blue);font-size:15px;font-weight:500}
-.xpb{max-height:46vh;overflow:auto;overscroll-behavior:contain}
+/* every picker (keypad, categories, accounts) gets the same fixed height — about half the
+   screen with its title bar; a long list scrolls inside it */
+.xpb{height:44vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+.xpb > .xgrid{flex:none}
+.xpb > .xkp{flex:1;grid-auto-rows:1fr}
+.xpb > .xkp button{height:auto;min-height:52px}
 .xkp{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hairline)}
 .xkp button{background:var(--canvas);height:52px;font-size:23px;color:var(--ink);font-variant-numeric:tabular-nums}
 .xkp button.op{background:#f7f7f9;color:var(--ink-2);font-size:21px}
@@ -604,7 +609,7 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
 .xfr .v small{font-weight:400;color:var(--ink-3);font-size:13px}
 .xfr .v .ph{color:var(--ink-3);font-weight:400}
 .xfr{position:relative}
-.xfr.on::after{content:'';position:absolute;left:92px;right:0;bottom:-1px;height:2px;border-radius:1px;background:var(--blue)}
+.xfr.on::after,.xfr:focus-within::after{content:'';position:absolute;left:92px;right:0;bottom:-1px;height:2px;border-radius:1px;background:var(--blue)}
 .xfr input{width:100%;border:0;background:none;outline:none;font-size:16px;font-weight:500;padding:0;color:var(--ink)}
 .xfr input::placeholder{color:var(--ink-3);font-weight:400}
 /* layout 3: steps */
@@ -1505,7 +1510,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-29b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-29f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4350,9 +4355,9 @@ function spMonthlyHtml(){
 }
 
 function xRow(e, showCat){
-  const title = e.note || e.sub || e.category;
+  const title = e.note || e.desc || e.sub || e.category;
   const meta = [showCat && e.category!==title ? e.category : null, e.sub && e.sub!==title ? e.sub : null, e.account||null].filter(Boolean).map(esc).join(' · ');
-  return `<button class="row" data-xrow="${e.row}" data-q="${esc(qWords(e.note, e.category, e.sub, e.account))}">${xTile(e.category)}
+  return `<button class="row" data-xrow="${e.row}" data-q="${esc(qWords(e.note, e.desc, e.category, e.sub, e.account))}">${xTile(e.category)}
     <div class="l"><div class="n">${esc(title)}</div>${meta?`<div class="m">${meta}</div>`:''}</div>
     <div class="r"><div class="v num money">${fINR2(e.amount)}</div></div></button>`;
 }
@@ -4394,8 +4399,8 @@ function paintDfab(){
 }
 function draftLine(d){
   const k = d.kind==='transfer' ? 'tr' : d.kind==='income' ? (d.type===XLIQ ? 'lq' : 'in') : 'ex';
-  const title = d.kind==='transfer' ? `${d.from||'?'} → ${d.to||'?'}` : (d.note || d.source || d.payee || (d.kind==='income' ? 'Money in' : 'Payment'));
-  const meta = [d.kind==='transfer' ? (d.note || d.payee) : d.account, fDate(d.date)].filter(Boolean).join(' · ');
+  const title = d.kind==='transfer' ? `${d.from||'?'} → ${d.to||'?'}` : (d.note || d.desc || d.source || d.payee || (d.kind==='income' ? 'Money in' : 'Payment'));
+  const meta = [d.kind==='transfer' ? (d.note || d.desc || d.payee) : d.account, fDate(d.date)].filter(Boolean).join(' · ');
   const up = d.kind==='income';
   return { k, title, meta, amt: (up?'+':'') + fINR2(d.amount), up };
 }
@@ -4419,8 +4424,8 @@ function openDrafts(){
 function closeDrafts(){ document.querySelectorAll('.dmenu').forEach(e=>e.remove()); if (!document.querySelector('.fmenu')) document.querySelectorAll('.fmenu-bd').forEach(e=>e.remove()); }
 function openDraft(d){
   const tpl = { amount:d.amount, date:d.date, note:d.note||'', draft:d.id };
-  if (d.kind==='transfer') Object.assign(tpl, { from:d.from||'', to:d.to||'' });
-  else Object.assign(tpl, { account:d.account||'', category:d.category||'', sub:d.sub||'', type:d.type||'', source:d.source||'' });
+  if (d.kind==='transfer') Object.assign(tpl, { from:d.from||'', to:d.to||'', desc:d.desc||'' });
+  else Object.assign(tpl, { account:d.account||'', category:d.category||'', sub:d.sub||'', type:d.type||'', source:d.source||'', desc:d.desc||'' });
   openXSheet(null, d.kind==='transfer' ? 'transfer' : d.kind==='income' ? 'income' : 'expense', tpl);
   if (d.check) toast('From a card OTP — check the payment went through');
 }
@@ -4451,17 +4456,17 @@ function txRow(x){
   const e = x.e, badge = `<span class="tarw ${x.k}" aria-label="${TX_NAME[x.k]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${TX_ARW[x.k]}"/></svg></span>`;
   let icon, title, meta, amt, cls = '', q;
   if (x.k==='ex' || x.k==='rf' || x.k==='lq' || x.k==='iv'){
-    icon = xTile(e.category); title = e.note || e.sub || e.category; if (isRecEntry(e, 'expense')) title += ' ↻';
+    icon = xTile(e.category); title = e.note || e.desc || e.sub || e.category; if (isRecEntry(e, 'expense')) title += ' ↻';
     meta = [e.category!==title ? e.category : null, e.sub && e.sub!==title ? e.sub : null, e.account].filter(Boolean).join(' · ');
-    amt = (x.k==='rf'||x.k==='lq' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf'||x.k==='lq' ? 'up' : ''; q = qWords(e.note, e.category, e.sub, e.account, TX_NAME[x.k]);
+    amt = (x.k==='rf'||x.k==='lq' ? '+' : '') + fINR2(Math.abs(e.amount)); cls = x.k==='rf'||x.k==='lq' ? 'up' : ''; q = qWords(e.note, e.desc, e.category, e.sub, e.account, TX_NAME[x.k]);
   } else if (x.k==='tr'){
-    icon = moveTile('transfer'); title = `${e.from} → ${e.to}` + (isRecEntry(e, 'transfer') ? ' ↻' : ''); meta = e.note || 'Transfer'; amt = fINR2(e.amount); cls = 'tr'; q = qWords(e.from, e.to, e.note, 'transfer');
+    icon = moveTile('transfer'); title = `${e.from} → ${e.to}` + (isRecEntry(e, 'transfer') ? ' ↻' : ''); meta = e.note || e.desc || 'Transfer'; amt = fINR2(e.amount); cls = 'tr'; q = qWords(e.from, e.to, e.note, e.desc, 'transfer');
   } else if (x.k==='adj'){
     icon = moveTile('income'); title = 'Balance adjustment'; meta = [e.account, e.remark].filter(Boolean).join(' · ');
     amt = (e.amount<0 ? '' : '+') + fINR2(e.amount); cls = 'tr'; q = qWords(e.account, e.remark, 'adjustment balance');
   } else {
-    icon = moveTile('income'); title = e.source || e.type || 'Income'; meta = [e.source ? e.type : '', e.account, e.remark].filter(Boolean).join(' · ');
-    amt = '+' + fINR2(e.amount); cls = 'up'; q = qWords(e.source, e.type, e.account, e.remark, 'money in income');
+    icon = moveTile('income'); title = e.source || e.desc || e.type || 'Income'; meta = [e.source || e.desc ? e.type : '', e.account, e.remark].filter(Boolean).join(' · ');
+    amt = '+' + fINR2(e.amount); cls = 'up'; q = qWords(e.source, e.desc, e.type, e.account, e.remark, 'money in income');
   }
   return `<button class="row trow" data-tx="${x.k}:${e.row}" data-q="${esc(q)}">${icon}<div class="l"><div class="n">${esc(title)}</div><div class="m">${badge}<span class="mt">${esc(meta)}</span></div></div>
     <div class="r"><div class="v num money ${cls}">${amt}</div></div></button>`;
@@ -5164,7 +5169,7 @@ const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!==
 // the most recent Source used for a type (Salary → your employer, and so on)
 const lastSource = type => (((xd()||{}).incomes||[]).find(i=>i.type===type && i.source)||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
-let xExpr = '', xDateV = '', xNoteV = '', xSrcV = '', xTaxV = '', xField = null, xStep = 1, xOpenCat = '', xKind = 'expense', xErrMsg = '';
+let xExpr = '', xDateV = '', xNoteV = '', xDescV = '', xSrcV = '', xTaxV = '', xField = null, xStep = 1, xOpenCat = '', xKind = 'expense', xErrMsg = '';
 
 /* calculator */
 const X_OPS = '+−×÷';
@@ -5257,7 +5262,7 @@ function openXSheet(e, mode, tpl){
   const first = (k)=> (xAccounts().find(a=>accKind(a)===k)||{}).name || '';
   xExpr = s && s.amount ? String(Math.abs(s.amount)) : '';
   xDateV = s && s.date || todayISO();
-  xNoteV = s ? (s.note||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
+  xNoteV = s ? (s.note||'') : ''; xDescV = s ? (s.desc||'') : ''; xSrcV = s && s.source || ''; xTaxV = s && s.tax ? String(s.tax) : '';
   xCat = s && s.category || ''; xSub = s && s.sub || '';
   xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : xExpenseAcc());
   xFrom = s && s.from || first('bank'); xTo = s && s.to || '';
@@ -5316,7 +5321,7 @@ function wireCommon(el){
   $$('.xchips [data-lq]', el).forEach(b=>b.onclick=()=>{ xCat = invCat(); xSub = b.dataset.lq; if (!/^stocks?$/i.test(xSub)) xKitePay = false; xErrMsg=''; paintXSheet(); });
   const kw = $('#xKw', el); if (kw) kw.onchange = ()=>{ xKitePay = kw.checked; };
   const bind = (id, set) => { const i = $('#'+id, el); if (i) i.oninput = ()=>set(i.value); };
-  bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
+  bind('xDate', v=>xDateV=v); bind('xNote', v=>{ xNoteV=v; noteSuggest(el); }); bind('xDesc', v=>xDescV=v); bind('xSource', v=>xSrcV=v); bind('xTax', v=>xTaxV=numPlain(v));
   const t = $('#xTax', el); if (t) commaInput(t, 'en-IN');
   const n = $('#xNote', el); if (n){ n.setAttribute('autocomplete','off');
     n.addEventListener('keydown', e=>{ if (e.key==='Enter'){ e.preventDefault(); xAfterNote(); } }); n.addEventListener('focus', ()=>noteSuggest(el)); n.addEventListener('blur', ()=>setTimeout(()=>{ const b=$('.xsug', el); if (b) b.remove(); }, 150)); }
@@ -5368,10 +5373,10 @@ function pickCat(c, done){
 
 /* ===== layout 1: flow ===== */
 function xFields(){
-  if (xMode==='expense') return ['amount','note','category','account','date'];
-  if (xMode==='transfer') return ['date','amount','from','to','note'];
-  if (xIsRefund() || xIsLiq()) return ['date','amount','type','category','account','note'];
-  return ['date','amount','type','account'].concat(xAsksCompany() ? ['source'] : [], ['tax','note']);
+  if (xMode==='expense') return ['date','amount','note','category','account','desc'];
+  if (xMode==='transfer') return ['date','amount','from','to','note','desc'];
+  if (xIsRefund() || xIsLiq()) return ['date','amount','type','category','account','note','desc'];
+  return ['date','amount','type','account'].concat(xAsksCompany() ? ['source'] : [], ['tax','note','desc']);
 }
 // Company is only asked for salary
 const xAsksCompany = () => xMode==='income' && /^salary$/i.test(xType||'');
@@ -5391,7 +5396,7 @@ function xDropOpts(f){
 }
 function xLabel(f){
   return { date:'Date', amount:'Amount', category: xIsLiq() ? 'From' : xMode==='income' ? 'Refund for' : 'Category', account: xMode==='income' ? 'Into' : 'Paid via',
-    from:'From', to:'To', type:'Type', source:'Company', tax:'Tax paid', note:'Note' }[f];
+    from:'From', to:'To', type:'Type', source:'Company', tax:'Tax paid', note:'Note', desc:'Description' }[f];
 }
 function xValue(f){
   const ph = t => `<span class="ph">${t}</span>`;
@@ -5411,17 +5416,33 @@ function xValue(f){
   if (f==='source') return `<input id="xSource" list="xSrcList" autocomplete="off" placeholder="e.g. Finlens" value="${esc(xSrcV)}">${xSrcList()}`;
   if (f==='tax') return `<input id="xTax" inputmode="decimal" placeholder="optional" value="${xTaxV ? esc(groupNum(xTaxV,'en-IN')) : ''}">`;
   if (f==='note') return `<input id="xNote" placeholder="optional" enterkeyhint="next" value="${esc(xNoteV)}">`;
+  if (f==='desc') return `<input id="xDesc" placeholder="optional" enterkeyhint="done" value="${esc(xDescV)}">`;
 }
 function xNext(){
   const fs = xFields(), i = fs.indexOf(xField);
   // an empty dropdown next in line: stop there, so it isn't skipped
   const emptyDrop = f => xIsDrop(f) && f!=='source' && !({ from:xFrom, to:xTo, type:xType, account:xAcc }[f]);
-  const nxt = fs.slice(i+1).find(f=>emptyDrop(f) || xGridField(f) || (f==='source' && !xIsDrop(f)) || f==='note' || f==='tax');
+  const nxt = fs.slice(i+1).find(f=>emptyDrop(f) || xGridField(f) || (f==='source' && !xIsDrop(f)) || f==='note' || f==='tax' || f==='desc');
   if (nxt && emptyDrop(nxt)){ xField = null; paintXSheet(); const r = $(`.xfr[data-f="${nxt}"]`); if (r) r.classList.add('want'); return; }
   if (!nxt){ xField = null; paintXSheet(); return; }
   if (xGridField(nxt)){ xField = nxt; paintXSheet(); return; }
   xField = null; paintXSheet();
-  const inp = $(nxt==='note' ? '#xNote' : nxt==='source' ? '#xSource' : '#xTax'); if (inp) inp.focus();
+  const inp = $(nxt==='note' ? '#xNote' : nxt==='desc' ? '#xDesc' : nxt==='source' ? '#xSource' : '#xTax'); if (inp) inp.focus();
+}
+// Paid via, one group per line: SBI · ICICI · Jupiter Bank first, the other banks,
+// the cards, Cash on its own, then the construction accounts
+const ACC_FIRST = ['SBI','Jupiter Bank'];   // row 1 (+ Cash); other banks go after the cards
+function xAccGrid(names, on){
+  const accs = names.map(n=>accByName(n)).filter(Boolean);
+  const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : 'bank';
+  const rank = a => { const i = ACC_FIRST.indexOf(a.name); return i < 0 ? 99 : i; };
+  const banks = accs.filter(a=>kind(a)==='bank').sort((a,b)=>rank(a)-rank(b));
+  const groups = [banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash')), accs.filter(a=>kind(a)==='card'), banks.filter(a=>rank(a)===99), accs.filter(a=>kind(a)==='con')];
+  let out = '';
+  groups.forEach(g=>{ for (let i=0;i<g.length;i+=3){ const row = g.slice(i,i+3);
+    out += row.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}"><span>${esc(a.name)}</span></button>`).join('');
+    for (let k=row.length;k<3;k++) out += '<b></b>'; } });
+  return `<div class="xgrid">${out}</div>`;
 }
 function flowPanel(){
   const f = xField; if (!f || !xGridField(f)) return '';
@@ -5429,7 +5450,7 @@ function flowPanel(){
   if (f==='amount') body = xKeypad('Next');
   else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense' });
-  else if (f==='account') body = xGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc, 'a');
+  else if (f==='account') body = xMode==='income' ? xGrid(xAllAcc(), xAcc, 'a') : xAccGrid(xSpendable(), xAcc);
   else if (f==='from') body = xGrid(xAllAcc(), xFrom, 'a');
   else if (f==='to') body = xGrid(xAllAcc().filter(n=>n!==xFrom), xTo, 'a');
   else if (f==='type') body = xGrid(inTypesList(), xType, 't');
@@ -5548,25 +5569,25 @@ async function saveXSheet(){
   if (xMode==='expense'){
     if (!xCat) return xErr('Pick a category.', 'category', 2);
     if (!xAcc) return xErr('Pick what paid for it.', 'account', 3);
-    return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note, amount }, xEditing);
+    return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note, desc: xDescV.trim(), amount }, xEditing);
   }
   if (xMode==='transfer'){
     if (!xFrom || !xTo) return xErr('Pick both accounts.', !xFrom ? 'from' : 'to', 2);
     if (xFrom===xTo) return xErr('From and To must differ.', 'to', 2);
-    return saveMove('transfer', { date, from:xFrom, to:xTo, note, amount }, xEditing);
+    return saveMove('transfer', { date, from:xFrom, to:xTo, note, desc: xDescV.trim(), amount }, xEditing);
   }
   if (!xType) return xErr('Pick what kind of money this is.', 'type', 2);
   if (!xAcc) return xErr('Pick the account it went into.', 'account', 3);
   if (xType===XLIQ){
     if (!xSub) return xErr('Pick which investment it came from.', 'category', 3);
-    return saveMove('expense', { date, account:xAcc, category:invCat(), sub:xSub, note: note || 'Liquidation', amount:-amount }, xEditing);
+    return saveMove('expense', { date, account:xAcc, category:invCat(), sub:xSub, note: note || 'Liquidation', desc: xDescV.trim(), amount:-amount }, xEditing);
   }
   if (xType===XREFUND){
     if (!xCat) return xErr('Pick the category this refund is for.', 'category', 3);
-    return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note: note || 'Refund', amount:-amount }, xEditing);
+    return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note: note || 'Refund', desc: xDescV.trim(), amount:-amount }, xEditing);
   }
   const tax = Number(numPlain(xTaxV)) || 0;
-  return saveMove('income', { date, account:xAcc, type:xType, source:xSrcV.trim(), tax, remark:note, note, amount }, xEditing);
+  return saveMove('income', { date, account:xAcc, type:xType, source:xSrcV.trim(), tax, remark:note, note, desc: xDescV.trim(), amount }, xEditing);
 }
 // one optimistic path for all three kinds
 // Budget alerts (Profile): say so when this save takes a category past 90% or 100%
