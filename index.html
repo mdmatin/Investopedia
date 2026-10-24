@@ -1271,6 +1271,26 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .menu button svg{width:20px;height:20px;color:var(--blue);flex:none}
 .menu button.dim{color:var(--ink-2)} .menu button.dim svg{color:var(--ink-3)}
 .menu button + button{border-top:1px solid var(--hairline);border-radius:0}
+
+/* ---------- multi-select (long-press an entry) ----------
+   A ring shows on every entry row, filled blue when picked; the tab bar makes
+   way for a bar with the count, the total and Delete. */
+.row[data-tx],.row[data-xrow]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+body.selecting .row[data-tx]::before,body.selecting .row[data-xrow]::before{content:"";flex:0 0 22px;height:22px;border-radius:50%;
+  box-shadow:inset 0 0 0 1.6px var(--ink-3);transition:background-color .15s,box-shadow .15s}
+body.selecting .row.picked::before{box-shadow:none;background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/13px no-repeat}
+body.selecting .tabs:not(.selbar),body.selecting .fab{display:none}
+.tabs.selbar{left:12px;right:12px;transform:none;width:auto;padding:8px;gap:10px;align-items:center}
+.tabs.selbar button{min-width:0;flex:none;flex-direction:row;gap:6px;justify-content:center;position:relative;z-index:1}
+.selbar .sx{width:44px;height:44px;border-radius:50%;background:rgba(120,120,128,.16);color:var(--ink)}
+.selbar .sx svg{width:17px;height:17px}
+.selbar .st{flex:1;min-width:0;position:relative;z-index:1;line-height:1.2}
+.selbar .st b{display:block;font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--ink)}
+.selbar .st small{display:block;font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.selbar .sd{height:44px;padding:0 16px;border-radius:22px;background:var(--down-bg);color:var(--down);font-size:15px;font-weight:600;letter-spacing:-.2px}
+.selbar .sd svg{width:17px;height:17px}
+.selbar .sd.arm{background:var(--down);color:#fff}
+.selbar .sd:disabled{opacity:.4}
 </style>
 </head>
 <body>
@@ -1460,7 +1480,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-28w';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-28y';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3146,6 +3166,7 @@ function holdScroll(y){
   window.scrollTo(0, y);
 }
 function show(v, sec){
+  if (SEL) selExit();
   { const pad = $('#homePad'); if (pad) pad.style.height = '0px'; }
   const prevView = activeView; activeView=v;
   const tabV = v==='trend' ? 'home' : v;                 // Trends opens from Overview, so Overview stays lit
@@ -3314,6 +3335,7 @@ function openPlatform(name, list){
 // Each drill-down page is also a history entry, so iOS's back swipe, the
 // browser's Back and the on-screen back button all walk the same stack.
 function pushPage(p){
+  if (SEL) selExit();
   pageStack.push(p);
   try{ history.pushState({ pg: pageStack.length }, ''); }catch(e){}
   const el = $('#page'), opening = el.hidden;
@@ -3329,6 +3351,7 @@ function popPage(){
   if (history.state && history.state.pg){ backFromButton = true; history.back(); } else popPageNow();
 }
 function popPageNow(instant){
+  if (SEL) selExit();
   pageStack.pop();
   const el = $('#page');
   el.style.transition = instant ? 'none' : ''; el.style.transform = '';
@@ -3965,10 +3988,17 @@ const ymDate  = ym => { const [y,m]=ym.split('-').map(Number); return new Date(y
 const ymLabel = ym => ymDate(ym).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 const ymShort = ym => ymDate(ym).toLocaleDateString('en-GB',{month:'short'});
 
+// A save bumps xSeq. A read that was already in flight when the save started
+// carries the sheet as it was before it, so its result is dropped (it used to
+// wipe the new entry off the screen) and a fresh read follows once saves finish.
+let xSeq = 0, xPending = 0, xAgain = false;
 async function loadExpenses(fresh){
-  if (xLoading || !cfg) return; xLoading = true;
+  if (!cfg) return;
+  if (xLoading){ if (fresh) xAgain = true; return; }
+  xLoading = true; const seq = xSeq;
   try{
     const j = await api(fresh ? {action:'expenses', fresh:'1'} : {action:'expenses'});
+    if (seq !== xSeq || xPending){ xAgain = true; return; }
     X = { at: Date.now(), data: j.data }; recApplyMarks(); save('inv.exp', X);
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
@@ -3976,7 +4006,10 @@ async function loadExpenses(fresh){
     const top = pageStack[pageStack.length-1];
     if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
-  finally{ xLoading = false; }
+  finally{
+    xLoading = false;
+    if (xAgain && !xPending){ xAgain = false; setTimeout(()=>loadExpenses(true), 0); }
+  }
 }
 
 /* ---------- reading the data ---------- */
@@ -5477,10 +5510,12 @@ async function saveMove(kind, rec, was){
   else { tmp = { ...rec, row:'new'+Date.now() }; list.unshift(tmp); list.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0); }
   closeXSheet(); rerenderSpendViews(); save('inv.exp', X);     // kept on the phone now, so a reopen shows it before the reload
   const act = { expense:['addExpense','editExpense'], income:['addIncome','editIncome'], transfer:['addTransfer','editTransfer'] }[kind];
+  xSeq++; xPending++; let held = true;
   try{
     let reply;
     if (was) reply = await apiPost(act[1], { row:was.row, before:{ date:prev.date, amount:prev.amount }, ...rec });
     else { reply = await apiPost(act[0], rec); if (reply && reply.row) tmp.row = reply.row; }
+    held = false; xPending--; xSeq++;
     applyBooks(reply && reply.books); save('inv.exp', X);
     const what = kind==='transfer' ? `${rec.from} → ${rec.to}` : kind==='income' ? `${rec.type} into ${rec.account}` : rec.category;
     const us = reply && reply.us && !reply.us.existed ? ` · ${rec.amount<0?'withdrawal':'transfer'} added to US Stocks` : '';
@@ -5489,8 +5524,10 @@ async function saveMove(kind, rec, was){
     if (kiteDone && rec.amount < 0) setTimeout(()=>kiteWalletDown(Math.abs(rec.amount)), 1600);
     loadExpenses(true);                        // rows below an insert have moved; re-read them
   }catch(e){
+    if (held){ held = false; xPending--; xSeq++; }
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
     save('inv.exp', X); rerenderSpendViews(); toast(e.message || 'Could not save');
+    if (xAgain && !xLoading){ xAgain = false; loadExpenses(true); }
   }
 }
 async function deleteXSheet(){
@@ -5502,10 +5539,99 @@ async function deleteXSheet(){
   const list = xd()[key], i = list.indexOf(e);
   if (i>=0) list.splice(i,1);
   closeXSheet(); rerenderSpendViews(); save('inv.exp', X);
+  xSeq++; xPending++;
   try{
     const reply = await apiPost({ expense:'deleteExpense', income:'deleteIncome', transfer:'deleteTransfer' }[kind], { row:e.row, date:e.date, amount:e.amount, note:e.note||'' });
+    xPending--; xSeq++;
     toast('Deleted'); applyBooks(reply && reply.books); loadExpenses(true);
-  }catch(err){ list.splice(Math.max(0,i), 0, e); save('inv.exp', X); rerenderSpendViews(); toast(err.message || 'Could not delete'); }
+  }catch(err){ xPending--; xSeq++; list.splice(Math.max(0,i), 0, e); save('inv.exp', X); rerenderSpendViews(); toast(err.message || 'Could not delete'); if (!xLoading) loadExpenses(true); }
+}
+
+/* ==========================================================================
+   MULTI-SELECT — long-press an entry (Activity, a category, an account) to
+   start; taps then pick and unpick, the bar shows the count and the total,
+   and Delete removes them all in one go (the server checks every one first,
+   so either all go or none do).
+   ========================================================================== */
+var SEL = null, selEat = false, selPress = null;   // var: show() checks SEL before this line runs
+const SEL_ROW = '#spBody .row[data-tx], #spBody .row[data-xrow], #page .row[data-xrow]';
+const selKeyOf = r => r.dataset.tx || ('ex:' + r.dataset.xrow);
+function selEntry(key){
+  const i = key.indexOf(':'), k = key.slice(0,i), row = key.slice(i+1), d = xd() || {};
+  const kind = k==='tr' ? 'transfer' : (k==='in' || k==='adj') ? 'income' : 'expense';
+  const pool = kind==='transfer' ? d.transfers : kind==='income' ? d.incomes : d.entries;
+  const e = (pool||[]).find(e=>String(e.row)===row);
+  return e ? { key, k, kind, e, pool } : null;
+}
+function selStart(r){
+  SEL = new Set([selKeyOf(r)]); document.body.classList.add('selecting');
+  let bar = $('#selBar');
+  if (!bar){
+    bar = document.createElement('div'); bar.id = 'selBar'; bar.className = 'tabs selbar';
+    bar.innerHTML = `<button class="sx" data-selx aria-label="Done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="st"><b class="num money" id="selTot"></b><small id="selCnt"></small></div>
+      <button class="sd" data-seldel><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>Delete</span></button>`;
+    document.body.append(bar);
+    bar.querySelector('[data-selx]').onclick = selExit;
+    bar.querySelector('[data-seldel]').onclick = selDelete;
+  }
+  selPaint();
+}
+function selExit(){
+  SEL = null; document.body.classList.remove('selecting');
+  const bar = $('#selBar'); if (bar) bar.remove();
+  $$('.row.picked').forEach(r=>r.classList.remove('picked'));
+}
+function selPaint(){
+  if (!SEL) return;
+  $$(SEL_ROW).forEach(r=>r.classList.toggle('picked', SEL.has(selKeyOf(r))));
+  const items = [...SEL].map(selEntry).filter(Boolean);
+  let out = 0, inn = 0, mv = 0;
+  items.forEach(x=>{ if (x.kind==='expense') out += x.e.amount; else if (x.kind==='transfer') mv += x.e.amount; else if (x.k==='in') inn += x.e.amount; });
+  const parts = [out ? 'Spent ' + fINR2(out) : '', inn ? 'In ' + fINR2(inn) : '', mv ? 'Moved ' + fINR2(mv) : ''].filter(Boolean);
+  const tot = $('#selTot'), cnt = $('#selCnt'), del = $('#selBar [data-seldel]');
+  if (tot) tot.textContent = parts.length > 1 ? fINR2(out + inn + mv) : parts.length ? fINR2(out || inn || mv) : fINR2(0);
+  if (cnt) cnt.textContent = `${items.length} selected` + (parts.length > 1 ? ' · ' + parts.join(' · ') : '');
+  if (del){ del.disabled = !items.length; del.classList.remove('arm'); del.querySelector('span').textContent = 'Delete'; }
+}
+// long-press starts it; while it is on, a tap picks instead of opening the entry
+document.addEventListener('pointerdown', ev=>{
+  const r = ev.target.closest && ev.target.closest(SEL_ROW); if (!r || SEL) return;
+  selPress = { x: ev.clientX, y: ev.clientY, t: setTimeout(()=>{ selPress = null; selEat = true; selStart(r); }, 450) };
+}, true);
+const selCancel = ()=>{ if (selPress){ clearTimeout(selPress.t); selPress = null; } };
+document.addEventListener('pointermove', ev=>{ if (selPress && Math.hypot(ev.clientX-selPress.x, ev.clientY-selPress.y) > 10) selCancel(); }, true);
+['pointerup','pointercancel','scroll'].forEach(t=>document.addEventListener(t, selCancel, true));
+document.addEventListener('contextmenu', ev=>{ if (ev.target.closest && ev.target.closest(SEL_ROW)) ev.preventDefault(); }, true);
+document.addEventListener('click', ev=>{
+  const r = ev.target.closest && ev.target.closest(SEL_ROW);
+  if (selEat){ selEat = false; if (r){ ev.preventDefault(); ev.stopPropagation(); return; } }
+  if (!SEL || !r) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const k = selKeyOf(r); if (SEL.has(k)) SEL.delete(k); else SEL.add(k);
+  selPaint();
+}, true);
+// lists re-render on reloads and month switches: keep the picks showing
+['#spBody','#page'].forEach(sel=>{ const el = $(sel); if (el) new MutationObserver(()=>{ if (SEL) selPaint(); }).observe(el, { childList:true, subtree:true }); });
+async function selDelete(){
+  const btn = $('#selBar [data-seldel]'), items = [...(SEL||[])].map(selEntry).filter(Boolean);
+  if (!btn || !items.length) return;
+  if (!btn.classList.contains('arm')){ btn.classList.add('arm'); btn.querySelector('span').textContent = `Delete ${items.length}?`; return; }
+  const total = items.reduce((a,x)=>a + Math.abs(x.e.amount), 0);
+  const gone = items.map(x=>({ x, i: x.pool.indexOf(x.e) }));
+  gone.forEach(g=>{ const i = g.x.pool.indexOf(g.x.e); if (i>=0) g.x.pool.splice(i,1); });
+  selExit(); rerenderSpendViews(); save('inv.exp', X);
+  xSeq++; xPending++;
+  try{
+    const reply = await apiPost('deleteMany', { items: items.map(x=>({ kind:x.kind, row:x.e.row, date:x.e.date, amount:x.e.amount, account:x.e.account, from:x.e.from, to:x.e.to })) });
+    xPending--; xSeq++;
+    toast(`Deleted ${items.length} · ${fINR2(total)}`); applyBooks(reply && reply.books); loadExpenses(true);
+  }catch(err){
+    xPending--; xSeq++;
+    gone.sort((a,b)=>a.i-b.i).forEach(g=>g.x.pool.splice(Math.max(0,g.i), 0, g.x.e));
+    save('inv.exp', X); rerenderSpendViews(); toast(err.message || 'Could not delete');
+    if (!xLoading) loadExpenses(true);
+  }
 }
 
 $$('#spSeg button').forEach(b=>b.onclick=()=>{ spSec = b.dataset.s; renderSpend(); window.scrollTo(0,0); });
