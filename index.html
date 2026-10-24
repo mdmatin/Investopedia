@@ -610,11 +610,11 @@ input.has-clr{padding-right:30px !important}
 .xgh{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3);padding:12px 2px 6px}
 .xgh:first-child{padding-top:2px}
 .xgrid.pills{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;background:none}
-.xgrid.pills > button{flex-direction:row;justify-content:flex-start;gap:10px;min-height:52px;padding:0 10px;border-radius:12px;text-align:left}
+.xgrid.pills > button{flex-direction:row;justify-content:flex-start;gap:10px;min-height:52px;padding:0 14px 0 10px;border-radius:var(--r-pill);text-align:left}
 .xgrid.pills > button span{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.xgrid.pills .tile{flex:0 0 32px;width:32px;height:32px;border-radius:9px}
+.xgrid.pills .tile{flex:0 0 32px;width:32px;height:32px;border-radius:50%}
 .xgrid.pills .tile svg{width:18px;height:18px}
-.xgrid.pills .tile img{border-radius:9px}
+.xgrid.pills .tile img{border-radius:50%}
 .xgrid.pills > button.on{background:#eaf2fc;box-shadow:inset 0 0 0 2px var(--blue);color:var(--blue);font-weight:600}
 .xpb > .xkp{flex:1;grid-auto-rows:1fr}
 .xpb > .xkp button{height:auto;min-height:38px}
@@ -1546,7 +1546,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
