@@ -572,19 +572,20 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
 .tday em{font-style:normal;color:var(--up);margin-right:8px}
 .row .v.up{color:var(--up)}
 /* add sheet (shared) */
-#xsheet{display:flex;flex-direction:column;height:92vh;max-height:92vh;overflow:hidden;padding:8px 0 0;background:var(--canvas)}
-#xsheet .grab{margin:0 auto 6px;flex:none}
-.xhd{display:flex;justify-content:space-between;align-items:center;padding:2px 18px 10px;flex:none}
-.xhd h3{font-family:var(--font-disp);font-size:20px;font-weight:600;letter-spacing:-.4px;margin:0}
+/* the add / edit form is a full page: Cancel on the left, the title centred */
+#xsheet{display:flex;flex-direction:column;top:0;height:100vh;height:100dvh;max-height:none;border-radius:0;overflow:hidden;padding:calc(6px + env(safe-area-inset-top)) 0 0;background:var(--canvas)}
+#xsheet .grab{display:none}
+.xhd{position:relative;display:flex;justify-content:flex-start;align-items:center;min-height:44px;padding:0 16px 8px;flex:none}
+.xhd h3{position:absolute;left:50%;top:calc(50% - 4px);transform:translate(-50%,-50%);font-size:17px;font-weight:600;letter-spacing:-.4px;margin:0;white-space:nowrap}
 .xhd button{font-size:17px;color:var(--blue)}
 .xscroll{flex:1;min-height:0;overflow:auto;padding:0 16px 16px;overscroll-behavior:contain}
 .xseg{margin-bottom:10px}
 .xpanel{flex:none;background:var(--parchment);border-top:1px solid var(--hairline);padding-bottom:env(safe-area-inset-bottom)}
-.xph{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:13px;font-weight:600;color:#0b5fc1;background:#eaf2fc}
+.xph{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink-2);background:#eaf2fc}
 .xph button{color:var(--blue);font-size:15px;font-weight:500}
 /* every picker (keypad, categories, accounts) gets the same fixed height — about half the
    screen with its title bar; a long list scrolls inside it */
-.xpb{height:44vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+.xpb{height:30vh;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
 .xpb > .xgrid{flex:none}
 /* clear (×) for any free-text field while you're typing in it */
 #xclr{position:fixed;z-index:9999;width:22px;height:22px;border-radius:50%;background:#c7c7cc;color:#fff;display:none;align-items:center;justify-content:center;padding:0;border:0}
@@ -616,7 +617,8 @@ input.has-clr{padding-right:30px !important}
 .xgrid.pills .tile img{border-radius:9px}
 .xgrid.pills > button.on{background:#eaf2fc;box-shadow:inset 0 0 0 2px var(--blue);color:var(--blue);font-weight:600}
 .xpb > .xkp{flex:1;grid-auto-rows:1fr}
-.xpb > .xkp button{height:auto;min-height:52px}
+.xpb > .xkp button{height:auto;min-height:38px}
+.xpb > .xkp button:not(.ok):not(.op){font-size:21px}
 .xkp{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hairline)}
 .xkp button{background:var(--canvas);height:52px;font-size:23px;color:var(--ink);font-variant-numeric:tabular-nums}
 .xkp button.op{background:#f7f7f9;color:var(--ink-2);font-size:21px}
@@ -850,7 +852,7 @@ html[data-theme=dark] .tarw.tr{background:rgba(41,151,255,.18)}
 html[data-theme=dark] .tarw.rf,html[data-theme=dark] .tarw.lq{background:rgba(255,159,10,.18);color:#ffb340}
 html[data-theme=dark] .tarw.iv{background:rgba(191,90,242,.2);color:#d08bff}
 html[data-theme=dark] .xkp button.op{background:#2c2c2e}
-html[data-theme=dark] .xph{background:rgba(41,151,255,.16);color:#64b5ff}
+html[data-theme=dark] .xph{background:rgba(41,151,255,.16)}
 html[data-theme=dark] .xgrid > button.on,html[data-theme=dark] .xgrid.tiles > button.on{background:rgba(41,151,255,.16)}
 html[data-theme=dark] .xsubrow{background:#111113}
 html[data-theme=dark] .grab{background:#48484a}
@@ -1540,7 +1542,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
