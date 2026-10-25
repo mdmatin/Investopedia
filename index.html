@@ -644,6 +644,29 @@ html[data-theme=dark] .xpb > .xgrid.tiles .xsubrow, html[data-theme=dark] .xpb >
 .chip.ghost{color:var(--ink-3)}
 /* layout 1: flow */
 .xform{margin-bottom:16px}
+/* entry form, layout A */
+.xa{margin:6px 0 14px}
+.xfr.xa-amt{display:block;border:0;min-height:0;text-align:center;padding:14px 0 2px;cursor:pointer}
+.xfr.xa-amt .v{display:block;font-size:44px;font-weight:700;letter-spacing:-1.2px;white-space:normal;overflow:visible;line-height:1.1}
+.xfr.xa-amt .v b{font-weight:700}
+.xfr.xa-amt .v small{display:block;font-size:15px;letter-spacing:0;margin-top:4px}
+.xfr.xa-amt .v .ph{font-weight:700;color:var(--ink-3)}
+.xfr.xa-amt::after,.xfr.xa-chip::after,.xfr.xa-in::after{display:none}
+.xa-date{position:relative;display:block;width:max-content;margin:6px auto 16px;font-size:14px;color:var(--ink-3)}
+.xa-date span::after{content:' · change';color:var(--blue)}
+.xa-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px}
+.xa-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:16px}
+.xfr.xa-chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;max-width:100%;padding:4px 14px 4px 4px;border:0;border-radius:999px;background:var(--sunken);font-size:15px;color:var(--ink)}
+.xfr.xa-chip.noic{padding-left:14px}
+.xfr.xa-chip .tile{flex:0 0 32px;width:32px;height:32px;border-radius:50%}
+.xfr.xa-chip .tile svg{width:17px;height:17px}
+.xfr.xa-chip .tile img{border-radius:50%}
+.xfr.xa-chip .v{font-weight:500}
+.xfr.xa-chip.on{box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue)}
+.xfr.xa-chip.want{box-shadow:inset 0 0 0 1.5px var(--blue)}
+.xfr.xa-in{display:block;min-height:0;border:0;border-radius:12px;background:var(--sunken);padding:8px 12px;margin-bottom:8px}
+.xfr.xa-in .k{display:block;font-size:11.5px;color:var(--ink-3);margin-bottom:1px}
+.xfr.xa-in:focus-within{box-shadow:inset 0 0 0 1.5px var(--blue)}
 .xfr{display:grid;grid-template-columns:92px 1fr;align-items:center;min-height:48px;border-bottom:1px solid var(--hairline);font-size:16px}
 .xfr .k{color:var(--ink-2)}
 .xfr .v{min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1556,7 +1579,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5233,6 +5256,7 @@ const inTypesList = () => ((xd()||{}).inTypes||IN_TYPES_DEF).filter(t=>t && t!==
 // the company on your latest income of that type (by date): Salary → your current company, picked by default
 const lastSource = type => (((xd()||{}).incomes||[]).filter(i=>i.type===type && i.source).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0]||{}).source || '';
 let xCat = '', xSub = '', xMode = 'expense', xAcc = '', xFrom = '', xTo = '', xType = '';
+const XLAYOUT = 'a';   // entry form layout: 'a' = amount on top + chips; anything else = the list rows (OG)
 let xExpr = '', xDateV = '', xNoteV = '', xDescV = '', xSrcV = '', xTaxV = '', xField = null, xStep = 1, xOpenCat = '', xKind = 'expense', xErrMsg = '';
 
 /* calculator */
@@ -5497,7 +5521,7 @@ function pickCat(c, done){
 
 /* ===== layout 1: flow ===== */
 function xFields(){
-  if (xMode==='expense') return ['date','amount','note','category','account','desc'];
+  if (xMode==='expense') return XLAYOUT==='a' ? ['date','amount','category','account','note','desc'] : ['date','amount','note','category','account','desc'];
   if (xMode==='transfer') return ['date','amount','from','to','note','desc'];
   if (xIsRefund() || xIsLiq()) return ['date','amount','type','category','account','note','desc'];
   return ['date','amount','type','account'].concat(xAsksCompany() ? ['source'] : [], ['tax','note','desc']);
@@ -5607,17 +5631,49 @@ function flowPanel(){
   else if (f==='source') body = xCompanyGrid(xSrcV);
   return `<div class="xpanel"><div class="xph"><span>${esc(head)}</span><button data-hide>Done</button></div><div class="xpb">${body}</div></div>`;
 }
+/* ===== entry form, layout A: the amount large on top, the picks as chips under it,
+   the typed fields as small boxes below. Every chip is still an .xfr[data-f], so the
+   panels, auto-advance and saving work exactly as with the list rows. */
+function xaDateLabel(){
+  const t = todayISO(), y = new Date(Date.now() - 864e5 - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10), v = xDateV || t;
+  if (v === t) return 'Today'; if (v === y) return 'Yesterday';
+  const d = new Date(v + 'T00:00:00'); return isNaN(d) ? v : d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
+function xaIcon(f){
+  try {
+    if (f==='category') return xIsLiq() ? '' : xCat ? xTile(xCat) : '';
+    if (f==='type') return xType ? xtTile(xType) : '';
+    const n = { account:xAcc, from:xFrom, to:xTo }[f]; if (!n) return '';
+    const a = accByName(n); return a ? xAccMark(a) : bankMark(n);
+  } catch (e) { return ''; }
+}
+function xaBody(){
+  const fs = xFields(), ph = t => `<span class="ph">${t}</span>`;
+  const amt = xExpr ? xValue('amount') : ph('₹0');
+  const chips = fs.filter(f => xGridField(f) && f!=='amount').map(f => {
+    const ic = xaIcon(f), filled = !/class="ph"/.test(xValue(f));
+    const v = filled ? xValue(f) : ph(esc(xLabel(f)));
+    return `<button class="xfr tap xa-chip ${xField===f?'on':''} ${ic?'':'noic'}" data-f="${f}">${ic}<span class="v">${v}</span></button>`;
+  }).join('');
+  const boxes = fs.filter(f => f==='note' || f==='desc' || f==='tax')
+    .map(f => `<div class="xfr xa-in" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
+  return `<div class="xa"><div class="xfr tap xa-amt ${xField==='amount'?'on':''}" data-f="amount"><span class="v">${amt}</span></div>
+    <label class="xa-date"><span>${esc(xaDateLabel())}</span><input type="date" id="xDate" value="${esc(xDateV)}" aria-label="Date"></label>
+    <div class="xa-chips">${chips}</div><div class="xa-ins">${boxes}</div></div>`;
+}
 function paintFlow(){
   const el = $('#xsheet');
   const rows = xFields().map(f=>`<div class="xfr ${xField===f?'on':''} ${xGridField(f)?'tap':''} ${xIsDrop(f)?'drop':''}" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
+  const body = XLAYOUT==='a' ? xaBody() : `<div class="xform">${rows}</div>`;
   el.innerHTML = `<div class="grab"></div><div class="xhd"><h3>${esc(xTitle())}</h3><button data-close>Cancel</button></div>
-    <div class="xscroll">${xModeSeg()}${xErrHtml()}<div class="xform">${rows}</div>${xKiteToggle()}
+    <div class="xscroll">${xModeSeg()}${xErrHtml()}${body}${xKiteToggle()}
       <button class="btn" data-save>Save</button>${xEditing?`<button class="btn danger" data-del>Delete</button>`:''}
       <p class="hint">${esc(xHint())}</p></div>${flowPanel()}`;
   wireCommon(el);
   $$('.xfr.tap', el).forEach(r=>r.onclick=()=>{ xField = xField===r.dataset.f ? null : r.dataset.f; xOpenCat=''; paintXSheet(); });
   $$('.xfr input', el).forEach(i=>i.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } }));
   const hide = $('[data-hide]', el); if (hide) hide.onclick = ()=>{ xField=null; paintXSheet(); };
+  const xad = $('.xa-date input', el); if (xad) xad.addEventListener('change', ()=>{ xDateV = xad.value; const l = $('.xa-date span', el); if (l) l.textContent = xaDateLabel(); });
   $$('[data-xsel]', el).forEach(sel=>{
     sel.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } });
     sel.onchange = ()=>{ const f = sel.dataset.xsel, v = sel.value;
