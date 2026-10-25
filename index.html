@@ -734,7 +734,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
 /* At rest the selection is quiet: a plain neutral capsule sitting inside the
    bar. The lens — taller than the bar, with its rim and chromatic fringe —
    only appears while it is travelling, then settles back down. */
-.tabblob{position:absolute;top:50%;left:0;height:52px;border-radius:var(--r-pill);pointer-events:none;z-index:0;
+.tabblob{position:absolute;top:50%;left:0;height:calc(100% - 20px);border-radius:var(--r-pill);pointer-events:none;z-index:0;
   transform:translate(var(--bx,0px),-50%) scaleX(var(--sx,1)) scaleY(var(--sy,1));
   background:rgba(120,120,128,.13);
   box-shadow:none;
@@ -787,7 +787,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
 .tabs.min{padding:8px 8px}
 .tabs.min button{min-width:50px}
 .tabs.min .tl{max-height:0;opacity:0}
-.tabs.min .tabblob{height:42px;border-radius:var(--r-pill)}
+.tabs.min .tabblob{height:calc(100% - 16px);border-radius:var(--r-pill)}
 .tabs.min .tabblob.moving{height:56px;border-radius:var(--r-pill)}
 
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -798,7 +798,7 @@ html[data-theme=dark] .dmenu{background:#2c2c2e;box-shadow:0 14px 40px rgba(0,0,
   .tabs{background:rgba(255,255,255,.98);backdrop-filter:none;-webkit-backdrop-filter:none;
         box-shadow:0 8px 26px rgba(0,0,0,.14), inset 0 0 0 .5px rgba(0,0,0,.08)}
   .tabs::before,.tabs::after{display:none}
-  .tabblob{background:rgba(0,102,204,.12);box-shadow:none;height:56px;border-radius:var(--r-pill)}
+  .tabblob{background:rgba(0,102,204,.12);box-shadow:none;height:calc(100% - 20px);border-radius:var(--r-pill)}
   .tabblob::before,.tabblob::after{display:none}
 }
 @media (prefers-contrast: more){
@@ -1546,7 +1546,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30r';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30t';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3090,7 +3090,7 @@ $('.tabs').prepend(tabBlob);
 let blobFlight = null;
 function slotOf(btn){
   const b = btn.getBoundingClientRect(), bar = $('.tabs').getBoundingClientRect();
-  return { x: b.left - bar.left + 2, w: b.width - 4 };
+  return { x: b.left - bar.left, w: b.width };   // the capsule fills its tab: same gap to the bar on every side
 }
 function moveBlob(animate){
   const on = $('.tabs button.on'); if(!on) return;
@@ -4379,8 +4379,16 @@ function spMonthlyHtml(){
   const items = Object.entries(src).filter(([,v])=>v>0).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
   const tabs = `<div class="iotabs"><button data-io="inc" class="${spIO==='inc'?'on':''}">Income <b class="num money">${fINR2(tI)}</b></button>
       <button data-io="exp" class="${spIO==='exp'?'on':''}">Exp. <b class="num money">${fINR2(tE)}</b></button></div>`;
-  const invRow = spIO==='exp' && invested>0 ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight"><div class="row tap" data-xcat="${esc(Object.keys(raw).find(isConstr))}" data-ymc="${ym}">${xTile(Object.keys(raw).find(isConstr))}
-      <div class="l"><div class="n">${esc(Object.keys(raw).find(isConstr))}</div><div class="m">From the construction fund</div></div><div class="r"><div class="v num money">${fINR2(invested)}</div></div></div></div>` : '';
+  // Construction section: the Construction category, plus (display only) money moved into
+  // investments from a construction account this month. That second figure is never added
+  // to spends, investment or any total; it's here so the month's construction outflow can be checked.
+  const cKey = Object.keys(raw).find(isConstr), d0 = xd() || {};
+  const cInv = ym >= (d0.entriesFrom||'') ? (d0.entries||[]).filter(e=>e.date.slice(0,7)===ym && isInvest(e.category) && constrAcc(e.account)).reduce((a,e)=>a+(e.amount||0),0) : 0;
+  const cRows = (invested>0 ? `<div class="row tap" data-xcat="${esc(cKey)}" data-ymc="${ym}">${xTile(cKey)}
+      <div class="l"><div class="n">${esc(cKey)}</div><div class="m">From the construction fund</div></div><div class="r"><div class="v num money">${fINR2(invested)}</div></div></div>` : '')
+    + (cInv>0 ? `<div class="row">${xTile('Investment')}
+      <div class="l"><div class="n">Investment</div><div class="m">Not counted in spends</div></div><div class="r"><div class="v num money">${fINR2(cInv)}</div></div></div>` : '');
+  const invRow = spIO==='exp' && cRows ? `<div class="sechead"><h2>Construction</h2>${invested>0 && cInv>0 ? `<span class="cnt num money">${fINR2(invested+cInv)}</span>` : ''}</div><div class="card tight">${cRows}</div>` : '';
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
   const svg = pieSvg(items, total);
   const rows = items.map(it=>{
