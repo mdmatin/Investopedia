@@ -1554,7 +1554,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-30y';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-30z';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5462,14 +5462,28 @@ function noteSuggest(el){
 // after the panel is redrawn: keep the scroll where it was, then bring the opened
 // category and its subcategory row fully into view (rows low in the grid were left hidden)
 function xRevealSubs(y0){
-  const pb = $('#xsheet .xpb'); if (!pb) return;
-  pb.scrollTop = y0 || 0;
-  const sr = $('.xsubrow', pb); if (!sr) return;
-  const op = $('.xgrid > button.op', pb) || sr, P = pb.getBoundingClientRect(), A = op.getBoundingClientRect(), B = sr.getBoundingClientRect();
-  let d = 0;
-  if (B.bottom > P.bottom - 12) d = B.bottom - P.bottom + 16;
-  if (A.top - d < P.top + 8) d = A.top - P.top - 12;
-  if (d) pb.scrollBy({ top: d, behavior: 'smooth' });
+  const pb0 = $('#xsheet .xpb'); if (!pb0) return;
+  pb0.scrollTop = y0 || 0;
+  // how far the panel must move so the open tile and its tray are both in view (0 = already fine)
+  const need = () => { const pb = $('#xsheet .xpb'), sr = pb && $('.xsubrow', pb); if (!sr) return [pb, 0];
+    const op = $('.xgrid > button.op', pb) || sr, P = pb.getBoundingClientRect(), A = op.getBoundingClientRect(), B = sr.getBoundingClientRect();
+    let d = 0;
+    if (B.bottom > P.bottom - 12) d = B.bottom - P.bottom + 16;
+    if (A.top - d < P.top + 8) d = A.top - P.top - 12;
+    return [pb, Math.round(d)]; };
+  // iOS drops a native smooth scroll on a panel that was just redrawn (or still gliding from a
+  // flick), so the glide is stepped by hand, a frame at a time, and checked again once it's done
+  let stop = false;
+  const glide = () => { const [pb, d] = need(); if (!pb || !d) return;
+    const from = pb.scrollTop, to = from + d, t0 = performance.now(), T = 260;
+    pb.addEventListener('touchstart', () => { stop = true; }, { once:true, passive:true });
+    const step = now => { if (stop || !pb.isConnected) return;
+      const k = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - k, 3);
+      pb.scrollTop = from + (to - from) * e;
+      if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); };
+  requestAnimationFrame(glide);
+  setTimeout(() => { if (stop) return; const [pb, d] = need(); if (pb && Math.abs(d) > 2) pb.scrollTop += d; }, 420);
 }
 // tapping a category: open its subcategories, or take it if it has none
 function pickCat(c, done){
