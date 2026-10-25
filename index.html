@@ -667,6 +667,12 @@ html[data-theme=dark] .xpb > .xgrid.tiles .xsubrow, html[data-theme=dark] .xpb >
 .xfr.xa-in{display:block;min-height:0;border:0;border-radius:12px;background:var(--sunken);padding:8px 12px;margin-bottom:8px}
 .xfr.xa-in .k{display:block;font-size:11.5px;color:var(--ink-3);margin-bottom:1px}
 .xfr.xa-in:focus-within{box-shadow:inset 0 0 0 1.5px var(--blue)}
+.xfr.xa-in{position:relative}
+.xfr.xa-in input{padding-right:30px}
+.xa-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;border:0;padding:0;background:#c7c7cc;color:#fff;display:none;align-items:center;justify-content:center}
+.xa-x.show{display:flex}
+.xa-x svg{width:10px;height:10px}
+html[data-theme=dark] .xa-x{background:#636366}
 .xfr{display:grid;grid-template-columns:92px 1fr;align-items:center;min-height:48px;border-bottom:1px solid var(--hairline);font-size:16px}
 .xfr .k{color:var(--ink-2)}
 .xfr .v{min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1579,7 +1585,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5481,8 +5487,11 @@ function noteSuggest(el){
     b.onpointerdown = e => e.preventDefault();            // keep the keyboard up
     b.onclick = ()=>{ const o = list[+b.dataset.ns];
       xNoteV = o.note; inp.value = o.note;
-      if (xMode==='expense' && !xCat && o.cat){ xCat = o.cat; xSub = o.sub || ''; const v = $('.xfr[data-f="category"] .v', el); if (v) v.innerHTML = xValue('category'); }
-      box.remove(); xAfterNote(); };
+      let filled = false;
+      if (xMode==='expense' && !xCat && o.cat){ xCat = o.cat; xSub = o.sub || ''; filled = true; const v = $('.xfr[data-f="category"] .v', el); if (v) v.innerHTML = xValue('category'); }
+      box.remove(); xAfterNote();
+      // layout A: redraw so the category chip gets its icon too, not just the words
+      if (filled && XLAYOUT==='a' && !xField){ const sc = $('.xscroll', el), y = sc ? sc.scrollTop : 0; paintXSheet(); const sc2 = $('#xsheet .xscroll'); if (sc2) sc2.scrollTop = y; } };
   });
 }
 // after the panel is redrawn: keep the scroll where it was, then bring the opened
@@ -5656,7 +5665,8 @@ function xaBody(){
     return `<button class="xfr tap xa-chip ${xField===f?'on':''} ${ic?'':'noic'}" data-f="${f}">${ic}<span class="v">${v}</span></button>`;
   }).join('');
   const boxes = fs.filter(f => f==='note' || f==='desc' || f==='tax')
-    .map(f => `<div class="xfr xa-in" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span></div>`).join('');
+    .map(f => { const has = { note:xNoteV, desc:xDescV, tax:xTaxV }[f];
+      return `<div class="xfr xa-in" data-f="${f}"><span class="k">${esc(xLabel(f))}</span><span class="v">${xValue(f)}</span><button type="button" class="xa-x ${has?'show':''}" aria-label="Clear ${esc(xLabel(f))}"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg></button></div>`; }).join('');
   return `<div class="xa"><div class="xfr tap xa-amt ${xField==='amount'?'on':''}" data-f="amount"><span class="v">${amt}</span></div>
     <label class="xa-date"><span>${esc(xaDateLabel())}</span><input type="date" id="xDate" value="${esc(xDateV)}" aria-label="Date"></label>
     <div class="xa-chips">${chips}</div><div class="xa-ins">${boxes}</div></div>`;
@@ -5673,6 +5683,11 @@ function paintFlow(){
   $$('.xfr.tap', el).forEach(r=>r.onclick=()=>{ xField = xField===r.dataset.f ? null : r.dataset.f; xOpenCat=''; paintXSheet(); });
   $$('.xfr input', el).forEach(i=>i.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } }));
   const hide = $('[data-hide]', el); if (hide) hide.onclick = ()=>{ xField=null; paintXSheet(); };
+  // layout A: each text box has its own × whenever it holds text, focused or not
+  $$('.xa-in', el).forEach(bx=>{ const i = $('input', bx), x = $('.xa-x', bx); if (!i || !x) return;
+    i.addEventListener('input', ()=>x.classList.toggle('show', !!i.value));
+    x.addEventListener('pointerdown', e=>e.preventDefault());
+    x.onclick = ()=>{ i.value = ''; i.dispatchEvent(new Event('input', {bubbles:true})); i.dispatchEvent(new Event('change', {bubbles:true})); x.classList.remove('show'); }; });
   const xad = $('.xa-date input', el); if (xad) xad.addEventListener('change', ()=>{ xDateV = xad.value; const l = $('.xa-date span', el); if (l) l.textContent = xaDateLabel(); });
   $$('[data-xsel]', el).forEach(sel=>{
     sel.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } });
@@ -6499,7 +6514,7 @@ if(cfg) start(); else $('#setup').hidden=false;
   btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>';
   document.body.appendChild(btn);
   let cur = null;
-  const ok = el => el && el.tagName==='INPUT' && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
+  const ok = el => el && el.tagName==='INPUT' && !el.closest('.xa-in') && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
   const place = ()=>{
     if (!cur || !document.body.contains(cur) || !cur.value){ btn.classList.remove('show'); return; }
     const r = cur.getBoundingClientRect(); if (!r.width){ btn.classList.remove('show'); return; }
