@@ -1585,7 +1585,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5365,13 +5365,14 @@ function xIncomeType(){ const v = DEF('inc.type') || PREF.incomeType; return v &
 function xCatAcc(c){
   if (xMode!=='expense') return;
   if (isConstr(c)){ const a = accByName(xAcc); if (!a || accKind(a)!=='construction'){
-    const pref = DEF('exp.constrAccount'), ca = accOk(pref) ? pref : (xAccounts().find(x=>accKind(x)==='construction' && x.active!==false)||{}).name; if (ca) xAcc = ca; } }
+    const pref = DEF('exp.constrAccount'); if (pref==='__none') return;   // None: leave the account as it is
+    const ca = accOk(pref) ? pref : (xAccounts().find(x=>accKind(x)==='construction' && x.active!==false)||{}).name; if (ca) xAcc = ca; } }
   else if (isInvest(c) && accOk(DEF('exp.investAccount'))) xAcc = DEF('exp.investAccount');
 }
 // an income type's own account (and Salary's company)
 function xTypeRule(t){
-  const acc = DEF('income:' + t + ':account'); if (accOk(acc)) xAcc = acc;
-  if (/^salary$/i.test(t)){ const co = DEF('income:Salary:company'); if (co) xSrcV = co; else if (!xSrcV) xSrcV = lastSource(t); }
+  const acc = DEF('income:' + t + ':account'); if (accOk(acc)) xAcc = acc; else if (acc==='__none') xAcc = '';
+  if (/^salary$/i.test(t)){ const co = DEF('income:Salary:company'); if (co==='__none') xSrcV = ''; else if (co) xSrcV = co; else if (!xSrcV) xSrcV = lastSource(t); }
   return accOk(acc);
 }
 const xLastCat = () => (((xd()||{}).entries||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0]||{}).category || '';
@@ -5390,7 +5391,7 @@ function openXSheet(e, mode, tpl){
   xCat = s && s.category || ''; xSub = s && s.sub || '';
   xAcc = s && s.account || (xMode==='income' ? xIncomeAcc() : xExpenseAcc());
   const dF = DEF('tr.from'), dT = DEF('tr.to'), lt = xLastTr();
-  xFrom = s && s.from || (dF==='__last' ? lt.from : accOk(dF) ? dF : '') || first('bank');
+  xFrom = s && s.from || (dF==='__last' ? lt.from : accOk(dF) ? dF : '') || (dF==='__none' ? '' : first('bank'));
   xTo = s && s.to || (dT==='__last' ? lt.to : accOk(dT) ? dT : '') || ''; if (xTo===xFrom) xTo = '';
   xType = s && s.type || (e && e.amount < 0 && xMode==='income' ? (isInvest(e.category) ? XLIQ : XREFUND) : !e && xMode==='income' ? xIncomeType() : '');
   if (!s && xMode==='income' && xAsksCompany()) xSrcV = lastSource(xType);
@@ -6226,14 +6227,14 @@ function defaultsBody(){
   const cos = xCompanies();
   const typeRows = types.map(t=>{ const [d, tn] = XT_ICON[xtKey(t)];
     if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), '<span class="vl">The card it’s for</span>');
-    let r = row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into']].concat(A)));
-    if (/^salary$/i.test(t)) r += row(I.co, '#0b5fc1', 'Salary company', pick('income:Salary:company', [['', 'Latest' + (lastSource('Salary') ? ' (' + lastSource('Salary') + ')' : '')]].concat(cos.map(c=>[c,c]))));
+    let r = row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(A)));
+    if (/^salary$/i.test(t)) r += row(I.co, '#0b5fc1', 'Salary company', pick('income:Salary:company', [['', 'Latest' + (lastSource('Salary') ? ' (' + lastSource('Salary') + ')' : '')], ['__none','None']].concat(cos.map(c=>[c,c]))));
     return r; }).join('');
   return `<div class="prof defs">
    <h3>Expense</h3><div class="grp">
     ${row(I.card,'#34c759','Paid via', pick('exp.account', [['','None']].concat(AS)))}
-    ${row(I.home,'#a35a07','Construction', pick('exp.constrAccount', [['','First one']].concat(AC)), 'Category Construction')}
-    ${row(I.inv,'#5856d6','Investment', pick('exp.investAccount', [['','Last used bank']].concat(AB)), 'Sent to Kite / INDmoney')}
+    ${row(I.home,'#a35a07','Construction', pick('exp.constrAccount', [['','First one'],['__none','None']].concat(AC)), 'Category Construction')}
+    ${row(I.inv,'#5856d6','Investment', pick('exp.investAccount', [['','Last used bank'],['__none','None']].concat(AB)), 'Sent to Kite / INDmoney')}
     ${row(I.cat,'#ff9500','Start on category', pick('exp.startCategory', [['','None'],['__last','Last used']].concat(xCats().map(c=>[c,c]))))}
    </div>
    <h3>Income</h3><div class="grp">
@@ -6242,7 +6243,7 @@ function defaultsBody(){
    </div>
    <h3>Income, by type</h3><div class="grp">${typeRows}</div>
    <h3>Transfer</h3><div class="grp">
-    ${row(I.from,'#007aff','From', pick('tr.from', [['','First bank'],['__last','Last used']].concat(A)))}
+    ${row(I.from,'#007aff','From', pick('tr.from', [['','First bank'],['__none','None'],['__last','Last used']].concat(A)))}
     ${row(I.to,'#007aff','To', pick('tr.to', [['','None'],['__last','Last used']].concat(A)))}
    </div>
    <h3>Form</h3><div class="grp">
