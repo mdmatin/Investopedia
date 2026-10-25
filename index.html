@@ -1135,6 +1135,19 @@ html[data-theme=dark] .books.off .n{color:#ff9f0a}
 .books .m{font-size:12.5px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .books > svg{flex:none;width:14px;height:14px;color:var(--ink-3)}
 .tabs button[data-v="home"]{position:relative}
+.tabs button[data-v="spend"]{position:relative}
+.tabs button[data-v="spend"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
+#spSeg button{position:relative}
+#spSeg button.segdot::after{content:'';position:absolute;top:6px;right:4px;width:8px;height:8px;border-radius:50%;background:#ff9f0a}
+#spBody .bkpill{margin:0 16px 12px}
+.bkflag{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:13px;line-height:16px;font-weight:500;white-space:nowrap;overflow:hidden;min-width:0}
+.bkflag span{overflow:hidden;text-overflow:ellipsis}
+.bkflag i{width:14px;height:14px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:9px;line-height:1;font-weight:800;flex:none;position:relative;top:-1.5px}
+.bkflag.off{color:#b25e00} .bkflag.off i{background:#ff9f0a;color:#fff}
+.bkflag.ok{color:var(--ink-3)} .bkflag.ok i{background:#34c759;color:#fff}
+html[data-theme=dark] .bkflag.off{color:#ffb340}
+.bkbanner{margin:0 16px 12px;border-radius:14px;padding:12px 14px;background:rgba(255,159,10,.14);font-size:14px;line-height:1.4;color:var(--ink)}
+.bkbanner b{display:block;font-size:15px;margin-bottom:2px}
 .tabs button[data-v="home"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
 .bk-hero .pg-big.off{color:#c77700}
 html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
@@ -1440,7 +1453,6 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
         <div class="ranges" id="homeRanges"></div>
         <div class="kpirow lcr" id="kpis"></div>
       </div>
-      <button class="card bkpill" id="books" hidden aria-label="Books"></button>
 
       <div class="sechead"><h2>Assets</h2><button data-go="break">Holdings</button></div>
       <div class="card tight" id="assets"></div>
@@ -1585,7 +1597,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4224,6 +4236,7 @@ function renderSpend(){
       <b data-mpick role="button">${esc(ymLabel(spMonth))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   el.innerHTML = sw + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
+  paintBooks();      // the Books pill lives on Accounts now; this also sets the orange dots
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
   $$('#spBody [data-constr]').forEach(b=>b.onclick=()=>pushPage({ kind:'constr' }));
@@ -4504,13 +4517,17 @@ async function pollDrafts(){
   if (draftsNoApi){ if (Date.now() - X.at > X_STALE && !xLoading) loadExpenses(); return; }   // script not updated yet
   draftsBusy = true;
   try{
-    const j = await api({ action:'drafts' }), list = (j.data && j.data.drafts) || [];
+    const j = await api({ action:'drafts' }), list = (j.data && j.data.drafts) || [], bb = j.data && j.data.bankBal;
     const ids = l => l.map(d=>d.id).join('|');
+    let changed = false;
     if (X && X.data && ids(list) !== ids(xDrafts())){
       const open = !!document.querySelector('.dmenu');
-      X.data.drafts = list; save('inv.exp', X); paintDfab();
+      X.data.drafts = list; changed = true; paintDfab();
       if (open && list.length) openDrafts();
     }
+    if (X && X.data && bb && JSON.stringify(bb) !== JSON.stringify(X.data.bankBal || {})){ X.data.bankBal = bb; changed = true; }
+    if (changed){ save('inv.exp', X);
+      if (activeView==='spend' && spSec==='accounts'){ const y = window.scrollY; renderSpend(); window.scrollTo(0, y); } else paintBooks(); }
   }catch(e){ if (/unknown action/i.test(e.message||'')) draftsNoApi = true; }
   finally{ draftsBusy = false; }
 }
@@ -4819,7 +4836,7 @@ function spAccountsHtml(){
       ${hasC ? `<div class="card tap" data-constr role="button"><div class="k">Construction${chev('M9 5l7 7-7 7')}</div><div class="b2 num money">${fINR(cf.total)}</div>
         <div class="s">Spent · ${esc(ymShort(spMonth).slice(0,3) + (spMonth.slice(0,4)===ymNow().slice(0,4) ? '' : ' ’'+spMonth.slice(2,4)))} <b class="num money">${fINR(cf.spentM)}</b><br>So far <b class="num money">${fINR(cf.spentAll)}</b></div></div>` : ''}</div>`;
   // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
-  return head + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
+  return head + `<button class="card bkpill" id="books" hidden aria-label="Books"></button>` + bankBannerHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
 // have a Construction account taken live from it. The table's rows carry the account's
@@ -4902,9 +4919,31 @@ function wireConstr(p){
 const booksNow = () => (xd()||{}).books || null;
 const booksOff = b => !!b && Math.abs(b.diff||0) >= 0.01;
 const BK_OK = 'M5 12.5l4.5 4.5L19 7.5', BK_WARN = 'M12 8v5M12 16.5h.01M10.3 3.9L2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z';
+/* Bank check: SBI and Jupiter Bank texts carry the bank's own balance. The latest one per
+   account (bankBal, from the script) is set against the app's figure. Cards are left out (their
+   cashback makes the bank's figure differ by design). Nothing is said while that account has
+   drafts waiting, or has entries dated after the bank's text. */
+function bankCheck(name){
+  const r = ((xd()||{}).bankBal||{})[name], a = accByName(name);
+  if (!r || !a || accKind(a)!=='bank' || r.bal==null) return null;
+  if (xDrafts().some(d=>d.account===name || d.from===name || d.to===name)) return null;
+  if (r.date && accMoves(name).some(m=>m.date > r.date)) return null;
+  const diff = Math.round((accBalance(name) - r.bal) * 100) / 100;
+  return { ok: Math.abs(diff) < 1, diff, bal: r.bal, at: r.at };
+}
+const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok) : [];
+const bankWhen = at => { const d = new Date(at), t = d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toUpperCase();
+  return d.toDateString()===new Date().toDateString() ? t : d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ', ' + t; };
+function bankBannerHtml(){
+  const L = bankOffs(); if (!L.length) return '';
+  const one = x => `${esc(x.name)} is ${fINR2(Math.abs(x.c.diff))} ${x.c.diff>0?'higher':'lower'} in the app than the bank reported at ${esc(bankWhen(x.c.at))}.`;
+  return `<div class="bkbanner"><b>${L.length===1?'1 account differs':L.length+' accounts differ'} from your bank</b>${L.map(one).join('<br>')} Tap ${L.length===1?'it':'one'} to check.</div>`;
+}
 function paintBooks(){
   const el = $('#books'), b = booksNow(), off = booksOff(b);
-  const nav = $('.tabs button[data-v="home"]'); if (nav) nav.classList.toggle('bkdot', off);
+  const iv0 = b && b.inv, booksBad = off || !!(iv0 && Math.abs(iv0.gap||0) >= 1), bankBad = bankOffs().length > 0;
+  const nav = $('.tabs button[data-v="spend"]'); if (nav) nav.classList.toggle('bkdot', booksBad || bankBad);
+  const segA = $('#spSeg [data-s="accounts"]'); if (segA) segA.classList.toggle('segdot', booksBad || bankBad);
   if (!el) return;
   if (!b){ el.hidden = true; return; }
   el.hidden = false;
@@ -4924,7 +4963,7 @@ function applyBooks(b){
   if (!b || !xd()) return;
   const was = booksNow(); xd().books = b; save('inv.exp', X); paintBooks();
   if (!booksBusy && booksOff(b) && (!booksOff(was) || Math.abs((was.diff||0) - b.diff) >= 0.01))
-    setTimeout(()=>toast(`Books off by ${fINR2(Math.abs(b.diff))} — see Overview`), 2600);
+    setTimeout(()=>toast(`Books off by ${fINR2(Math.abs(b.diff))} — see Spend › Accounts`), 2600);
   const top = pageStack[pageStack.length-1]; if (top && /^(books|bklog)$/.test(top.kind)) renderPage();
 }
 // the refresh button: the server works both totals out again, right now
@@ -5010,9 +5049,11 @@ function accGroupsHtml(acc){
           <div class="l ccl"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m cardm">${lim?`${fINR2(lim + bal)}`:''}${a.dueDay?`${lim?' · ':''}<span style="white-space:nowrap">due ${ordinal(a.dueDay)}</span>`:''}</div></div>
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
-      const last = accMoves(a.name)[0];
+      const last = accMoves(a.name)[0], bc = k==='bank' ? bankCheck(a.name) : null;
+      const line = bc ? (bc.ok ? `<div class="m bkflag ok"><i>✓</i><span>Matches bank · ${esc(bankWhen(bc.at))}</span></div>`
+                               : `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>`) : '';
       return `<div class="row tap" data-acc="${esc(a.name)}">${((k==='bank' || k==='construction') && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
-        <div class="l"><div class="n">${esc(a.name)}</div><div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div></div>
+        <div class="l"><div class="n">${esc(a.name)}</div>${line || `<div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
       ? `<div class="rowtotal num money"><span>Total</span><span>${fINR2(list.reduce((t,a)=>t+accBalance(a.name),0))}</span></div>`
