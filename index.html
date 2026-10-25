@@ -1140,14 +1140,15 @@ html[data-theme=dark] .books.off .n{color:#ff9f0a}
 #spSeg button{position:relative}
 #spSeg button.segdot::after{content:'';position:absolute;top:6px;right:4px;width:8px;height:8px;border-radius:50%;background:#ff9f0a}
 #spBody .bkpill{margin:0 16px 12px}
+#spBody .bkpill.bankrow{margin-top:-4px}
+.bankrow .bk-t{overflow:hidden;text-overflow:ellipsis}
 .bkflag{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:13px;line-height:16px;font-weight:500;white-space:nowrap;overflow:hidden;min-width:0}
 .bkflag span{overflow:hidden;text-overflow:ellipsis}
 .bkflag i{width:14px;height:14px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:9px;line-height:1;font-weight:800;flex:none;position:relative;top:-1.5px}
 .bkflag.off{color:#b25e00} .bkflag.off i{background:#ff9f0a;color:#fff}
 .bkflag.ok{color:var(--ink-3)} .bkflag.ok i{background:#34c759;color:#fff}
+.bktick{display:inline-grid;place-items:center;width:15px;height:15px;margin-left:6px;border-radius:50%;background:#34c759;color:#fff;font-style:normal;font-size:9.5px;font-weight:800;line-height:1;vertical-align:1px}
 html[data-theme=dark] .bkflag.off{color:#ffb340}
-.bkbanner{margin:0 16px 12px;border-radius:14px;padding:12px 14px;background:rgba(255,159,10,.14);font-size:14px;line-height:1.4;color:var(--ink)}
-.bkbanner b{display:block;font-size:15px;margin-bottom:2px}
 .tabs button[data-v="home"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
 .bk-hero .pg-big.off{color:#c77700}
 html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
@@ -1597,7 +1598,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4239,6 +4240,7 @@ function renderSpend(){
   paintBooks();      // the Books pill lives on Accounts now; this also sets the orange dots
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
+  $$('#spBody [data-bankgo]').forEach(b=>b.onclick=()=>{ const h = [...document.querySelectorAll('#spBody .sechead h2')].find(x=>x.textContent.trim()==='Bank'); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
   $$('#spBody [data-constr]').forEach(b=>b.onclick=()=>pushPage({ kind:'constr' }));
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
@@ -4934,10 +4936,15 @@ function bankCheck(name){
 const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok) : [];
 const bankWhen = at => { const d = new Date(at), t = d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toUpperCase();
   return d.toDateString()===new Date().toDateString() ? t : d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ', ' + t; };
+// one row, styled like the Books pill: which account differs (or how many) and by how much;
+// tapping opens that account, or with several, scrolls to the Bank list
 function bankBannerHtml(){
   const L = bankOffs(); if (!L.length) return '';
-  const one = x => `${esc(x.name)} is ${fINR2(Math.abs(x.c.diff))} ${x.c.diff>0?'higher':'lower'} in the app than the bank reported at ${esc(bankWhen(x.c.at))}.`;
-  return `<div class="bkbanner"><b>${L.length===1?'1 account differs':L.length+' accounts differ'} from your bank</b>${L.map(one).join('<br>')} Tap ${L.length===1?'it':'one'} to check.</div>`;
+  const one = L.length===1, t = one ? `${esc(L[0].name)} off by` : `${L.length} accounts differ from bank`;   // reads like "Books off −₹…" above it
+  return `<button class="card bkpill off bankrow" ${one ? `data-acc="${esc(L[0].name)}"` : 'data-bankgo'}>
+    <span class="bk-ic off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${BK_WARN}"/></svg></span>
+    <span class="bk-t">${t}</span>${one ? `<span class="bk-v num money">${fINR2(Math.abs(L[0].c.diff))}</span>` : ''}
+    <svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
 }
 function paintBooks(){
   const el = $('#books'), b = booksNow(), off = booksOff(b);
@@ -5050,10 +5057,11 @@ function accGroupsHtml(acc){
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
       const last = accMoves(a.name)[0], bc = k==='bank' ? bankCheck(a.name) : null;
-      const line = bc ? (bc.ok ? `<div class="m bkflag ok"><i>✓</i><span>Matches bank · ${esc(bankWhen(bc.at))}</span></div>`
-                               : `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>`) : '';
+      // differs from the bank: the line under the name says by how much (a match shows nothing)
+      const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
+      const tick = '';   // a match says nothing: only a difference is shown
       return `<div class="row tap" data-acc="${esc(a.name)}">${((k==='bank' || k==='construction') && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
-        <div class="l"><div class="n">${esc(a.name)}</div>${line || `<div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div>`}</div>
+        <div class="l"><div class="n">${esc(a.name)}${tick}</div>${line || `<div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
       ? `<div class="rowtotal num money"><span>Total</span><span>${fINR2(list.reduce((t,a)=>t+accBalance(a.name),0))}</span></div>`
