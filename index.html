@@ -377,7 +377,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .row .m.cardm{white-space:normal;overflow:visible}
 .ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
 .ccl .pbar + .cardm{margin-top:3px}
-.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
+.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
+.epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
@@ -436,7 +437,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .iotabs{display:grid;grid-template-columns:1fr 1fr;margin:0 16px 12px;border-bottom:1px solid var(--hairline)}
 .iotabs button{padding:10px 4px 11px;font-size:15px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px}
 .iotabs button b{font-weight:600}
-.iotabs button.on{color:var(--ink);border-bottom-color:var(--down)}
+.iotabs button.on{color:var(--ink);border-bottom-color:var(--blue)}   /* the app's selection colour */
 .piecard{padding:10px 0}
 .pie{display:block;width:100%;height:auto}
 :root{--pc0:#2e84ea;--pc1:#6967d0;--pc2:#50b0da;--pc3:#50bd6c;--pc4:#f09a28;--pc5:#ec5070;--pc6:#a867d1;--pc7:#ecc62d;--pc8:#30bdb6;--pc9:#e85349;--pc10:#a58a6c;--pc11:#94949a}   /* system hues, softened halfway */
@@ -1651,7 +1652,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zd';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31ze';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4975,7 +4976,7 @@ function epfCalc(){
 }
 function epfBody(p){
   const c = epfCalc(); if (!c) return '<div class="pg-load">Loading…</div>';
-  const row = (t, m, v, cls) => `<div class="row"><div class="l"><div class="n">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money ${cls||''}">${v}</div></div></div>`;
+  const row = (t, m, v, cls, ed) => `<div class="row${ed ? ' tap' : ''}" ${ed ? `data-epfe="${ed}" role="button"` : ''}><div class="l"><div class="n">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money ${cls||''}">${v}</div></div></div>`;
   const uan = c.E.uan ? 'UAN ••••' + String(c.E.uan).slice(-4) : '';
   const closed = c.bal < 1 && c.lastW;
   const hero = `<div class="card pg-card pg-hero">
@@ -4988,17 +4989,17 @@ function epfBody(p){
       ${c.months.length > 1 ? monthLineChart(c.months, c.series, c.selM) : ''}
     </div>`;
   const ints = c.I.slice().reverse().map(x=>{ const r = c.rate(x);
-    return row(esc(fyLbl(fyOf(x.date))), `Up to ${esc(fDateY(x.date))}${r ? ' · ≈' + r.toFixed(2) + '%' : ''}`, '+' + fINR(x.amount), 'up'); }).join('');
-  const wds = c.W.slice().reverse().map(x=>row(esc(fDateY(x.date)), [x.paid ? 'Paid ' + fINR(x.paid) : '', x.tds ? 'TDS ' + fINR(x.tds) : ''].filter(Boolean).join(' · ') || 'Withdrawn', '−' + fINR(x.amount))).join('');
+    return row(esc(fyLbl(fyOf(x.date))), `Up to ${esc(fDateY(x.date))}${r ? ' · ≈' + r.toFixed(2) + '%' : ''}`, '+' + fINR(x.amount), 'up', 'i:' + c.I.indexOf(x)); }).join('');
+  const wds = c.W.slice().reverse().map(x=>row(esc(fDateY(x.date)), [x.paid ? 'Paid ' + fINR(x.paid) : '', x.tds ? 'TDS ' + fINR(x.tds) : ''].filter(Boolean).join(' · ') || 'Withdrawn', '−' + fINR(x.amount), '', 'w:' + c.W.indexOf(x))).join('');
   const byFY = {}; c.C.forEach(x=>{ (byFY[fyOf(x.date)] = byFY[fyOf(x.date)] || []).push(x); });
   const contrib = Object.keys(byFY).sort().reverse().map(s=>{ const L = byFY[s].slice().reverse(), t = L.reduce((a,x)=>a+x.emp+x.er,0);
     return `<div class="cmhead"><h3>${esc(fyLbl(+s))}</h3><span class="num money">${fINR(t)}</span></div>
-      <div class="card tight">${L.map(x=>row(esc(ymLabel(x.date.slice(0,7))), `You ${fINR(x.emp)} · Employer ${fINR(x.er)}`, fINR(x.emp + x.er))).join('')}</div>`; }).join('');
+      <div class="card tight">${L.map(x=>row(esc(ymLabel(x.date.slice(0,7))), `You ${fINR(x.emp)} · Employer ${fINR(x.er)}`, fINR(x.emp + x.er), '', 'c:' + c.C.indexOf(x))).join('')}</div>`; }).join('');
   const due = epfIntDue(c);
   return hero
     + (due != null && p.epf !== 'i' ? `<button class="card bkpill bankrow zirem" data-epfi data-fy="${due}"><span class="bk-ic iq">${PCT_IC}</span><span class="bk-t">Add ${esc(fyLbl(due))} interest</span><span class="bk-v zis">EPF</span>${CHEV_R}</button>` : '')
     + `<div class="sechead"><h2>Interest</h2>${p.epf==='i' ? '' : '<button data-epfi>+ Add</button>'}</div>${p.epf==='i' ? epfForm(p, c) : ''}<div class="card tight">${ints || '<div class="empty">No interest yet</div>'}</div>`
-    + (wds ? `<div class="sechead"><h2>Withdrawals</h2></div><div class="card tight">${wds}</div>` : '')
+    + (wds || c.bal > 0 ? `<div class="sechead"><h2>Withdrawals</h2>${p.epf==='w' || !(c.bal > 0) ? '' : '<button data-epfw>+ Add</button>'}</div>${p.epf==='w' ? epfForm(p, c) : ''}${wds ? `<div class="card tight">${wds}</div>` : ''}` : '')
     + `<div class="sechead"><h2>Contributions</h2>${p.epf==='c' ? '' : '<button data-epfc>+ Add</button>'}</div>${p.epf==='c' ? epfForm(p, c) : ''}` + (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>');
 }
 // a year with contributions and no interest yet: from August after it ends (EPFO credits it then)
@@ -5011,26 +5012,53 @@ function epfIntDue(c){
 function epfForm(p, c){
   const f = p.epfF || {}, last = c.C[c.C.length-1] || { emp:'', er:'' }, ym = ymNow();
   const inp = (k, v, ph) => `<div class="inwrap"><span>₹</span><input data-epfv="${k}" inputmode="decimal" value="${v!=null && v!=='' ? esc(groupNum(String(v),'en-IN')) : ''}" placeholder="${esc(ph)}"></div>`;
-  const body = p.epf==='c'
+  const accs = xAccounts().filter(a=>accKind(a)==='bank' && !a.other).map(a=>a.name), acc = f.acc != null ? f.acc : (p.epfEd ? '' : (accOk(DEF('inc.account')) && accs.includes(DEF('inc.account')) ? DEF('inc.account') : accs[0] || ''));
+  const wg = Number(f.amt) || 0, wt = Number(f.tds) || 0;
+  const body = p.epf==='w'
+    ? `<label>Date</label><input type="date" class="epdate" data-epfd value="${esc(f.date || todayISO())}" max="${todayISO()}">
+       <label style="margin-top:12px">Amount withdrawn</label>${inp('amt', f.amt, '0')}
+       <label style="margin-top:12px">TDS deducted</label>${inp('tds', f.tds, '0')}
+       <label style="margin-top:12px">Paid into</label><div class="cbm"><b>${esc(acc || 'Pick an account')}</b><select data-epfacc>${(acc ? [] : ['']).concat(accs).map(n=>`<option value="${esc(n)}" ${n===acc?'selected':''}>${esc(n || 'Pick an account')}</option>`).join('')}</select></div>
+       <div class="eph">${wg ? fINR2(Math.max(0, wg - wt)) + ' reaches the bank' + (wt ? ' · ' + fINR2(wt) + ' TDS' : '') : 'The bank gets the amount less TDS'}</div>`
+    : p.epf==='c'
     ? `<label>Month</label><div class="cbm"><b>${esc(ymLabel(f.ym||ym))}</b><input type="month" data-epfym value="${esc(f.ym||ym)}" max="${ym}"></div>
        <label style="margin-top:12px">Total contribution</label>${inp('tot', f.tot!=null ? f.tot : (last.emp + last.er || ''), '0')}
        <div class="eph">${(()=>{ const t = Number(f.tot!=null ? f.tot : (last.emp + last.er || 0)) || 0; return t ? 'You ' + fINR2(t/2) + ' · Employer ' + fINR2(t/2) : 'Split half yours, half the employer’s'; })()}</div>`
     : `<label>Financial year</label><div class="cbm"><b>${esc(fyLbl(f.fy!=null ? +f.fy : (epfIntDue(c) ?? fyOf(todayISO())-1)))}</b>
          <select data-epffy>${[...new Set(c.C.map(x=>fyOf(x.date)).concat([fyOf(todayISO())-1, fyOf(todayISO())]))].sort((a,b)=>b-a).map(s=>`<option value="${s}" ${(f.fy!=null ? +f.fy : (epfIntDue(c) ?? fyOf(todayISO())-1))===s?'selected':''}>${esc(fyLbl(s))}</option>`).join('')}</select></div>
        <label style="margin-top:12px">Interest</label>${inp('amt', f.amt, '0')}`;
-  return `<div class="cbform epform">${body}${p.epfErr ? `<div class="err">${esc(p.epfErr)}</div>` : ''}
-    <div class="btns"><button class="cancel" data-epfx>Cancel</button><button class="save" data-epfsave ${p.epfBusy?'disabled':''}>${p.epfBusy ? 'Saving…' : 'Save'}</button></div></div>`;
+  const ttl = p.epfEd ? `<div class="ttl">Edit ${p.epf==='c' ? 'contribution' : p.epf==='i' ? 'interest' : 'withdrawal'}</div>` : '';
+  return `<div class="cbform epform">${ttl}${body}${p.epfErr ? `<div class="err">${esc(p.epfErr)}</div>` : ''}
+    <div class="btns">${p.epfEd ? `<button class="del" data-epfdel ${p.epfBusy?'disabled':''}>${p.epfDelArm ? 'Delete?' : 'Delete'}</button>` : ''}<button class="cancel" data-epfx>Cancel</button><button class="save" data-epfsave ${p.epfBusy?'disabled':''}>${p.epfBusy ? 'Saving…' : 'Save'}</button></div></div>`;
 }
 function wireEpf(p){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
-  const open = k => b => { b.onclick = ()=>{ p.epf = k; p.epfF = b.dataset.fy ? { fy:+b.dataset.fy } : {}; p.epfErr = ''; again(); }; };
-  $$('#page [data-epfc]').forEach(open('c')); $$('#page [data-epfi]').forEach(open('i'));
+  const open = k => b => { b.onclick = ()=>{ p.epf = k; p.epfF = b.dataset.fy ? { fy:+b.dataset.fy } : {}; p.epfErr = ''; p.epfEd = null; p.epfDelArm = false; again(); }; };
+  $$('#page [data-epfc]').forEach(open('c')); $$('#page [data-epfi]').forEach(open('i')); $$('#page [data-epfw]').forEach(open('w'));
+  // tap an entry to change or delete it (the server takes out its Money lines too)
+  $$('#page [data-epfe]').forEach(r=>r.onclick=()=>{ const [k, i] = r.dataset.epfe.split(':'), c = epfCalc(), x = (k==='c' ? c.C : k==='i' ? c.I : c.W)[+i]; if (!x) return;
+    p.epf = k; p.epfErr = ''; p.epfDelArm = false;
+    p.epfEd = k==='c' ? { kind:'contrib', date:x.date, emp:x.emp, er:x.er } : k==='i' ? { kind:'interest', date:x.date, amount:x.amount } : { kind:'withdraw', date:x.date, amount:x.amount };
+    p.epfF = k==='c' ? { ym:x.date.slice(0,7), tot:Math.round((x.emp + x.er) * 100) / 100 } : k==='i' ? { fy:x.fy != null ? x.fy : fyOf(x.date), amt:x.amount } : { date:x.date, amt:x.amount, tds:x.tds || '' };
+    again(); const f = $('#page .epform'); if (f) $('#page').scrollTop += f.getBoundingClientRect().top - 140; });
   const f = () => (p.epfF = p.epfF || {});
   $$('#page [data-epfv]').forEach(i=>i.oninput=()=>{ f()[i.dataset.epfv] = numPlain(i.value);
-    const h = $('#page .eph'), t = Number(f().tot) || 0; if (h && i.dataset.epfv==='tot') h.textContent = t ? 'You ' + fINR2(t/2) + ' · Employer ' + fINR2(t/2) : 'Split half yours, half the employer’s'; });
+    const h = $('#page .eph'), t = Number(f().tot) || 0; if (h && i.dataset.epfv==='tot') h.textContent = t ? 'You ' + fINR2(t/2) + ' · Employer ' + fINR2(t/2) : 'Split half yours, half the employer’s';
+    if (h && p.epf==='w'){ const g = Number(f().amt) || 0, x = Number(f().tds) || 0; h.textContent = g ? fINR2(Math.max(0, g - x)) + ' reaches the bank' + (x ? ' · ' + fINR2(x) + ' TDS' : '') : 'The bank gets the amount less TDS'; } });
+  const dd = $('#page [data-epfd]'); if (dd) dd.onchange = ()=>{ f().date = dd.value; };
+  const ac = $('#page [data-epfacc]'); if (ac) ac.onchange = ()=>{ f().acc = ac.value; again(); };
   const ym = $('#page [data-epfym]'); if (ym) ym.onchange = ()=>{ f().ym = ym.value; again(); };
   const fy = $('#page [data-epffy]'); if (fy) fy.onchange = ()=>{ f().fy = +fy.value; again(); };
-  const x = $('#page [data-epfx]'); if (x) x.onclick = ()=>{ p.epf = null; p.epfF = null; p.epfErr = ''; again(); };
+  const x = $('#page [data-epfx]'); if (x) x.onclick = ()=>{ p.epf = null; p.epfF = null; p.epfErr = ''; p.epfEd = null; p.epfDelArm = false; again(); };
+  const post = async (data, msg) => {
+    p.epfBusy = true; p.epfErr = ''; again();
+    try{ const r = await apiPost(p.epfEd ? 'epfEdit' : 'epfAdd', p.epfEd ? { old:p.epfEd, new:data } : data); if (r && r.epf && D && D.data){ D.data.epf = r.epf; save(LS.data, D); }
+      p.epf = null; p.epfF = null; p.epfEd = null; p.epfDelArm = false; p.epfBusy = false; again();
+      toast(r && r.moneyError ? 'Saved to EPF, not to Money: ' + r.moneyError : r && r.warn ? r.warn : msg);
+      refresh(false, true); loadExpenses(true);   // Money's lines for it changed too
+    }catch(e){ p.epfBusy = false; p.epfErr = e.message || 'Could not save'; again(); }
+  };
+  const dl = $('#page [data-epfdel]'); if (dl) dl.onclick = ()=>{ if (!p.epfDelArm){ p.epfDelArm = true; again(); return; } post(null, 'Deleted from EPF and Money'); };
   const sv = $('#page [data-epfsave]'); if (sv) sv.onclick = async ()=>{
     const c = epfCalc(), F = f(), last = c.C[c.C.length-1] || {};
     const num = (k, d) => { const v = F[k]!=null && F[k]!=='' ? Number(F[k]) : d; return isFinite(v) ? v : NaN; };
@@ -5038,16 +5066,16 @@ function wireEpf(p){
     if (p.epf==='c'){ const t = num('tot', (last.emp||0) + (last.er||0)), half = Math.round(t / 2 * 100) / 100;   // one number: half yours, half the employer's
       data = { kind:'contrib', date:(F.ym||ymNow()) + '-01', emp:half, er:Math.round((t - half) * 100) / 100 };
       if (!(t > 0)){ p.epfErr = 'Enter the contribution.'; again(); return; } }
+    else if (p.epf==='w'){ const g = num('amt', NaN), x = num('tds', 0) || 0, acc = F.acc != null ? F.acc : (($('#page [data-epfacc]')||{}).value || '');
+      data = { kind:'withdraw', date:F.date || todayISO(), amount:g, tds:x, account:acc };
+      if (!(g > 0)){ p.epfErr = 'Enter the amount withdrawn.'; again(); return; }
+      if (x < 0 || x >= g){ p.epfErr = 'TDS must be less than the amount.'; again(); return; }
+      if (!acc){ p.epfErr = 'Pick the account it was paid into.'; again(); return; } }
     else { const s = F.fy!=null ? +F.fy : (epfIntDue(c) ?? fyOf(todayISO())-1);
       const end = (s+1) + '-03-31';   // the sheet keeps interest by period end ("Upto Date")
       data = { kind:'interest', fy:s, date: end < todayISO() ? end : todayISO(), amount:num('amt', NaN) };
       if (!(data.amount > 0)){ p.epfErr = 'Enter the interest.'; again(); return; } }
-    p.epfBusy = true; p.epfErr = ''; again();
-    try{ const r = await apiPost('epfAdd', data); if (r && r.epf && D && D.data){ D.data.epf = r.epf; save(LS.data, D); }
-      p.epf = null; p.epfF = null; p.epfBusy = false; again();
-      toast(r && r.moneyError ? 'Saved to EPF, not to Money: ' + r.moneyError : data.kind==='contrib' ? 'Contribution added' : 'Interest added');
-      refresh(false, true); loadExpenses(true);   // Money got its income + Investment › EPF lines too
-    }catch(e){ p.epfBusy = false; p.epfErr = e.message || 'Could not save'; again(); }
+    post(data, p.epfEd ? 'Updated in EPF and Money' : data.kind==='contrib' ? 'Contribution added' : data.kind==='interest' ? 'Interest added' : 'Withdrawal added');
   };
   const gs = $('#page .mbscroll'); if (!gs) return;
   const si = +gs.dataset.sel, w = +gs.dataset.w || 64;
