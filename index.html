@@ -1683,7 +1683,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zw';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zx';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5003,8 +5003,8 @@ function spAccountsHtml(){
   const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
   // pills under the Liquid card: Construction, Zakat, Interest, each wearing the same icon as its own page
   const ter = [hasC ? `<button data-constr>${xTile('Construction')}Constr. <b class="num money">${fKL(cf.total)}</b></button>` : '',
-    n ? `<button data-zi="zakat"><span class="zico">${MOON_IC}</span>Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : '',
-    I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Interest <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : ''].filter(Boolean).join('');
+    I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Interest <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : '',
+    n ? `<button data-zi="zakat"><span class="zico">${MOON_IC}</span>Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : ''].filter(Boolean).join('');   // Construction · Interest · Zakat
   const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
       <div class="big num money">${fINR(liquid)}</div>
       <div class="g3"><div><span>Bank</span><b class="num money">${fLakh(sum.bank)}</b></div><div><span>Wallet</span><b class="num money">${fLakh(sum.wallet)}</b></div>
