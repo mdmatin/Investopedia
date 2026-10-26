@@ -1647,7 +1647,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31v';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4287,7 +4287,7 @@ function renderSpend(){
       <button data-ym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
       <b data-mpick role="button">${esc(ymLabel(spMonth))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
-  el.innerHTML = sw + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
+  el.innerHTML = (spSec==='accounts' ? '' : sw) + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   paintBooks();      // the Books pill lives on Accounts now; this also sets the orange dots
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
@@ -4898,10 +4898,10 @@ function spAccountsHtml(){
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
   // one card: Liquid (bank + wallet − what the cards owe), its three parts, the Books chip, and a
   // quieter line for Construction (whole fund, investments included), Zakat and Interest
-  const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(spMonth) : null;
+  const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(ymNow()) : null;
   const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
   const ter = [hasC ? `<button data-constr>Constr. <b class="num money">${fKL(cf.total)}</b>${C}</button>` : '',
-    n ? `<button data-zi="zakat">Zakat ’${n.yr.slice(2)} <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b>${C}</button>` : '',
+    n ? `<button data-zi="zakat">Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b>${C}</button>` : '',
     I ? `<button data-zi="interest">Interest <b class="num money">${fKL(Math.max(0, I.left))}</b>${C}</button>` : ''].filter(Boolean).join('');
   const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
       <div class="big num money">${fINR(liquid)}</div>
@@ -4942,6 +4942,7 @@ function constrFundHtml(part){
 function constrEntries(){
   const d = xd() || {};
   return (d.entries||[]).filter(e=>isConstr(e.category)).concat(d.constrOld||[])
+    .filter(e=>!(accByName(e.account)||{}).other)      // Halim · C's payments are his money: on the budget sheet, not in your spend
     .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.row-a.row);
 }
 function constrBody(p){
