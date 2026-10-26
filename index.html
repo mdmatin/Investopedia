@@ -1633,7 +1633,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31p';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1926,12 +1926,12 @@ function editRowMeta(b){
 function renderEditList(L){
   const el = $(L.sel); if(!el) return;
   el.innerHTML = L.rows.map((b,i)=>{
-    if (b.live) return `<div class="row tap" data-acc="${esc(b.name)}">${bankMark(b.name)}
+    if (b.live) return `<div class="row tap" data-acc="${esc(b.name)}">${nameMark(b.name)}
       <div class="l"><div class="n">${esc(b.label || b.name)}</div></div>
       <div class="r"><div class="v num money ${b.amount<0?'down':''}">${fINR(b.amount)}</div></div></div>`;
     const meta = editRowMeta(b), can = !b.formula || !!b.wkey;
     const main = b.wccy==='USD' && b.usd==null ? fUSD(b.usdVal) : fINR(b.amount);
-    return `<div class="row ${can?'tap':''} ${b.saving?'saving':''}" data-i="${i}">${bankMark(b.name)}
+    return `<div class="row ${can?'tap':''} ${b.saving?'saving':''}" data-i="${i}">${nameMark(b.name)}
       <div class="l"><div class="n">${b.locked?'🔒 ':''}${esc(b.name)}</div>${meta?`<div class="m num money">${meta}</div>`:''}</div>
       <div class="r"><div class="v num money">${main}</div></div>
       ${can?`<span class="chev">${L.open===i?'⌄':'›'}</span>`:'<span class="chev"></span>'}</div>`
@@ -4856,6 +4856,10 @@ function accMoves(name){
   return out.sort((x,y)=>x.date<y.date?1:x.date>y.date?-1:0);
 }
 const accBalance = name => { const a = accByName(name); return (a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+m.amt,0); };
+// one icon per account, the same everywhere (lists, its page, the entry form, Net Worth rows):
+// cash accounts (Cash, Cash · C) the cash note, everything else its bank's logo (or the bank fallback)
+const accMark = a => a && (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}</div>` : bankMark(a ? a.name : '');
+const nameMark = n => { const a = accByName(n); return a ? accMark(a) : bankMark(n); };
 const accIcon = a => {
   const k = accKind(a), p = k==='card' ? 'M3 6.5h18v11H3zM3 10h18M6.5 14.5h3'
           : k==='wallet' ? 'M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1zM16 14.25h.01'
@@ -5092,7 +5096,7 @@ function accGroupsHtml(acc){
       const bal = accBalance(a.name);
       if (k==='card'){
         const owed = Math.max(0,-bal), lim = a.limit||0;
-        return `<div class="row tap" data-acc="${esc(a.name)}">${accIcon(a)}
+        return `<div class="row tap" data-acc="${esc(a.name)}">${accMark(a)}
           <div class="l ccl"><div class="n">${esc(a.name)}</div>${lim?pbar(owed/lim):''}<div class="m cardm">${lim?`${fINR2(lim + bal)}`:''}${a.dueDay?`${lim?' · ':''}<span style="white-space:nowrap">due ${ordinal(a.dueDay)}</span>`:''}</div></div>
           <div class="r"><div class="v num money">${bal>0 ? '−'+fINR2(bal) : fINR2(owed)}</div><div class="s">${bal>0?'credit':'owed'}</div></div></div>`;
       }
@@ -5100,7 +5104,7 @@ function accGroupsHtml(acc){
       // differs from the bank: the line under the name says by how much (a match shows nothing)
       const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
       const tick = '';   // a match says nothing: only a difference is shown
-      return `<div class="row tap" data-acc="${esc(a.name)}">${((k==='bank' || k==='construction') && !/cash/i.test(a.name)) || k==='wallet' ? bankMark(a.name) : accIcon(a)}
+      return `<div class="row tap" data-acc="${esc(a.name)}">${accMark(a)}
         <div class="l"><div class="n">${esc(a.name)}${tick}</div>${line || `<div class="m">${last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
@@ -5127,7 +5131,7 @@ function accBody(p){
       <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
       <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
   return `<div class="card pg-card pg-hero">
-      <div class="pg-id">${accIcon(a)}<div class="grow"><div class="t">${esc(a.name)}</div><div class="s">${sub}</div></div></div>
+      <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div><div class="s">${sub}</div></div></div>
       <div class="pg-big num money">${big}</div>
       <div class="accbtns"><button class="xbud" data-setbal>Set actual balance
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
@@ -5306,7 +5310,7 @@ function ziQBody(p){
   const b = ziBanks(); if (!b) return '<div class="pg-load">Loading…</div>';
   if (!p.vals) p.vals = {};
   const tot = b.cols.reduce((s,c)=>s + (Number(numPlain(p.vals[c]||''))||0), 0);
-  const ic = c => bankMark(ziLabel(c));
+  const ic = c => nameMark(ziLabel(c));
   return `<div class="card pg-card zq">
     <div class="zqh"><span class="bk-ic iq">${PCT_IC}</span><div><div class="t">${esc(qLabel(p.q))}</div><div class="s">Credited around 25 ${qMon(p.q)} · from each bank app</div></div></div>
     ${b.cols.map(c=>`<div class="zqr">${ic(c)}<span class="n">${esc(ziLabel(c))}</span><div class="inwrap"><span>₹</span><input data-zqv="${esc(c)}" inputmode="decimal" value="${esc(p.vals[c] ? groupNum(String(p.vals[c]),'en-IN') : '')}" placeholder="0"></div></div>`).join('')}
@@ -5873,7 +5877,7 @@ function xNext(){
 // Paid via as icon pills, two per row, under small headings: Everyday (SBI ·
 // Jupiter Bank · Cash), Cards, Other banks, Construction (shown as "SBI · C")
 const ACC_FIRST = ['SBI','Jupiter Bank'];
-const xAccMark = a => isCashAcc(a) && accKind(a)!=='construction' ? `<div class="tile in">${ICONS.cash}</div>` : bankMark(a.name);
+const xAccMark = a => accMark(a);
 function xAccGrid(names, on){
   const accs = names.map(n=>accByName(n)).filter(Boolean);
   const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : 'bank';
@@ -5938,7 +5942,7 @@ function xaIcon(f){
     if (f==='type') return xType ? xtTile(xType) : '';
     if (f==='source') return xSrcV ? logoMark(xSrcV, null, [S(`<path d="${XI.rent}"/>`), 'us']) : '';   // same mark as in the Company picker
     const n = { account:xAcc, from:xFrom, to:xTo }[f]; if (!n) return '';
-    const a = accByName(n); return a ? xAccMark(a) : bankMark(n);
+    return nameMark(n);
   } catch (e) { return ''; }
 }
 function xaBody(){
