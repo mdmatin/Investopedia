@@ -1251,20 +1251,22 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .xkw input{width:20px;height:20px;accent-color:var(--blue);flex:none}
 .xkw b{color:var(--ink);font-weight:600}
 .kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
-.cbk{margin-bottom:6px}
+.cbk{margin-bottom:18px}
+.acclist .card.tight{margin-left:16px;margin-right:16px}   /* lines up with the hero and the Interest / Cashback block above */
 .cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:16px 16px 4px}
 .cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.4px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
-.cbk .st{display:flex;margin:6px 12px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
+.cbk .hd .hadd{font-size:15px;font-weight:600;color:var(--blue);padding:4px 0}
+.cbk .st{display:flex;margin:6px 16px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
 .cbk .st div{flex:1;text-align:left}.cbk .st div+div{border-left:1px solid var(--hairline);padding-left:12px}
 .cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
 .cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:12px 20px 4px}
 .cbk .bars i{flex:1;background:var(--up);opacity:.7;border-radius:4px 4px 1px 1px}.cbk .bars i.cur{opacity:1}
 .cbk .bl{display:flex;gap:6px;margin:0 20px;font-size:10px;color:var(--ink-3)}.cbk .bl span{flex:1;text-align:center}
-.cbk .lst{margin:10px 12px 0;background:var(--canvas);border-radius:14px;overflow:hidden}
+.cbk .lst{margin:10px 16px 0;background:var(--canvas);border-radius:14px;overflow:hidden}
 .cbk .lr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:15px}
 .cbk .lr+.lr{border-top:.5px solid var(--hairline)}.cbk .lr small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
 .cbk .lr b{color:var(--up);font-weight:600}
-.cbk .addcb{display:block;width:calc(100% - 24px);margin:12px 12px 0;padding:12px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15.5px;text-align:center}
+.cbk .addcb{display:block;width:calc(100% - 32px);margin:12px 16px 0;padding:12px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15.5px;text-align:center}
 .cbform{margin:12px 12px 0;background:var(--canvas);border-radius:14px;padding:14px}
 .cbform label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}
 .cbform .cbm{position:relative;font-size:16px}.cbform .cbm input{position:absolute;inset:0;opacity:0;width:100%}
@@ -1647,7 +1649,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31w';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31x';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5176,7 +5178,7 @@ function accBody(p){
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
     </div>
     ${card ? cashbackHtml(a, p) : ziBankHtml(a)}
-    ${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}`;
+    <div class="acclist">${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}</div>`;
 }
 /* ---------- Cashback on a card: saved as Income · Cashback into the card.
    'monthly' cards: type what came in. 'total' cards: type the lifetime total from
@@ -5328,12 +5330,11 @@ function ziBankHtml(a){
   const meta = r => r.date >= ZI_QSTART ? 'Quarter' : 'Yearly';
   const list = (pend ? `<div class="lr due"><span>${esc(qLabel(next))}<small>${next===due ? 'Due now' : 'From 25 ' + qMon(next)}</small></span><em>Pending</em></div>` : '')
     + rows.slice().reverse().map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
-  return `<div class="cbk zint"><div class="hd"><h2>Interest</h2><span>to give away</span></div>
+  return `<div class="cbk zint"><div class="hd"><h2>Interest</h2>${pend ? `<button class="hadd" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))}</button>` : ''}</div>
     <div class="st"><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>All time</span><b class="num money">${fINR(all)}</b></div></div>
     <div class="bars">${sv.map((v,i)=>`<i class="${i===curI?'cur':''} ${v?'':'nil'}" style="height:${v ? Math.max(4, v/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${slots.map(q=>`<span>${qMon(q)}</span>`).join('')}</div>
-    <div class="lst">${list}</div>
-    ${pend ? `<button class="addcb" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))} interest</button>` : ''}</div>`;
+    <div class="lst">${list}</div></div>`;
 }
 
 // the quarter the next entry is for: the one due now, else the coming one
@@ -5405,8 +5406,8 @@ function ziPageBody(p){
   if (p.kind==='interest' && I){
     const b = I.banks || { cols:[], rows:[] }, per = b.cols.map(c=>[c, b.rows.reduce((s,r)=>s+(r.v[c]||0),0)]);
     h += `<div class="card pg-card pg-hero">
-      <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">Earned on savings</div></div></div>
-      <div class="pg-big num money">${fINR(Math.max(0, I.left))}</div><div class="pg-sub"><span class="k">${I.left < 0 ? fINR(-I.left) + ' given ahead' : 'still to give'}</span></div>
+      <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">${I.left < 0 ? esc(fINR(-I.left)) + ' given ahead' : 'To purify'}</div></div></div>
+      <div class="pg-big num money">${fINR(Math.max(0, I.left))}</div>
       <div class="spstats"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
     <div class="card tight zsrc">${row('Banks', b.cols.length + ' accounts · from the quarterly entries', fINR(I.sources.banks))}
       <div class="zbk">${per.map(([c,v])=>`<div class="hrow"><span>${esc(ziLabel(c))}</span><b class="num money">${fINR(v)}</b></div>`).join('')}</div>
