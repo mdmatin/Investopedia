@@ -377,6 +377,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .row .m.cardm{white-space:normal;overflow:visible}
 .ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
 .ccl .pbar + .cardm{margin-top:3px}
+.epform{margin:0 16px 14px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
@@ -1650,7 +1651,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31za';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zb';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1858,10 +1859,10 @@ function renderHome(d){
   ].map(([k,v,c])=>`<div><div class="k">${k}</div><div class="v num money ${c}">${v}</div></div>`).join('');
 
   // assets
-  const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && a.value!==0 && !/^Less:|^Charges/i.test(a.name))
+  const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && (a.value!==0 || (/^EPF$/i.test(a.name) && epfD())) && !/^Less:|^Charges/i.test(a.name))
     .sort((a,b)=>(b.value||0)-(a.value||0));
   $('#assets').innerHTML = rows.map(a=>`
-    <div class="row platrow"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
+    <div class="row platrow${/^EPF$/i.test(a.name) && epfD() ? ' tap" data-epf="1' : ''}"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>${a.dayChange!=null
@@ -1872,6 +1873,7 @@ function renderHome(d){
 
   // an asset class opens Holdings ▸ Assets with that filter on
   $$('#assets .row[data-acat]').forEach(r=>r.onclick=()=>openAssetCat(r.dataset.acat));
+  $$('#assets .row[data-epf]').forEach(r=>r.onclick=()=>pushPage({ kind:'epf' }));
 
   // recent
   // (the Recent list was removed from Overview — Activity has every order)
@@ -3591,7 +3593,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3633,7 +3635,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3646,6 +3648,7 @@ function renderPage(){
   if (p.kind==='zakat' || p.kind==='interest'){ wireZiPage(p); return; }
   if (p.kind==='intq'){ wireZiQ(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
+  if (p.kind==='epf'){ wireEpf(p); return; }
   if (p.kind==='bklog'){ const o = $('#bkOnly'); if (o) o.onclick = ()=>{ save('inv.bkOnly', !o.classList.contains('on')); renderPage(); }; }
   if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
     const m = $('#bkLogAll'); if (m) m.onclick = ()=>pushPage({ kind:'bklog' });
@@ -4948,6 +4951,105 @@ function constrEntries(){
     .filter(e=>!(accByName(e.account)||{}).other)      // Halim · C's payments are his money: on the budget sheet, not in your spend
     .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.row-a.row);
 }
+/* ---------- EPF ----------
+   From All Investments › EPF: monthly contributions (yours + employer's), the yearly
+   interest credits, and withdrawals. Balance = both shares + interest − withdrawals. */
+const epfD = () => (D && D.data && D.data.epf) || null;
+const fyOf = d => { const y = +d.slice(0,4), m = +d.slice(5,7), s = m<=3 ? y-1 : y; return s; };
+const fyLbl = s => 'FY ' + String(s).slice(2) + '–' + String(s+1).slice(2);
+function epfCalc(){
+  const E = epfD(); if (!E) return null;
+  const C = (E.contrib||[]).slice().sort((a,b)=>a.date<b.date?-1:1), I = (E.interest||[]).slice().sort((a,b)=>a.date<b.date?-1:1), W = (E.withdrawals||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const emp = C.reduce((s,c)=>s+c.emp,0), er = C.reduce((s,c)=>s+c.er,0), int = I.reduce((s,x)=>s+x.amount,0), wd = W.reduce((s,x)=>s+x.amount,0);
+  const bal = Math.round((emp + er + int - wd)*100)/100;
+  // month-end balance, first contribution → this month
+  const first = (C[0]||{date:todayISO()}).date.slice(0,7), months = []; for (let m = first; m <= ymNow(); m = ymAdd(m,1)) months.push(m);
+  const ev = [...C.map(c=>[c.date, c.emp+c.er]), ...I.map(x=>[x.date, x.amount]), ...W.map(x=>[x.date, -x.amount])];
+  const series = months.map(m=>ev.filter(e=>e[0].slice(0,7)<=m).reduce((s,e)=>s+e[1],0));
+  // the interest's rate: that year's credit over the average month-end balance before it
+  const rate = x => { const s = fyOf(x.date), ms = months.filter(m=>fyOf(m+'-01')===s && m < x.date.slice(0,7)), avg = ms.length ? ms.reduce((t,m)=>t+series[months.indexOf(m)],0)/ms.length : 0;
+    return avg > 0 && ms.length >= 6 ? x.amount / avg * 12 / ms.length * 100 : null; };   // too few months to mean anything: no rate
+  // the chart opens on the latest month with money in it (a withdrawn account would otherwise open on a flat zero)
+  let si = series.length - 1; while (si > 0 && series[si] < 1) si--;
+  return { E, C, I, W, emp, er, int, wd, bal, months, series, rate, selM: months[si], lastW: W[W.length-1] || null };
+}
+function epfBody(p){
+  const c = epfCalc(); if (!c) return '<div class="pg-load">Loading…</div>';
+  const row = (t, m, v, cls) => `<div class="row"><div class="l"><div class="n">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money ${cls||''}">${v}</div></div></div>`;
+  const uan = c.E.uan ? 'UAN ••••' + String(c.E.uan).slice(-4) : '';
+  const closed = c.bal < 1 && c.lastW;
+  const hero = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${mark('EPF')}<div class="grow"><div class="t">EPF</div>${uan ? `<div class="s">${esc(uan)}</div>` : ''}</div></div>
+      <div class="pg-big num money">${fINR2(c.bal)}</div>
+      ${closed ? `<div class="pg-sub"><span class="k">${fINR(c.lastW.amount)} withdrawn on ${esc(fDateY(c.lastW.date))}</span></div>` : ''}
+      <div class="spstats lcr"><div><span>Your share</span><b class="num money">${fINR(c.emp)}</b></div>
+        <div><span>Employer</span><b class="num money">${fINR(c.er)}</b></div>
+        <div><span>Interest</span><b class="num money up">${fINR(c.int)}</b></div></div>
+      ${c.months.length > 1 ? monthLineChart(c.months, c.series, c.selM) : ''}
+    </div>`;
+  const ints = c.I.slice().reverse().map(x=>{ const r = c.rate(x);
+    return row(esc(fyLbl(fyOf(x.date))), `Up to ${esc(fDateY(x.date))}${r ? ' · ≈' + r.toFixed(2) + '%' : ''}`, '+' + fINR(x.amount), 'up'); }).join('');
+  const wds = c.W.slice().reverse().map(x=>row(esc(fDateY(x.date)), [x.paid ? 'Paid ' + fINR(x.paid) : '', x.tds ? 'TDS ' + fINR(x.tds) : ''].filter(Boolean).join(' · ') || 'Withdrawn', '−' + fINR(x.amount))).join('');
+  const byFY = {}; c.C.forEach(x=>{ (byFY[fyOf(x.date)] = byFY[fyOf(x.date)] || []).push(x); });
+  const contrib = Object.keys(byFY).sort().reverse().map(s=>{ const L = byFY[s].slice().reverse(), t = L.reduce((a,x)=>a+x.emp+x.er,0);
+    return `<div class="cmhead"><h3>${esc(fyLbl(+s))}</h3><span class="num money">${fINR(t)}</span></div>
+      <div class="card tight">${L.map(x=>row(esc(ymLabel(x.date.slice(0,7))), `You ${fINR(x.emp)} · Employer ${fINR(x.er)}`, fINR(x.emp + x.er))).join('')}</div>`; }).join('');
+  const due = epfIntDue(c);
+  return hero
+    + (due != null && p.epf !== 'i' ? `<button class="card bkpill bankrow zirem" data-epfi data-fy="${due}"><span class="bk-ic iq">${PCT_IC}</span><span class="bk-t">Add ${esc(fyLbl(due))} interest</span><span class="bk-v zis">EPF</span>${CHEV_R}</button>` : '')
+    + `<div class="sechead"><h2>Interest</h2>${p.epf==='i' ? '' : '<button data-epfi>+ Add</button>'}</div>${p.epf==='i' ? epfForm(p, c) : ''}<div class="card tight">${ints || '<div class="empty">No interest yet</div>'}</div>`
+    + (wds ? `<div class="sechead"><h2>Withdrawals</h2></div><div class="card tight">${wds}</div>` : '')
+    + `<div class="sechead"><h2>Contributions</h2>${p.epf==='c' ? '' : '<button data-epfc>+ Add</button>'}</div>${p.epf==='c' ? epfForm(p, c) : ''}` + (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>');
+}
+// a year with contributions and no interest yet: from August after it ends (EPFO credits it then)
+function epfIntDue(c){
+  const now = todayISO(), have = new Set(c.I.map(x=>x.fy != null ? x.fy : fyOf(x.date)));
+  const fys = [...new Set(c.C.map(x=>fyOf(x.date)))].sort();
+  for (const s of fys.reverse()){ if (have.has(s)) continue; if (now >= (s+1) + '-08-01') return s; }
+  return null;
+}
+function epfForm(p, c){
+  const f = p.epfF || {}, last = c.C[c.C.length-1] || { emp:'', er:'' }, ym = ymNow();
+  const inp = (k, v, ph) => `<div class="inwrap"><span>₹</span><input data-epfv="${k}" inputmode="decimal" value="${v!=null && v!=='' ? esc(groupNum(String(v),'en-IN')) : ''}" placeholder="${esc(ph)}"></div>`;
+  const body = p.epf==='c'
+    ? `<label>Month</label><div class="cbm"><b>${esc(ymLabel(f.ym||ym))}</b><input type="month" data-epfym value="${esc(f.ym||ym)}" max="${ym}"></div>
+       <label style="margin-top:12px">Your share</label>${inp('emp', f.emp!=null ? f.emp : last.emp, '0')}
+       <label style="margin-top:12px">Employer share</label>${inp('er', f.er!=null ? f.er : last.er, '0')}`
+    : `<label>Financial year</label><div class="cbm"><b>${esc(fyLbl(f.fy!=null ? +f.fy : (epfIntDue(c) ?? fyOf(todayISO())-1)))}</b>
+         <select data-epffy>${[...new Set(c.C.map(x=>fyOf(x.date)).concat([fyOf(todayISO())-1, fyOf(todayISO())]))].sort((a,b)=>b-a).map(s=>`<option value="${s}" ${(f.fy!=null ? +f.fy : (epfIntDue(c) ?? fyOf(todayISO())-1))===s?'selected':''}>${esc(fyLbl(s))}</option>`).join('')}</select></div>
+       <label style="margin-top:12px">Interest</label>${inp('amt', f.amt, '0')}`;
+  return `<div class="cbform epform">${body}${p.epfErr ? `<div class="err">${esc(p.epfErr)}</div>` : ''}
+    <div class="btns"><button class="cancel" data-epfx>Cancel</button><button class="save" data-epfsave ${p.epfBusy?'disabled':''}>${p.epfBusy ? 'Saving…' : 'Save'}</button></div></div>`;
+}
+function wireEpf(p){
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  const open = k => b => { b.onclick = ()=>{ p.epf = k; p.epfF = b.dataset.fy ? { fy:+b.dataset.fy } : {}; p.epfErr = ''; again(); }; };
+  $$('#page [data-epfc]').forEach(open('c')); $$('#page [data-epfi]').forEach(open('i'));
+  const f = () => (p.epfF = p.epfF || {});
+  $$('#page [data-epfv]').forEach(i=>i.oninput=()=>{ f()[i.dataset.epfv] = numPlain(i.value); });
+  const ym = $('#page [data-epfym]'); if (ym) ym.onchange = ()=>{ f().ym = ym.value; again(); };
+  const fy = $('#page [data-epffy]'); if (fy) fy.onchange = ()=>{ f().fy = +fy.value; again(); };
+  const x = $('#page [data-epfx]'); if (x) x.onclick = ()=>{ p.epf = null; p.epfF = null; p.epfErr = ''; again(); };
+  const sv = $('#page [data-epfsave]'); if (sv) sv.onclick = async ()=>{
+    const c = epfCalc(), F = f(), last = c.C[c.C.length-1] || {};
+    const num = (k, d) => { const v = F[k]!=null && F[k]!=='' ? Number(F[k]) : d; return isFinite(v) ? v : NaN; };
+    let data;
+    if (p.epf==='c'){ data = { kind:'contrib', date:(F.ym||ymNow()) + '-01', emp:num('emp', last.emp), er:num('er', last.er) };
+      if (!(data.emp >= 0) || !(data.er >= 0) || !(data.emp + data.er > 0)){ p.epfErr = 'Enter both shares.'; again(); return; } }
+    else { const s = F.fy!=null ? +F.fy : (epfIntDue(c) ?? fyOf(todayISO())-1);
+      const end = (s+1) + '-03-31';   // the sheet keeps interest by period end ("Upto Date")
+      data = { kind:'interest', fy:s, date: end < todayISO() ? end : todayISO(), amount:num('amt', NaN) };
+      if (!(data.amount > 0)){ p.epfErr = 'Enter the interest.'; again(); return; } }
+    p.epfBusy = true; p.epfErr = ''; again();
+    try{ const r = await apiPost('epfAdd', data); if (r && r.epf && D && D.data){ D.data.epf = r.epf; save(LS.data, D); }
+      p.epf = null; p.epfF = null; p.epfBusy = false; again(); toast(data.kind==='contrib' ? 'Contribution added' : 'Interest added'); refresh(false, true);
+    }catch(e){ p.epfBusy = false; p.epfErr = e.message || 'Could not save'; again(); }
+  };
+  const gs = $('#page .mbscroll'); if (!gs) return;
+  const si = +gs.dataset.sel, w = +gs.dataset.w || 64;
+  gs.scrollLeft = si >= 0 ? Math.max(0, (si + 1) * w - gs.clientWidth + w) : gs.scrollWidth;   // the selected month near the right edge
+}
+const fDateY = d => { const [y,m,dd] = d.split('-'); return +dd + ' ' + ymShort(y + '-' + m).slice(0,3) + ' ' + y; };
 function constrBody(p){
   const f = constrFund(), list = constrEntries(), d = xd() || {};
   const tot = m => Object.entries(xMonth(m)).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0);
