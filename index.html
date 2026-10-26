@@ -1634,7 +1634,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31r';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31s';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5888,13 +5888,14 @@ function xNext(){
 // Jupiter Bank · Cash), Cards, Other banks, Construction (shown as "SBI · C")
 const ACC_FIRST = ['SBI','Jupiter Bank'];
 const xAccMark = a => accMark(a);
-function xAccGrid(names, on){
+function xAccGrid(names, on, cardsFirst){
   const accs = names.map(n=>accByName(n)).filter(Boolean);
   const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : 'bank';
   const rank = a => { const i = ACC_FIRST.indexOf(a.name); return i < 0 ? 99 : i; };
   const banks = accs.filter(a=>kind(a)==='bank').sort((a,b)=>rank(a)-rank(b));
   const groups = [['Everyday', banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash'))], ['Cards', accs.filter(a=>kind(a)==='card')],
     ['Other banks', banks.filter(a=>rank(a)===99)], ['Construction', accs.filter(a=>kind(a)==='con')]];
+  if (cardsFirst) groups.unshift(groups.splice(1, 1)[0]);     // cashback: the cards on top
   return `<div class="xacc">${groups.filter(g=>g[1].length).map(([h,g])=>`<div class="xgh">${h}</div><div class="xgrid pills">${
     g.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}">${xAccMark(a)}<span>${esc(a.name)}</span></button>`).join('')}</div>`).join('')}</div>`;
 }
@@ -5931,7 +5932,7 @@ function flowPanel(){
   else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense', icons: true });
   // every account picker (Paid via, Into, From, To) is the same grouped pill panel
-  else if (f==='account') body = xAccGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc);
+  else if (f==='account') body = xAccGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc, xMode==='income' && isCashback(xType));
   else if (f==='from') body = xAccGrid(xAllAcc(), xFrom);
   else if (f==='to') body = xAccGrid(xAllAcc().filter(n=>n!==xFrom), xTo);
   else if (f==='type') body = xTypeGrid(inTypesList(), xType);
@@ -6514,6 +6515,7 @@ function defaultsBody(){
     return `<span class="vl">${esc((opts.find(o=>o[0]===cur)||opts[0])[1])}${chv}</span><select data-def="${esc(k)}" aria-label="${esc(k)}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`; };
   const sw = (k,on)=>`<button class="sw ${on?'on':''}" role="switch" aria-checked="${on}" data-defsw="${esc(k)}"></button>`;
   const A = xAccounts().filter(a=>a.active!==false).map(a=>[a.name,a.name]), AS = xAccounts().filter(a=>a.active!==false && (accKind(a)!=='wallet' || isCashAcc(a))).map(a=>[a.name,a.name]);
+  const AK = xAccounts().filter(a=>a.active!==false && accKind(a)==='card').map(a=>[a.name,a.name]);
   const AC = xAccounts().filter(a=>a.active!==false && accKind(a)==='construction').map(a=>[a.name,a.name]), AB = xAccounts().filter(a=>a.active!==false && accKind(a)==='bank').map(a=>[a.name,a.name]);
   const I = { card:PI.card, in:PI.in, tag:PI.tag, home:'<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>', inv:'<path d="M3 17l6-6 4 4 8-8M14 7h7v7"/>',
     cat:'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>', co:'<path d="M5 21V5.5L12 3l7 2.5V21M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>',
@@ -6522,7 +6524,8 @@ function defaultsBody(){
   const types = inTypesList().filter(t=>t!==XREFUND && t!==XLIQ);
   const cos = xCompanies();
   const typeRows = types.map(t=>{ const [d, tn] = XT_ICON[xtKey(t)];
-    if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), '<span class="vl">The card it’s for</span>');
+    // Cashback lands on a card, so its choices are the cards
+    if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(AK)), 'The card it’s for');
     let r = row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(A)));
     if (/^salary$/i.test(t)) r += row(I.co, '#0b5fc1', 'Salary company', pick('income:Salary:company', [['', 'Latest' + (lastSource('Salary') ? ' (' + lastSource('Salary') + ')' : '')], ['__none','None']].concat(cos.map(c=>[c,c]))));
     return r; }).join('');
