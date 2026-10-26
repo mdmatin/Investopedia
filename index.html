@@ -377,6 +377,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .row .m.cardm{white-space:normal;overflow:visible}
 .ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
 .ccl .pbar + .cardm{margin-top:3px}
+.pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
 /* budget (Money Manager style, compact) */
@@ -1257,7 +1258,7 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.4px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
 .cbk .hd .hadd{font-size:15px;font-weight:600;color:var(--blue);padding:4px 0}
 .cbk .st{display:flex;margin:6px 16px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
-.cbk .st div{flex:1;text-align:left}.cbk .st div+div{border-left:1px solid var(--hairline);padding-left:12px}
+.cbk .st div{flex:1;text-align:left}.cbk .st div:nth-child(2){text-align:center}.cbk .st div:last-child:not(:first-child){text-align:right}   /* left · centre · right, no dividers */
 .cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
 .cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:12px 20px 4px}
 .cbk .bars i{flex:1;background:var(--up);opacity:.7;border-radius:4px 4px 1px 1px}.cbk .bars i.cur{opacity:1}
@@ -1649,7 +1650,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31x';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31y';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4935,7 +4936,7 @@ function constrFundHtml(part){
   const f = constrFund();
   if (part==='other') return f.rows.some(r=>!r.acc) ? `<div class="cfin" id="cfOther"></div>` : '';
   return `<div class="card spsum cfund tap" data-constr role="button"><div class="k">Construction fund${chev('M9 5l7 7-7 7')}</div><div class="big num money">${fINR2(f.total)}</div>
-      <div class="spstats"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
+      <div class="spstats lcr"><div><span>Spent · ${esc(ymShort(ymNow()).slice(0,3))}</span><b class="num money">${fINR2(f.spentM)}</b></div>
         <div><span>Spent so far</span><b class="num money">${fINR2(f.spentAll)}</b></div></div></div>`;
 }
 // Construction page: every expense in the Construction category (all of it -
@@ -4960,7 +4961,7 @@ function constrBody(p){
         <div class="s">${list.length} payment${list.length===1?'':'s'}${has.length ? ' · since '+esc(ymLabel(first)) : ''}</div></div></div>
       <div class="pg-big num money">${fINR2(f.spentAll)}</div>
       <div class="pg-sub"><span class="k">spent so far</span></div>
-      <div class="spstats"><div><span>Fund left</span><b class="num money">${fINR2(f.total)}</b></div>
+      <div class="spstats lcr"><div><span>Fund left</span><b class="num money">${fINR2(f.total)}</b></div>
         <div><span>This month</span><b class="num money">${fINR2(f.spentM)}</b></div>
         <div><span>Monthly avg</span><b class="num money">${fINR2(avg)}</b></div></div>
       ${has.length ? monthLineChart(months, vals, sel) : ''}
@@ -5155,7 +5156,7 @@ function accBody(p){
   const mIn = mm.filter(m=>m.amt>0).reduce((s,m)=>s+m.amt,0), mOut = -mm.filter(m=>m.amt<0).reduce((s,m)=>s+m.amt,0);
   // a card reads like its statement: what you owe is positive, credit is negative
   const big = card ? (bal>0 ? '−'+fINR2(bal) : fINR2(-bal)) : fINR2(bal);
-  const sub = card ? `${bal>0 ? 'In credit' : 'Owed'}${a.limit?` · ${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}`:''}${a.dueDay?` · due ${ordinal(a.dueDay)}`:''}` : esc(a.type);
+  const sub = card && a.dueDay ? `Due ${ordinal(a.dueDay)}` : '';   // the type is in the page title already
   const ed = p.setBal ? `<div class="ed xbed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${card?Math.max(0,-bal):bal}" aria-label="Actual balance"></div>
       <div class="hint" style="margin:8px 2px 0">${card?'What the card app says you owe.':'What the bank app shows right now.'} The difference is recorded as an adjustment.</div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Set balance</button></div></div>` : '';
@@ -5165,15 +5166,15 @@ function accBody(p){
       <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
       <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
   return `<div class="card pg-card pg-hero">
-      <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div><div class="s">${sub}</div></div></div>
+      <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div></div>
       <div class="pg-big num money">${big}</div>
       <div class="accbtns"><button class="xbud" data-setbal>Set actual balance
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
         <button class="xbud" data-editacc>Edit account
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
       ${ed}
-      ${card && a.limit ? pbar(Math.max(0,-bal)/a.limit) : ''}
-      <div class="spstats"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
+      ${card && a.limit ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${bal>0 ? fINR2(bal) + ' in credit · ' : ''}${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
+      <div class="spstats lcr"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
     </div>
@@ -5390,7 +5391,7 @@ function ziPageBody(p){
       <div class="pg-id"><span class="zico">${MOON_IC}</span><div class="grow"><div class="t">Zakat</div><div class="s">${(Z.rate*100).toFixed(1).replace(/\.0$/,'')}% of net worth · every 1 Jan</div></div></div>
       <div class="pg-big num money">${fINR(n.owing ? c.left : c.due)}</div>
       <div class="pg-sub"><span class="k">${n.owing ? `left of ${fINR(c.due)} for 1 Jan ${n.yr}` : `estimated for 1 Jan ${n.yr} · in ${n.days} day${n.days===1?'':'s'}`}</span></div>
-      <div class="spstats"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span><b class="num money">${fINR(n.owing ? c.base : Z.nw)}</b></div>
+      <div class="spstats lcr"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span><b class="num money">${fINR(n.owing ? c.base : Z.nw)}</b></div>
         <div><span>Paid</span><b class="num money ${c.paid>0?'up':''}">${fINR(c.paid)}</b></div><div><span>To pay</span><b class="num money">${fINR(Math.max(0, c.left))}</b></div></div></div>
     <div class="sechead"><h2>Snapshots</h2></div>
     <div class="card tight">${frozen.length ? frozen.map(y=>row('1 Jan ' + y.date.slice(0,4), `Net worth ${fINR(y.base)} · due ${fINR(y.due)}`, y.left > 0.5 ? fINR(y.left) + ' left' : 'Paid ✓', y.left > 0.5 ? '' : 'up')).join('')
@@ -5408,7 +5409,7 @@ function ziPageBody(p){
     h += `<div class="card pg-card pg-hero">
       <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">${I.left < 0 ? esc(fINR(-I.left)) + ' given ahead' : 'To purify'}</div></div></div>
       <div class="pg-big num money">${fINR(Math.max(0, I.left))}</div>
-      <div class="spstats"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
+      <div class="spstats lcr"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
     <div class="card tight zsrc">${row('Banks', b.cols.length + ' accounts · from the quarterly entries', fINR(I.sources.banks))}
       <div class="zbk">${per.map(([c,v])=>`<div class="hrow"><span>${esc(ziLabel(c))}</span><b class="num money">${fINR(v)}</b></div>`).join('')}</div>
       <button class="zmore zadd" data-ziq="${esc(ziAddQ())}">+ Add ${esc(qLabel(ziAddQ()).replace(/ \d+$/,''))} interest</button>
