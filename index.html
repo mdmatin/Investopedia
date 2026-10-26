@@ -384,6 +384,18 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .tabbody{min-height:calc(100vh - 150px)}
 .epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
 .epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
+.pg-hero{position:relative}
+.pg-hero .ccp:last-child{margin-bottom:0}.menu.accmenu{top:62px;right:14px;min-width:220px}
+.cch{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:18px}
+.cch span,.cc2 span{display:block;font-size:12px;color:var(--ink-2);letter-spacing:-.05px;margin-bottom:3px}
+.cch b{display:block;font-family:var(--font-disp);font-size:30px;font-weight:600;letter-spacing:-.9px;line-height:1.1;white-space:nowrap}
+.cch b.down{color:var(--down)}
+.cch .r{text-align:right}.cch .r b{font-family:inherit;font-size:17px;letter-spacing:-.3px}
+.cch .r small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
+.ccp{margin:16px 0 16px;padding:14px;border-radius:14px;background:var(--parchment)}
+.cc2{display:flex;justify-content:space-between;gap:10px}.cc2 .r{text-align:right}
+.cc2 b{display:block;font-size:15px;font-weight:600;letter-spacing:-.25px;white-space:nowrap}
+.ccp .pbar{margin:12px 0}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
@@ -1198,9 +1210,10 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .liq .g3{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline)}
 .liq .g3>div:nth-child(2){text-align:center}.liq .g3>div:nth-child(3){text-align:right}
 .liq .g3 span{display:block;font-size:12px;color:var(--ink-2)}.liq .g3 b{font-size:16px;font-weight:600;letter-spacing:-.3px}
-.liq .ter{display:flex;justify-content:space-between;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline)}
-.liq .ter button{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink-3);white-space:nowrap;padding:2px 0}
-.liq .ter b{font-weight:500;color:var(--ink-2)}.liq .ter svg{width:10px;height:10px}
+.liq.ter.liqout{margin:-4px 32px 18px;padding-top:0;border-top:0;justify-content:flex-start;gap:22px}
+.liq .ter,.liq.ter{display:flex;justify-content:space-between;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline)}
+.liq .ter button,.liq.ter button{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink-3);white-space:nowrap;padding:2px 0}
+.liq .ter b,.liq.ter b{font-weight:500;color:var(--ink-2)}.liq .ter svg,.liq.ter svg{width:10px;height:10px}
 /* Zakat & Interest */
 .zitiles{margin-top:-4px}
 .acctiles .s b.up{color:var(--up)}
@@ -1665,7 +1678,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zo';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zp';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4985,7 +4998,7 @@ function spAccountsHtml(){
       <div class="big num money">${fINR(liquid)}</div>
       <div class="g3"><div><span>Bank</span><b class="num money">${fLakh(sum.bank)}</b></div><div><span>Wallet</span><b class="num money">${fLakh(sum.wallet)}</b></div>
         <div><span>Cards</span><b class="num money">${cards.owed > 0 ? '−' + fLakh(cards.owed) : fINR(0)}</b></div></div>
-      ${ter ? `<div class="ter">${ter}</div>` : ''}</div>`;
+</div>${ter ? `<div class="liq ter liqout">${ter}</div>` : ''}`;
   // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
   return head + bankBannerHtml() + ziRemindHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
@@ -5372,7 +5385,19 @@ function accBody(p){
   const mIn = mm.filter(m=>m.amt>0).reduce((s,m)=>s+m.amt,0), mOut = -mm.filter(m=>m.amt<0).reduce((s,m)=>s+m.amt,0);
   // a card reads like its statement: what you owe is positive, credit is negative
   const big = card ? (bal>0 ? '−'+fINR2(bal) : fINR2(-bal)) : fINR2(bal);
-  const sub = card && a.dueDay ? `Due ${ordinal(a.dueDay)}` : '';   // the type is in the page title already
+  const sub = '';   // a card's due date sits beside the amount now
+  // next bill date from the due day: this month if it hasn't passed, else next month
+  const nextDue = d => { const t = new Date(); t.setHours(0,0,0,0);
+    const at = (y,m) => new Date(y, m, Math.min(d, new Date(y, m+1, 0).getDate()));
+    let x = at(t.getFullYear(), t.getMonth()); if (x < t) x = at(t.getFullYear(), t.getMonth()+1); return x; };
+  const due = card && a.dueDay ? nextDue(a.dueDay) : null;
+  const dueIn = due ? Math.round((due - new Date(new Date().toDateString()))/864e5) : null;
+  const owed = Math.max(0,-bal);
+  const ccHero = !card ? '' : `<div class="cch"><div><span>${bal>0?'Credit':'Outstanding'}</span><b class="num money ${owed>0?'down':''}">${fINR2(bal>0?bal:owed)}</b></div>
+      <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b></div></div>
+    ${a.limit ? `<div class="ccp"><div class="cc2"><div><span>Limit used</span><b class="num money">${fINR2(owed)}</b></div><div class="r"><span>Total limit</span><b class="num money">${fINR2(a.limit)}</b></div></div>
+      ${pbar(owed/a.limit)}
+      <div class="cc2"><div><span>Available limit</span><b class="num money">${fINR2(a.limit + bal)}</b></div><div class="r"><span>Used</span><b>${(owed/a.limit*100).toFixed(1)}%</b></div></div></div>` : ''}`;
   const ed = p.setBal ? `<div class="ed xbed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${card?Math.max(0,-bal):bal}" aria-label="Actual balance"></div>
       <div class="hint" style="margin:8px 2px 0">${card?'What the card app says you owe.':'What the bank app shows right now.'} The difference is recorded as an adjustment.</div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Set balance</button></div></div>` : '';
@@ -5382,14 +5407,12 @@ function accBody(p){
       <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
       <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
   return `<div class="card pg-card pg-hero">
-      <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div></div>
-      <div class="pg-big num money">${big}</div>
-      <div class="accbtns"><button class="xbud" data-setbal>Set actual balance
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
-        <button class="xbud" data-editacc>Edit account
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+      <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div>
+        <button class="chart-tg ${p.accMenu?'on':''}" data-accmenu aria-label="Edit" aria-haspopup="menu" aria-expanded="${p.accMenu?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
+      ${card ? ccHero : `<div class="pg-big num money">${big}</div>`}
+      ${p.accMenu ? `<div class="menu accmenu" role="menu"><button data-setbal role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Set actual balance</button><button data-editacc role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Edit account</button></div>` : ''}
       ${ed}
-      ${card && a.limit ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
+      ${false ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
       <div class="spstats lcr"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
@@ -5659,8 +5682,12 @@ function moveTile(kind){
 }
 function wireAccPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
-  const b = $('#page [data-setbal]'); if (b) b.onclick = ()=>{ p.setBal = !p.setBal; rerender(); };
-  const ea = $('#page [data-editacc]'); if (ea) ea.onclick = ()=>pushPage({ kind:'accform', acc:p.acc });
+  const am = $('#page [data-accmenu]'); if (am) am.onclick = e=>{ e.stopPropagation(); p.accMenu = !p.accMenu; rerender(); };
+  if (p.accMenu) setTimeout(()=>document.addEventListener('click', function off(e){
+    if (e.target.closest && e.target.closest('.accmenu,[data-accmenu]')) return;
+    document.removeEventListener('click', off, true); if (p.accMenu){ e.stopPropagation(); e.preventDefault(); p.accMenu = false; rerender(); } }, true), 0);   // a tap outside only closes the menu
+  const b = $('#page [data-setbal]'); if (b) b.onclick = ()=>{ p.accMenu = false; p.setBal = !p.setBal; rerender(); };
+  const ea = $('#page [data-editacc]'); if (ea) ea.onclick = ()=>{ p.accMenu = false; pushPage({ kind:'accform', acc:p.acc }); };
   $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
     const [kind,row] = r.dataset.mv.split(':'), d = xd();
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers;
