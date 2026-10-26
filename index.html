@@ -377,7 +377,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .row .m.cardm{white-space:normal;overflow:visible}
 .ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
 .ccl .pbar + .cardm{margin-top:3px}
-.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
+.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epseg{margin-top:18px}.epseg + .cbform.epform{margin-top:2px}.sechead.epadd{margin-top:0;padding-top:0;min-height:0}.sechead.epadd + .cmhead{padding-top:4px}
+.epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
 .epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
@@ -1652,7 +1653,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zf';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zg';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4998,9 +4999,17 @@ function epfBody(p){
   const due = epfIntDue(c);
   return hero
     + (due != null && p.epf !== 'i' ? `<button class="card bkpill bankrow zirem" data-epfi data-fy="${due}"><span class="bk-ic iq">${PCT_IC}</span><span class="bk-t">Add ${esc(fyLbl(due))} interest</span><span class="bk-v zis">EPF</span>${CHEV_R}</button>` : '')
-    + `<div class="sechead"><h2>Interest</h2>${p.epf==='i' ? '' : '<button data-epfi>+ Add</button>'}</div>${p.epf==='i' ? epfForm(p, c) : ''}<div class="card tight">${ints || '<div class="empty">No interest yet</div>'}</div>`
-    + (wds || c.bal > 0 ? `<div class="sechead"><h2>Withdrawals</h2>${p.epf==='w' || !(c.bal > 0) ? '' : '<button data-epfw>+ Add</button>'}</div>${p.epf==='w' ? epfForm(p, c) : ''}${wds ? `<div class="card tight">${wds}</div>` : ''}` : '')
-    + `<div class="sechead"><h2>Contributions</h2>${p.epf==='c' ? '' : '<button data-epfc>+ Add</button>'}</div>${p.epf==='c' ? epfForm(p, c) : ''}` + (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>');
+    + epfTabs(p, c, ints, wds, contrib);
+}
+// Contributions | Interest | Withdrawals under the overview; each tab has its title with + Add beside it
+const EPF_TABS = [['c','Contributions','data-epfc'],['i','Interest','data-epfi'],['w','Withdrawals','data-epfw']];
+function epfTabs(p, c, ints, wds, contrib){
+  const t = p.epfTab = p.epf || p.epfTab || 'c', T = EPF_TABS.find(x=>x[0]===t);
+  const seg = `<div class="seg segwide epseg">${EPF_TABS.map(([k,l])=>`<button data-epft="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div>`;
+  const head = (p.epf===t ? '' : `<div class="sechead epadd"><span></span><button class="hadd" ${T[2]}>+ Add ${T[1]==='Interest' ? 'interest' : T[1]==='Contributions' ? 'contribution' : 'withdrawal'}</button></div>`) + (p.epf===t ? epfForm(p, c) : '');   // the tab is the title
+  const body = t==='c' ? (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>')
+    : `<div class="card tight">${(t==='i' ? ints : wds) || `<div class="empty">No ${t==='i' ? 'interest' : 'withdrawals'} yet</div>`}</div>`;
+  return seg + head + body;
 }
 // a year with contributions and no interest yet: from August after it ends (EPFO credits it then)
 function epfIntDue(c){
@@ -5034,6 +5043,7 @@ function epfForm(p, c){
 function wireEpf(p){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   const open = k => b => { b.onclick = ()=>{ p.epf = k; p.epfF = b.dataset.fy ? { fy:+b.dataset.fy } : {}; p.epfErr = ''; p.epfEd = null; p.epfDelArm = false; again(); }; };
+  $$('#page [data-epft]').forEach(b=>b.onclick=()=>{ p.epfTab = b.dataset.epft; p.epf = null; p.epfF = null; p.epfEd = null; p.epfErr = ''; again(); });
   $$('#page [data-epfc]').forEach(open('c')); $$('#page [data-epfi]').forEach(open('i')); $$('#page [data-epfw]').forEach(open('w'));
   // tap an entry to change or delete it (the server takes out its Money lines too)
   $$('#page [data-epfe]').forEach(r=>r.onclick=()=>{ const [k, i] = r.dataset.epfe.split(':'), c = epfCalc(), x = (k==='c' ? c.C : k==='i' ? c.I : c.W)[+i]; if (!x) return;
