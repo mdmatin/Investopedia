@@ -620,7 +620,7 @@ html[data-theme=dark] .xfresh{background:rgba(41,151,255,.28);box-shadow:0 0 0 3
 .xpb:has(> .xkp){padding-top:0}                 /* the keypad sits flush under the bar */
 .xpb > .xgrid.tiles{padding-top:2px}            /* 14 + 2 = 16: same as the sides */
 /* clear (×) for any free-text field while you're typing in it */
-#xclr{position:fixed;z-index:9999;width:22px;height:22px;border-radius:50%;background:#c7c7cc;color:#fff;display:none;align-items:center;justify-content:center;padding:0;border:0}
+#xclr{position:absolute;z-index:5;width:22px;height:22px;border-radius:50%;background:#c7c7cc;color:#fff;display:none;align-items:center;justify-content:center;padding:0;border:0}
 #xclr.show{display:flex}
 #xclr svg{width:10px;height:10px}
 html[data-theme=dark] #xclr{background:#636366}
@@ -974,7 +974,7 @@ html[data-theme=dark] .tabs svg{opacity:1}
 .fields{background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);overflow:hidden;margin-bottom:14px}
 .f{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--hairline)}
 .f:first-child{border-top:0}
-.f label{font-size:15px;color:var(--ink-2);width:104px;flex:none}
+.f label{font-size:15px;color:var(--ink-2);min-width:104px;flex:none;white-space:nowrap}   /* "Opening balance" stays on one line */
 .f input,.f select{flex:1;min-width:0;border:0;background:none;outline:none;font-size:16px;text-align:right;padding:0}
 .f select{-webkit-appearance:none;appearance:none;text-align-last:right;padding-right:16px;
   background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a1a1a6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right center/10px 7px}
@@ -1686,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzd';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zze';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7121,15 +7121,18 @@ if(cfg) start(); else $('#setup').hidden=false;
   document.body.appendChild(btn);
   let cur = null;
   const ok = el => el && el.tagName==='INPUT' && !el.closest('.xa-in') && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
+  // the × lives inside the field's own row, so it scrolls with it (the iPhone keyboard shifts
+  // the viewport, which used to leave a fixed-position × floating above the field)
   const place = ()=>{
-    if (!cur || !document.body.contains(cur) || !cur.value){ btn.classList.remove('show'); return; }
-    const r = cur.getBoundingClientRect(); if (!r.width){ btn.classList.remove('show'); return; }
-    btn.style.left = (r.right - 26) + 'px'; btn.style.top = (r.top + r.height/2 - 11) + 'px'; btn.classList.add('show');
+    if (!cur || !document.body.contains(cur) || !cur.value || !cur.offsetWidth){ btn.classList.remove('show'); return; }
+    const host = cur.parentElement;
+    if (btn.parentElement !== host){ if (getComputedStyle(host).position === 'static') host.style.position = 'relative'; host.appendChild(btn); }
+    btn.style.left = (cur.offsetLeft + cur.offsetWidth - 26) + 'px'; btn.style.top = (cur.offsetTop + cur.offsetHeight/2 - 11) + 'px'; btn.classList.add('show');
   };
   document.addEventListener('focusin', e=>{ if (cur && cur!==e.target) cur.classList.remove('has-clr'); cur = ok(e.target) ? e.target : null; if (cur) cur.classList.add('has-clr'); place(); });
   document.addEventListener('focusout', e=>{ setTimeout(()=>{ if (document.activeElement!==cur){ if (cur) cur.classList.remove('has-clr'); cur = null; place(); } }, 0); });
   document.addEventListener('input', e=>{ if (e.target===cur) place(); });
-  window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
+  window.addEventListener('resize', place); if (window.visualViewport) visualViewport.addEventListener('resize', place);
   // keep focus on the field while tapping ×
   btn.addEventListener('pointerdown', e=>e.preventDefault());
   btn.addEventListener('mousedown', e=>e.preventDefault());
