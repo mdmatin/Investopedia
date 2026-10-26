@@ -1172,6 +1172,40 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .cfund.tap{cursor:pointer}
 /* Accounts top: two tiles */
 .acctiles{display:flex;gap:10px;margin:0 16px 14px}
+/* Zakat & Interest */
+.zitiles{margin-top:-4px}
+.acctiles .s b.up{color:var(--up)}
+.bkpill .bk-ic.iq,.zqh .bk-ic.iq{background:rgba(0,102,204,.12);color:var(--blue)}
+html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{background:rgba(41,151,255,.16)}
+.zirem .zis{color:var(--ink-2);font-weight:500;font-size:14px}
+.zint .bars i.nil{background:var(--hairline);opacity:1}
+.zint .lr b{color:var(--up)}.zint .lr b.nil{color:var(--ink-3);font-weight:500}
+.zint .lr.due span{color:var(--ink-2)}
+.zint .lr em{font-style:normal;font-size:13px;font-weight:600;color:var(--blue);background:rgba(0,102,204,.1);padding:3px 9px;border-radius:999px}
+.zq{padding:16px}
+.zqh{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.zqh .bk-ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none}.zqh .bk-ic svg{width:17px;height:17px}
+.zqh .t{font:600 19px/1.2 var(--font-disp);letter-spacing:-.3px}.zqh .s{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.zqr{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hairline)}
+.zqr:first-of-type{margin-top:8px}
+.zqr .n{flex:1;min-width:0;font-size:15.5px;font-weight:500}
+.zqr .inwrap{width:124px;flex:none;display:flex;align-items:center;gap:6px;background:var(--parchment);border:1px solid var(--card-edge);border-radius:10px;padding:7px 10px}
+.zqr .inwrap span{color:var(--ink-3);font-size:15px}
+.zqr .inwrap input{flex:1;min-width:0;width:100%;border:0;outline:0;background:none;color:var(--ink);text-align:right;font:600 17px var(--font-disp);font-variant-numeric:tabular-nums}
+.zqr .inwrap input::placeholder{color:var(--ink-3);font-weight:500}
+.zqx{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--sunken);font-size:10px;font-weight:700;color:var(--ink-2);flex:none}
+.zqt{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0 4px;border-top:1px solid var(--hairline);font-size:15px}.zqt b{font-size:17px;color:var(--up)}
+.zq .err{color:var(--down);font-size:13px;margin:6px 0 0}
+.zq .hint{font-size:12.5px;color:var(--ink-3);line-height:1.4;margin:8px 0 14px}
+.zq .btns{display:flex;gap:10px}.zq .btns button{flex:1;padding:13px;border-radius:12px;font-weight:600;font-size:15.5px}
+.zq .btns .cancel{background:var(--sunken);color:var(--ink)}.zq .btns .save{background:var(--blue);color:#fff}.zq .btns .save:disabled{opacity:.6}
+.zico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--up-bg);color:var(--up);flex:none}.zico svg{width:22px;height:22px}
+.zico.iq{background:rgba(0,102,204,.12);color:var(--blue)}
+.zsrc{margin-top:12px}
+.zsub{font-size:13px;color:var(--ink-2)}
+.zbk{margin:0 0 6px 14px}.zbk .hrow{padding:7px 0;font-size:14px;color:var(--ink-2);border-top:0}.zbk .hrow b{font-weight:500}
+.zmore{display:block;width:100%;padding:12px 0 4px;color:var(--blue);font-weight:600;font-size:14.5px;text-align:center;border-top:1px solid var(--hairline)}
+.zbtns{display:flex;gap:10px;margin:18px 16px 0}.zbtns button{flex:1;padding:13px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15px}
 .acctiles .card{flex:1;min-width:0;margin:0;padding:12px 14px}
 .acctiles .k{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:2px}
 .acctiles .k svg{width:11px;height:11px}
@@ -1598,7 +1632,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3539,7 +3573,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat & Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3581,7 +3615,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3590,7 +3624,9 @@ function renderPage(){
         : p.kind==='books' ? `<button class="pg-add ${booksBusy?'spin':''}" id="pgRefresh" aria-label="Check again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>` : stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
-  if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); return; }
+  if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); $$('#page [data-ziq]').forEach(b=>b.onclick=()=>pushPage({ kind:'intq', q:b.dataset.ziq })); return; }
+  if (p.kind==='zakat'){ wireZiPage(p); return; }
+  if (p.kind==='intq'){ wireZiQ(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
   if (p.kind==='bklog'){ const o = $('#bkOnly'); if (o) o.onclick = ()=>{ save('inv.bkOnly', !o.classList.contains('on')); renderPage(); }; }
   if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
@@ -4124,7 +4160,7 @@ async function loadExpenses(fresh){
     if (activeView==='home' && D) renderHome(D.data);
     if (activeView==='trend' && D) renderTrends(D.data.daily, D.data.monthly);   // cash in accounts is live
     const top = pageStack[pageStack.length-1];
-    if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+    if (top && /^(expcat|inccat|budgets|acct|zakat|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
   }catch(e){ if (activeView==='spend' && !X) $('#spBody').innerHTML = `<div class="empty">${esc(e.message||'Could not load expenses')}</div>`; }
   finally{
     xLoading = false;
@@ -4242,6 +4278,8 @@ function renderSpend(){
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
   $$('#spBody [data-bankgo]').forEach(b=>b.onclick=()=>{ const h = [...document.querySelectorAll('#spBody .sechead h2')].find(x=>x.textContent.trim()==='Bank'); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
   $$('#spBody [data-constr]').forEach(b=>b.onclick=()=>pushPage({ kind:'constr' }));
+  $$('#spBody [data-zi]').forEach(b=>b.onclick=()=>pushPage({ kind:'zakat' }));
+  $$('#spBody [data-ziq]').forEach(b=>b.onclick=()=>pushPage({ kind:'intq', q:b.dataset.ziq }));
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-fmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openTxMenu(b); });
@@ -4838,7 +4876,7 @@ function spAccountsHtml(){
       ${hasC ? `<div class="card tap" data-constr role="button"><div class="k">Construction${chev('M9 5l7 7-7 7')}</div><div class="b2 num money">${fINR(cf.total)}</div>
         <div class="s">Spent · ${esc(ymShort(spMonth).slice(0,3) + (spMonth.slice(0,4)===ymNow().slice(0,4) ? '' : ' ’'+spMonth.slice(2,4)))} <b class="num money">${fINR(cf.spentM)}</b><br>So far <b class="num money">${fINR(cf.spentAll)}</b></div></div>` : ''}</div>`;
   // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
-  return head + `<button class="card bkpill" id="books" hidden aria-label="Books"></button>` + bankBannerHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
+  return head + ziTilesHtml() + `<button class="card bkpill" id="books" hidden aria-label="Books"></button>` + bankBannerHtml() + ziRemindHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
 // have a Construction account taken live from it. The table's rows carry the account's
@@ -4949,8 +4987,9 @@ function bankBannerHtml(){
 function paintBooks(){
   const el = $('#books'), b = booksNow(), off = booksOff(b);
   const iv0 = b && b.inv, booksBad = off || !!(iv0 && Math.abs(iv0.gap||0) >= 1), bankBad = bankOffs().length > 0;
-  const nav = $('.tabs button[data-v="spend"]'); if (nav) nav.classList.toggle('bkdot', booksBad || bankBad);
-  const segA = $('#spSeg [data-s="accounts"]'); if (segA) segA.classList.toggle('segdot', booksBad || bankBad);
+  const ziq = !!ziDue();      // a quarter's bank interest is waiting
+  const nav = $('.tabs button[data-v="spend"]'); if (nav) nav.classList.toggle('bkdot', booksBad || bankBad || ziq);
+  const segA = $('#spSeg [data-s="accounts"]'); if (segA) segA.classList.toggle('segdot', booksBad || bankBad || ziq);
   if (!el) return;
   if (!b){ el.hidden = true; return; }
   el.hidden = false;
@@ -5099,7 +5138,7 @@ function accBody(p){
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
     </div>
-    ${card ? cashbackHtml(a, p) : ''}
+    ${card ? cashbackHtml(a, p) : ziBankHtml(a)}
     ${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}`;
 }
 /* ---------- Cashback on a card: saved as Income · Cashback into the card.
@@ -5183,6 +5222,165 @@ function wireCashback(p){
     await saveMove('income', { date, account:a.name, type, source:'', tax:0, remark:note, note, amount });
   };
 }
+/* ---------- Zakat & Interest: All Investments › Zakat and Interests, sent with the money data ----------
+   Zakat: 2.5% of net worth, frozen every 1 Jan; Donation › Jakat from the start date pays the oldest
+   year first, the rest carries on. Interest: earned (Interests tab) vs Donation › Interest given.
+   Bank interest goes in once a quarter (rows dated the 25th of Mar/Jun/Sep/Dec); from that day until
+   it's in, a reminder row shows on Accounts and the Spend tab gets a dot. */
+const ZI_QSTART = '2026-01-01';   // quarterly rows began with Jan–Mar 2026; earlier rows are yearly totals
+const ziD = () => (xd() || {}).zi || null;
+const ZI_Q = ['03-25','06-25','09-25','12-25'];
+const qLabel = q => ['Jan–Mar','Apr–Jun','Jul–Sep','Oct–Dec'][ZI_Q.indexOf(q.slice(5))] + ' ' + q.slice(0,4);
+const qMon = q => ['Mar','Jun','Sep','Dec'][ZI_Q.indexOf(q.slice(5))];
+function qOf(ds){ const y = +ds.slice(0,4), md = ds.slice(5); let q = (y-1) + '-12-25'; ZI_Q.forEach(x=>{ if (md >= x) q = y + '-' + x; }); return q; }
+const qNext = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===3 ? (y+1)+'-'+ZI_Q[0] : y+'-'+ZI_Q[i+1]; };
+const qPrev = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===0 ? (y-1)+'-'+ZI_Q[3] : y+'-'+ZI_Q[i-1]; };
+const qFY = q => { const y = +q.slice(0,4), m = +q.slice(5,7), s = m<=3 ? y-1 : y; return 'FY ' + String(s).slice(2) + '–' + String(s+1).slice(2); };
+const fLakh = v => Math.abs(v) >= 1e5 ? '₹' + (v/1e5).toFixed(1).replace(/\.0$/,'') + 'L' : fINR(v);
+const ziBanks = () => { const z = ziD(); return z && z.interest && z.interest.banks || null; };
+const ziLabel = c => { const b = ziBanks(); return (b && b.label && b.label[c]) || c; };
+// the Interests column for a Money account (INDmoney has none: it's on the Interest page only)
+function ziColOf(name){ const b = ziBanks(); return b && b.cols.includes(name) && !(b.label||{})[name] ? name : null; }
+const ziRow = q => { const b = ziBanks(); return b && b.rows.find(r=>r.date===q) || null; };
+const ziFilled = r => !!r && Object.keys(r.v||{}).length > 0;
+// the quarter waiting for its interest, if any (from its 25th until it's entered)
+function ziDue(){ if (!ziBanks()) return null; const q = qOf(todayISO()); return ziFilled(ziRow(q)) ? null : q; }
+// where zakat stands: the oldest frozen year still owing, else the live (estimated) one
+function ziZakatNow(){
+  const z = ziD(), Z = z && z.zakat; if (!Z || !Z.years || !Z.years.length) return null;
+  const owing = Z.years.find(y=>!y.live && y.left > 0.5), cur = owing || Z.years[Z.years.length-1];
+  const days = Math.max(0, Math.ceil((new Date(cur.date+'T00:00:00') - new Date(todayISO()+'T00:00:00'))/864e5));
+  return { Z, cur, owing: !!owing, days, yr: cur.date.slice(0,4) };
+}
+const PCT_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/></svg>';
+const MOON_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>';
+const CHEV_R = '<svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+// Accounts: two tiles under Bank & wallet / Construction
+function ziTilesHtml(){
+  const z = ziD(), n = ziZakatNow(), I = z && z.interest; if (!n && !I) return '';
+  const zt = n ? `<div class="card tap" data-zi role="button"><div class="k">Zakat · 1 Jan ’${n.yr.slice(2)}${chev('M9 5l7 7-7 7')}</div>
+      <div class="b2 num money">${fINR(n.owing ? n.cur.left : n.cur.due)}</div>
+      <div class="s">${n.owing ? `left of <b class="num money">${fINR(n.cur.due)}</b>` : `est. on <b class="num money">${fLakh(n.Z.nw)}</b>`}<br>Paid <b class="num money ${n.cur.paid>0?'up':''}">${fINR(n.cur.paid)}</b></div></div>` : '';
+  const it = I ? `<div class="card tap" data-zi role="button"><div class="k">Interest to give${chev('M9 5l7 7-7 7')}</div>
+      <div class="b2 num money">${fINR(Math.max(0, I.left))}</div>
+      <div class="s">Earned <b class="num money">${fINR(I.earned)}</b><br>Given <b class="num money">${fINR(I.given)}</b></div></div>` : '';
+  return `<div class="acctiles zitiles">${zt}${it}</div>`;
+}
+function ziRemindHtml(){
+  const q = ziDue(); if (!q) return '';
+  const n = ziBanks().cols.length;
+  return `<button class="card bkpill bankrow zirem" data-ziq="${q}"><span class="bk-ic iq">${PCT_IC}</span>
+    <span class="bk-t">Add ${esc(qLabel(q).replace(/ \d+$/,''))} interest</span><span class="bk-v zis">${n} banks</span>${CHEV_R}</button>`;
+}
+
+// a bank's page: its interest, every quarter (and the yearly rows before)
+function ziBankHtml(a){
+  const b = ziBanks(), col = ziColOf(a.name); if (!b || !col) return '';
+  const rows = b.rows.filter(r=>r.v && r.v[col]!=null);
+  const qs = rows.filter(r=>r.date >= ZI_QSTART), lastQ = qs[qs.length-1];
+  const due = ziDue(), next = due || qNext(qOf(todayISO()));
+  const fy = qFY(next), fySum = qs.filter(r=>qFY(r.date)===fy).reduce((s,r)=>s+r.v[col],0);
+  const all = rows.reduce((s,r)=>s+r.v[col],0);
+  const slots = [qPrev(qPrev(qPrev(next))), qPrev(qPrev(next)), qPrev(next), next];
+  const sv = slots.map(q=>{ const r = ziRow(q); return r && r.v[col]!=null ? r.v[col] : 0; }), mx = Math.max(1, ...sv);
+  const curI = slots.map((q,i)=>sv[i]>0 ? i : -1).filter(i=>i>=0).pop();
+  const nextRow = ziRow(next), pend = !ziFilled(nextRow);
+  const label = r => r.date >= ZI_QSTART ? qLabel(r.date) : r.date ? 'Up to ' + qMon(r.date) + ' ' + r.date.slice(0,4) : (r.fy || '').replace('-', '–');
+  const meta = r => r.date >= ZI_QSTART ? 'Quarter' : 'Yearly';
+  const list = (pend ? `<div class="lr due"><span>${esc(qLabel(next))}<small>${next===due ? 'Due now' : 'From 25 ' + qMon(next)}</small></span><em>Pending</em></div>` : '')
+    + rows.slice().reverse().map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
+  return `<div class="cbk zint"><div class="hd"><h2>Interest</h2><span>to give away</span></div>
+    <div class="st"><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>All time</span><b class="num money">${fINR(all)}</b></div></div>
+    <div class="bars">${sv.map((v,i)=>`<i class="${i===curI?'cur':''} ${v?'':'nil'}" style="height:${v ? Math.max(4, v/mx*100) : 2}%"></i>`).join('')}</div>
+    <div class="bl">${slots.map(q=>`<span>${qMon(q)}</span>`).join('')}</div>
+    <div class="lst">${list}</div>
+    ${pend ? `<button class="addcb" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))} interest</button>` : ''}</div>`;
+}
+
+// the quarter's entry: every bank at once
+function ziQBody(p){
+  const b = ziBanks(); if (!b) return '<div class="pg-load">Loading…</div>';
+  if (!p.vals) p.vals = {};
+  const tot = b.cols.reduce((s,c)=>s + (Number(numPlain(p.vals[c]||''))||0), 0);
+  const ic = c => ziColOf(c) ? bankMark(c) : `<span class="zqx">${esc(ziLabel(c).slice(0,3).toUpperCase())}</span>`;
+  return `<div class="card pg-card zq">
+    <div class="zqh"><span class="bk-ic iq">${PCT_IC}</span><div><div class="t">${esc(qLabel(p.q))}</div><div class="s">Credited around 25 ${qMon(p.q)} · from each bank app</div></div></div>
+    ${b.cols.map(c=>`<div class="zqr">${ic(c)}<span class="n">${esc(ziLabel(c))}</span><div class="inwrap"><span>₹</span><input data-zqv="${esc(c)}" inputmode="decimal" value="${esc(p.vals[c] ? groupNum(String(p.vals[c]),'en-IN') : '')}" placeholder="0"></div></div>`).join('')}
+    <div class="zqt"><span>Total this quarter</span><b class="num money up" id="zqTot">+${fINR2(tot)}</b></div>
+    ${p.err ? `<div class="err">${esc(p.err)}</div>` : ''}
+    <div class="hint">Saved to the Interests sheet and as Income · Interest into each account, so balances stay right. ${esc(b.cols.filter(c=>!ziColOf(c)).map(ziLabel).join(', '))} goes to the sheet only. Leave a bank blank if nothing came.</div>
+    <div class="btns"><button class="cancel" data-zqx>Later</button><button class="save" data-zqs ${p.busy?'disabled':''}>${p.busy ? 'Saving…' : 'Save ' + fINR(tot)}</button></div></div>`;
+}
+function wireZiQ(p){
+  const b = ziBanks(); if (!b) return;
+  $$('#page [data-zqv]').forEach(inp=>{ commaInput(inp,'en-IN'); inp.oninput = ()=>{ p.vals[inp.dataset.zqv] = numPlain(inp.value);
+    const tot = b.cols.reduce((s,c)=>s + (Number(p.vals[c]||0)||0), 0); $('#zqTot').textContent = '+' + fINR2(tot); $('#page [data-zqs]').textContent = 'Save ' + fINR(tot); }; });
+  const x = $('#page [data-zqx]'); if (x) x.onclick = popPage;
+  const s = $('#page [data-zqs]'); if (s) s.onclick = async ()=>{
+    const amounts = {}; b.cols.forEach(c=>{ const n = Number(p.vals[c]||0); if (n>0) amounts[c] = n; });
+    if (!Object.keys(amounts).length && !confirmNothing(p)) return;
+    p.busy = true; p.err = ''; renderPage();
+    try{ const r = await apiPost('interestSave', { date:p.q, amounts }); if (r && r.books) applyBooks(r.books);
+      toast(r && r.summary || 'Interest saved'); popPage(); loadExpenses(true); }
+    catch(e){ p.busy = false; p.err = e.message || 'Could not save'; renderPage(); }
+  };
+}
+// all blank: a second tap saves the quarter as nothing (so the reminder goes)
+function confirmNothing(p){ if (p.zeroOk) return true; p.zeroOk = true; p.err = 'Nothing entered. Tap Save again to mark this quarter as no interest.'; renderPage(); return false; }
+
+// Zakat & Interest page
+function ziPageBody(p){
+  const z = ziD(); if (!z) return '<div class="pg-load">Loading…</div>';
+  const n = ziZakatNow(), I = z.interest, row = (t, m, v, cls) => `<div class="row"><div class="l"><div class="n">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money ${cls||''}">${v}</div></div></div>`;
+  const pay = x => `<div class="row">${xTile('Donation')}<div class="l"><div class="n">${esc(x.note || 'Donation')}</div><div class="m">${esc(fDate(x.date))}${x.account ? ' · ' + esc(x.account) : ''}</div></div><div class="r"><div class="v num money">${fINR2(x.amount)}</div></div></div>`;
+  let h = '';
+  if (n){
+    const Z = n.Z, c = n.cur, frozen = Z.years.filter(y=>!y.live).slice().reverse(), start = fDate(Z.start);
+    h += `<div class="card pg-card pg-hero">
+      <div class="pg-id"><span class="zico">${MOON_IC}</span><div class="grow"><div class="t">Zakat</div><div class="s">${(Z.rate*100).toFixed(1).replace(/\.0$/,'')}% of net worth · every 1 Jan</div></div></div>
+      <div class="pg-big num money">${fINR(n.owing ? c.left : c.due)}</div>
+      <div class="pg-sub"><span class="k">${n.owing ? `left of ${fINR(c.due)} for 1 Jan ${n.yr}` : `estimated for 1 Jan ${n.yr} · in ${n.days} day${n.days===1?'':'s'}`}</span></div>
+      <div class="spstats"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span><b class="num money">${fINR(n.owing ? c.base : Z.nw)}</b></div>
+        <div><span>Paid</span><b class="num money ${c.paid>0?'up':''}">${fINR(c.paid)}</b></div><div><span>To pay</span><b class="num money">${fINR(Math.max(0, c.left))}</b></div></div></div>
+    <div class="sechead"><h2>Snapshots</h2></div>
+    <div class="card tight">${frozen.length ? frozen.map(y=>row('1 Jan ' + y.date.slice(0,4), `Net worth ${fINR(y.base)} · due ${fINR(y.due)}`, y.left > 0.5 ? fINR(y.left) + ' left' : 'Paid ✓', y.left > 0.5 ? '' : 'up')).join('')
+      : row('1 Jan ' + n.yr, 'First snapshot · net worth freezes that day', 'in ' + n.days + 'd')}</div>
+    <div class="sechead"><h2>Zakat given</h2><span class="zsub">since ${esc(start)}</span></div>
+    <div class="card tight">${Z.pays.length ? Z.pays.slice(0, p.allZ ? 999 : 8).map(pay).join('') : '<div class="empty">Nothing given since ' + esc(start) + ' yet</div>'}
+      ${Z.pays.length > 8 && !p.allZ ? `<button class="zmore" data-zall="Z">Show all ${Z.pays.length}</button>` : ''}</div>
+    ${(Z.hist||[]).length ? `<div class="sechead"><h2>History</h2><span class="zsub">before ${esc(start)}</span></div>
+    <div class="card tight">${Z.hist.slice().reverse().map(y=>row('1 Jan ' + y.date.slice(0,4), 'Due ' + fINR(y.due), esc(y.note || ''), /paid/i.test(y.note) ? 'up' : '')).join('')}
+      ${(Z.histPays||[]).length ? (p.histOpen ? Z.histPays.slice().reverse().map(x=>row(esc(x.note || 'Zakat'), esc(fDate(x.date)), fINR(x.amount))).join('') + `<button class="zmore" data-zhist>Hide payments</button>`
+        : `<button class="zmore" data-zhist>${Z.histPays.length} payments · ${fINR(Z.histPays.reduce((s,x)=>s+x.amount,0))}</button>`) : ''}</div>` : ''}`;
+  } else if (z.zakatError) h += `<div class="card"><div class="empty">Zakat: ${esc(z.zakatError)}</div></div>`;
+  if (I){
+    const b = I.banks || { cols:[], rows:[] }, per = b.cols.map(c=>[c, b.rows.reduce((s,r)=>s+(r.v[c]||0),0)]);
+    h += `<div class="card pg-card pg-hero" style="margin-top:22px">
+      <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">Earned on savings and holdings · give it all away</div></div></div>
+      <div class="pg-big num money">${fINR(Math.max(0, I.left))}</div><div class="pg-sub"><span class="k">${I.left < 0 ? fINR(-I.left) + ' given ahead' : 'still to give'}</span></div>
+      <div class="spstats"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
+    <div class="card tight zsrc">${row('Banks', b.cols.length + ' accounts · from the quarterly entries', fINR(I.sources.banks))}
+      <div class="zbk">${per.map(([c,v])=>`<div class="hrow"><span>${esc(ziLabel(c))}</span><b class="num money">${fINR(v)}</b></div>`).join('')}</div>
+      ${row('Stocks', 'LIQUIDCASE counts when sold', fINR(I.sources.stocks))}${row('Mutual funds', '', fINR(I.sources.mf))}${row('Dividends', '', fINR(I.sources.dividends))}</div>
+    <div class="sechead"><h2>Interest given</h2><span class="zsub">Donation · Interest</span></div>
+    <div class="card tight">${I.pays.length ? I.pays.slice(0, p.allI ? 999 : 8).map(pay).join('') : '<div class="empty">Nothing given yet</div>'}
+      ${I.pays.length > 8 && !p.allI ? `<button class="zmore" data-zall="I">Show all ${I.pays.length}</button>` : ''}</div>`;
+  } else if (z.interestError) h += `<div class="card"><div class="empty">Interest: ${esc(z.interestError)}</div></div>`;
+  return h + `<div class="zbtns"><button data-zgive="Jakat">+ Give zakat</button><button data-zgive="Interest">+ Give interest</button></div>`;
+}
+function wireZiPage(p){
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  $$('#page [data-zall]').forEach(b=>b.onclick=()=>{ p['all'+b.dataset.zall] = true; again(); });
+  $$('#page [data-zhist]').forEach(b=>b.onclick=()=>{ p.histOpen = !p.histOpen; again(); });
+  $$('#page [data-zgive]').forEach(b=>b.onclick=()=>{
+    const subs = ((xd().categories||[]).find(c=>/^donation$/i.test(c.name))||{}).subs || [];
+    const sub = subs.find(s=>b.dataset.zgive==='Jakat' ? /^(jakat|zakat)$/i.test(s) : /^interest$/i.test(s)) || b.dataset.zgive;
+    const cat = (xCats().find(c=>/^donation$/i.test(c))) || 'Donation';
+    openXSheet(null, 'expense', { category:cat, sub });
+  });
+}
+
 // the page header names the kind of account; the name itself is in the card below
 function accPageTitle(name){ const a = accByName(name); if (!a) return name;
   const k = accKind(a); return k==='card' ? 'Credit card' : isCashAcc(a) ? 'Cash' : k==='wallet' ? 'Wallet' : k==='construction' ? 'Construction' : 'Bank account'; }
@@ -5872,7 +6070,7 @@ function rerenderSpendViews(){
   paintDfab();
   if (activeView==='spend') renderSpend();
   const top = pageStack[pageStack.length-1];
-  if (top && /^(expcat|inccat|budgets|acct|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
+  if (top && /^(expcat|inccat|budgets|acct|zakat|constr|books|bklog|recurring|profile|bucket)$/.test(top.kind)){ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; }
 }
 async function saveXSheet(){
   const amount = xAmt();
