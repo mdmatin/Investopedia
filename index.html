@@ -1650,7 +1650,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31z';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31za';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5173,7 +5173,7 @@ function accBody(p){
         <button class="xbud" data-editacc>Edit account
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
       ${ed}
-      ${card && a.limit ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${bal>0 ? fINR2(bal) + ' in credit · ' : ''}${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
+      ${card && a.limit ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
       <div class="spstats lcr"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
