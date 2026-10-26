@@ -375,8 +375,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .spsum .big{font-family:var(--font-disp);font-size:36px;font-weight:600;letter-spacing:-1px;margin-top:2px;line-height:1.1}
 .spsum .of{font-size:15px;color:var(--ink-2);margin-top:2px}
 .row .m.cardm{white-space:normal;overflow:visible}
-.ccl .pbar{height:6px;margin-top:8px}          /* card rows: name, bar, available · due — evenly spaced */
-.ccl .pbar + .cardm{margin-top:7px}
+.ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
+.ccl .pbar + .cardm{margin-top:3px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
 /* budget (Money Manager style, compact) */
@@ -1035,7 +1035,7 @@ input[type=date]::-webkit-datetime-edit{padding:0}
 .prof .themes{display:flex;justify-content:space-around;padding:16px 10px 12px}
 .prof .th{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
 .prof .mini{width:62px;height:112px;border-radius:12px;border:1px solid rgba(128,128,128,.25);overflow:hidden;position:relative}
-.prof .mini.l{background:#f2f2f7}.prof .mini.d{background:#000}.prof .mini.a{background:linear-gradient(90deg,#f2f2f7 50%,#000 50%)}
+.prof .mini.l{background:#f2f2f7}.prof .mini.d{background:#000}.prof .mini.a{background:linear-gradient(90deg,#f2f2f7 50%,#000 50%) border-box}
 .prof .mini span{position:absolute;left:8px;right:8px;height:10px;border-radius:3px}
 .prof .mini.l span{background:#fff}.prof .mini.d span{background:#1c1c1e}.prof .mini.a span{background:linear-gradient(90deg,#fff 50%,#1c1c1e 50%)}
 .prof .rad{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink-3);display:grid;place-items:center}
@@ -1647,7 +1647,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31v';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
