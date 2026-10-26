@@ -1652,7 +1652,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31ze';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zf';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5038,8 +5038,8 @@ function wireEpf(p){
   // tap an entry to change or delete it (the server takes out its Money lines too)
   $$('#page [data-epfe]').forEach(r=>r.onclick=()=>{ const [k, i] = r.dataset.epfe.split(':'), c = epfCalc(), x = (k==='c' ? c.C : k==='i' ? c.I : c.W)[+i]; if (!x) return;
     p.epf = k; p.epfErr = ''; p.epfDelArm = false;
-    p.epfEd = k==='c' ? { kind:'contrib', date:x.date, emp:x.emp, er:x.er } : k==='i' ? { kind:'interest', date:x.date, amount:x.amount } : { kind:'withdraw', date:x.date, amount:x.amount };
-    p.epfF = k==='c' ? { ym:x.date.slice(0,7), tot:Math.round((x.emp + x.er) * 100) / 100 } : k==='i' ? { fy:x.fy != null ? x.fy : fyOf(x.date), amt:x.amount } : { date:x.date, amt:x.amount, tds:x.tds || '' };
+    p.epfEd = k==='c' ? { kind:'contrib', id:x.id, date:x.date, emp:x.emp, er:x.er } : k==='i' ? { kind:'interest', id:x.id, date:x.date, amount:x.amount } : { kind:'withdraw', id:x.id, date:x.date, amount:x.amount };   // the ID ties it to its Money lines
+    p.epfF = k==='c' ? { ym:x.date.slice(0,7), tot:Math.round((x.emp + x.er) * 100) / 100 } : k==='i' ? { fy:x.fy != null ? x.fy : fyOf(x.date), amt:x.amount } : { date:x.date, amt:x.amount, tds:x.tds || '', acc:x.account || undefined };
     again(); const f = $('#page .epform'); if (f) $('#page').scrollTop += f.getBoundingClientRect().top - 140; });
   const f = () => (p.epfF = p.epfF || {});
   $$('#page [data-epfv]').forEach(i=>i.oninput=()=>{ f()[i.dataset.epfv] = numPlain(i.value);
