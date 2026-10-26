@@ -1173,6 +1173,19 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .cfund.tap{cursor:pointer}
 /* Accounts top: two tiles */
 .acctiles{display:flex;gap:10px;margin:0 16px 14px}
+/* Accounts: the Liquid card */
+.liq{padding:16px 18px 12px}
+.liq .hd{display:flex;justify-content:space-between;align-items:center}.liq .k{font-size:13px;color:var(--ink-2)}
+.liq .big{font:600 32px/1.1 var(--font-disp);letter-spacing:-.8px;margin-top:4px}
+.okchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--up);background:var(--up-bg);padding:3px 9px;border-radius:999px;cursor:pointer}
+.okchip[hidden]{display:none}.okchip i{width:6px;height:6px;border-radius:50%;background:var(--up)}
+.okchip.bad{color:#c77700;background:rgba(255,159,10,.16)}.okchip.bad i{background:#ff9f0a}html[data-theme=dark] .okchip.bad{color:#ffb340}
+.liq .g3{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline)}
+.liq .g3>div:nth-child(2){text-align:center}.liq .g3>div:nth-child(3){text-align:right}
+.liq .g3 span{display:block;font-size:12px;color:var(--ink-2)}.liq .g3 b{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.liq .ter{display:flex;justify-content:space-between;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline)}
+.liq .ter button{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink-3);white-space:nowrap;padding:2px 0}
+.liq .ter b{font-weight:500;color:var(--ink-2)}.liq .ter svg{width:10px;height:10px}
 /* Zakat & Interest */
 .zitiles{margin-top:-4px}
 .acctiles .s b.up{color:var(--up)}
@@ -1634,7 +1647,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31s';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4883,15 +4896,20 @@ function spAccountsHtml(){
   const sum = { bank:0, card:0, wallet:0, construction:0 }, cards = { owed:0, credit:0 };
   acc.forEach(a=>{ const b = accBalance(a.name), k = accKind(a); sum[k] += b;
     if (k==='card'){ if (b<0) cards.owed += -b; else cards.credit += b; } });
-  // two tiles: Bank & wallet (with its parts) beside Construction (whole fund, this month's and all-time spend; opens its page)
-  const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(spMonth) : null;  // the month switcher picks the Spent month
-  const head = `<div class="acctiles">
-      <div class="card"><div class="k">Bank &amp; wallet</div><div class="b2 num money">${fINR(sum.bank + sum.wallet)}</div>
-        <div class="s">Bank <b class="num money">${fINR(sum.bank)}</b><br>Wallet <b class="num money">${fINR(sum.wallet)}</b></div></div>
-      ${hasC ? `<div class="card tap" data-constr role="button"><div class="k">Construction${chev('M9 5l7 7-7 7')}</div><div class="b2 num money">${fINR(cf.total)}</div>
-        <div class="s">Spent · ${esc(ymShort(spMonth).slice(0,3) + (spMonth.slice(0,4)===ymNow().slice(0,4) ? '' : ' ’'+spMonth.slice(2,4)))} <b class="num money">${fINR(cf.spentM)}</b><br>So far <b class="num money">${fINR(cf.spentAll)}</b></div></div>` : ''}</div>`;
+  // one card: Liquid (bank + wallet − what the cards owe), its three parts, the Books chip, and a
+  // quieter line for Construction (whole fund, investments included), Zakat and Interest
+  const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(spMonth) : null;
+  const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
+  const ter = [hasC ? `<button data-constr>Constr. <b class="num money">${fKL(cf.total)}</b>${C}</button>` : '',
+    n ? `<button data-zi="zakat">Zakat ’${n.yr.slice(2)} <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b>${C}</button>` : '',
+    I ? `<button data-zi="interest">Interest <b class="num money">${fKL(Math.max(0, I.left))}</b>${C}</button>` : ''].filter(Boolean).join('');
+  const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
+      <div class="big num money">${fINR(liquid)}</div>
+      <div class="g3"><div><span>Bank</span><b class="num money">${fLakh(sum.bank)}</b></div><div><span>Wallet</span><b class="num money">${fLakh(sum.wallet)}</b></div>
+        <div><span>Cards</span><b class="num money">${cards.owed > 0 ? '−' + fLakh(cards.owed) : fINR(0)}</b></div></div>
+      ${ter ? `<div class="ter">${ter}</div>` : ''}</div>`;
   // the Accounts / Transfers / Income switch is gone: transfers and income are in Activity (filter)
-  return head + ziTilesHtml() + `<button class="card bkpill" id="books" hidden aria-label="Books"></button>` + bankBannerHtml() + ziRemindHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
+  return head + bankBannerHtml() + ziRemindHtml() + accGroupsHtml(acc) + `<button class="addacc" data-addacc>+ Add account</button>`;
 }
 // The construction fund: Net Worth's For Construction rows, with the rows that
 // have a Construction account taken live from it. The table's rows carry the account's
@@ -5014,6 +5032,9 @@ function paintBooks(){
   const gap = off && ivOff ? (Math.abs(b.diff) >= Math.abs(iv.gap) ? b.diff : iv.gap) : off ? b.diff : ivOff ? iv.gap : 0;
   el.classList.toggle('off', bad);
   el.setAttribute('aria-label', bad ? `Books off by ${fINR2(Math.abs(gap))}` : 'Books balanced');
+  el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
+  // the Liquid card's chip: green "Books", or orange with the gap
+  if (el.classList.contains('okchip')){ el.classList.toggle('bad', bad); el.innerHTML = `<i></i>Books${bad ? ' ' + (gap<0?'−':'+') + fINR(Math.abs(gap)) : ''}`; return; }
   el.innerHTML = `<span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
     <span class="bk-t">${bad ? 'Books off' : 'Books balanced'}</span>${bad ? `<span class="bk-v num money">${gap<0?'−':'+'}${fINR2(Math.abs(gap))}</span>` : ''}
     <svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
@@ -5251,6 +5272,7 @@ function qOf(ds){ const y = +ds.slice(0,4), md = ds.slice(5); let q = (y-1) + '-
 const qNext = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===3 ? (y+1)+'-'+ZI_Q[0] : y+'-'+ZI_Q[i+1]; };
 const qPrev = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===0 ? (y-1)+'-'+ZI_Q[3] : y+'-'+ZI_Q[i-1]; };
 const qFY = q => { const y = +q.slice(0,4), m = +q.slice(5,7), s = m<=3 ? y-1 : y; return 'FY ' + String(s).slice(2) + '–' + String(s+1).slice(2); };
+const fKL = v => { const a = Math.abs(v), t = x => x.toFixed(x < 10 ? 2 : 1).replace(/\.?0+$/,''); return (v<0?'−':'') + (a >= 1e5 ? '₹' + t(a/1e5) + 'L' : a >= 1e3 ? '₹' + t(a/1e3) + 'K' : '₹' + Math.round(a)); };
 const fLakh = v => Math.abs(v) >= 1e5 ? '₹' + (v/1e5).toFixed(1).replace(/\.0$/,'') + 'L' : fINR(v);
 const ziBanks = () => { const z = ziD(); return z && z.interest && z.interest.banks || null; };
 const ziLabel = c => { const b = ziBanks(); return (b && b.label && b.label[c]) || c; };
@@ -6525,7 +6547,7 @@ function defaultsBody(){
   const cos = xCompanies();
   const typeRows = types.map(t=>{ const [d, tn] = XT_ICON[xtKey(t)];
     // Cashback lands on a card, so its choices are the cards
-    if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(AK)), 'The card it’s for');
+    if (isCashback(t)) return row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(AK)));
     let r = row(`<path d="${d}"/>`, tint[tn]||'#8e8e93', esc(t), pick('income:' + t + ':account', [['','Same as Into'],['__none','None']].concat(A)));
     if (/^salary$/i.test(t)) r += row(I.co, '#0b5fc1', 'Salary company', pick('income:Salary:company', [['', 'Latest' + (lastSource('Salary') ? ' (' + lastSource('Salary') + ')' : '')], ['__none','None']].concat(cos.map(c=>[c,c]))));
     return r; }).join('');
