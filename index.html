@@ -439,7 +439,7 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-row.slim .vb-tr em{top:-7px;bottom:auto;width:0;height:0;margin-left:-4px;background:none;border-radius:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink-2)}
 .vb-row.slim .vb-n{font-size:12.5px;margin-top:6px}
 /* monthly pie (Money Manager style) */
-.captabs{display:flex;gap:26px;margin:2px 0 12px;padding:0 20px;border-bottom:1px solid var(--hairline);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.captabs{display:flex;gap:26px;margin:2px 16px 12px;padding:0 4px;border-bottom:1px solid var(--hairline);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .captabs::-webkit-scrollbar{display:none}
 .captabs button{flex:none;padding:10px 0 11px;font-size:15px;letter-spacing:-.2px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
 .captabs button.on{color:var(--ink);font-weight:600;border-bottom-color:var(--blue)}
@@ -1343,7 +1343,7 @@ body.paged{overflow:hidden}
 .dvrow:first-child{border-top:0}
 .dvrow span{color:var(--ink-2)} .dvrow b{font-weight:600} .dvrow .dvt{color:var(--ink)}
 .kgrid > div{display:flex;flex-direction:column;gap:2px;min-width:0}
-.kgrid i{font-style:normal;font-size:13px;font-weight:500}
+.kgrid i{font-style:normal;font-size:13px;font-weight:500}.kgrid span em{font-style:normal;font-weight:500;font-size:11px}.hstats .kgrid > div > span{white-space:nowrap}
 .kgrid b i{font-size:12px;letter-spacing:-.1px}
 .kgrid.kfit{grid-template-columns:auto auto auto;justify-content:space-between}
 .kgrid.k2{grid-template-columns:1fr 1fr}
@@ -1665,7 +1665,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zl';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zm';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2364,7 +2364,7 @@ function renderAssets(holdings, usdInr){
         ${histInner(ck, assetChart, 'assetChart')}
         <div class="arow num">
           <div><span>Invested</span><b class="money">${km(invested)}</b></div>
-          <div><span>Returns</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
+          <div><span>Current P&amp;L</span><b class="money ${cls(ret)}">${skm(ret)}${rp!=null?` <i>(${fPct(rp,false)})</i>`:''}</b></div>
           <div><span>XIRR</span><b class="${xr!=null?cls(xr):''}">${xr!=null?fPct(xr,false):'—'}</b></div>
         </div>`;
       $$('#assetSum [data-ccy]').forEach(b=>b.onclick=()=>{ usInr = b.dataset.ccy==='inr'; renderAssets(all, usdInr); });
@@ -2437,7 +2437,7 @@ function renderAssets(holdings, usdInr){
           <div class="k">Today</div>
           <div class="vv ${cls(day)}" data-short="${esc(short(h)(Math.abs(day)))}"><span class="arrow">${day>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(day))}</span></div></div>`}
         <div class="right">
-          <div class="k">Returns ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
+          <div class="k">Current P&amp;L ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
           <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}">${ret>=0?'+':'−'}<span class="amt">${m(Math.abs(ret))}</span></div></div>
       </div>
     </div>`;
@@ -3969,7 +3969,7 @@ function holdingBody(ticker){
       <div><span>Invested</span><b>${mm(h.invested)}</b></div>
       <div><span>Avg cost</span><b>${m(h.avg)}</b></div>
       <div><span>Quantity</span><b>${qtyFmt(h.qty)}</b></div>
-      <div><span>Current returns</span><b class="${cls(ret)}">${sgn(ret,mm)}</b>${pct!=null?`<i class="${cls(pct)}">(${fPct(pct,false)})</i>`:''}</div>
+      <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${fPct(pct,false)})</em>`:''}</span><b class="${cls(ret)}">${sgn(ret,mm)}</b></div>
       <div><span>Realised</span><b class="${cls(h.realized)}">${sgn(h.realized,mm)}</b></div>
       <div><span>Total P&amp;L</span><b class="${cls(h.totalPnl)}">${sgn(h.totalPnl,mm)}</b></div>
     </div>
@@ -4101,12 +4101,12 @@ function platformBody(name){
   const pdivs = divsForPlatform(name);            // shown only when this platform has paid any
   const stats = `<div class="card hstats num"><div class="kgrid k2">
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
-      <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
+      <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
     ${pdivs.length ? `<button class="hrow hlink" data-pdiv><span>Dividends earned</span><b class="money">${nativeMoney(true)(pdivs.reduce((a,x)=>a+x.amount,0))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></b></button>` : ''}
-    <div class="hrow tr2"><span>Total returns</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
+    <div class="hrow tr2"><span>Total P&amp;L</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
     ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
@@ -4192,11 +4192,11 @@ function bucketBody(name){
   }
   const stats = `<div class="card hstats num"><div class="kgrid k2">
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
-      <div><span>Current returns${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
+      <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
-    <div class="hrow tr2"><span>Total returns</span><b class="money">${tot<0?'−':tot>0?'+':''}${fINR(Math.abs(tot))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
+    <div class="hrow tr2"><span>Total P&amp;L</span><b class="money">${tot<0?'−':tot>0?'+':''}${fINR(Math.abs(tot))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
     ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
