@@ -1686,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzc';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzd';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5771,10 +5771,10 @@ function accFormBody(p){
         <div class="f"><label>Since</label><input id="afDate" type="date" value="${esc(f.openDate||'')}"></div>
         ${card ? `<div class="f"><label>Credit limit</label><input id="afLimit" inputmode="decimal" value="${f.limit?groupNum(String(f.limit),'en-IN'):''}" placeholder="optional"></div>
         <div class="f"><label>Bill due day</label><input id="afDue" inputmode="numeric" value="${esc(String(f.dueDay||''))}" placeholder="1–31"></div>` : ''}
-      ${card && a ? `<div class="xlbl">Cashback is entered as</div>
-      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${cbMode(a.name)===k?'on':''}">${l}</button>`).join('')}</div>` : ''}
       </div>
       <p class="hint" style="margin:0 4px 14px">${card ? 'What you owed on the card on the “Since” date.' : 'The balance on the “Since” date.'} Entries before that date don't count toward the balance.</p>
+      ${card && a ? `<div class="xlbl">Cashback is entered as</div>
+      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${cbMode(a.name)===k?'on':''}">${l}</button>`).join('')}</div>` : ''}
       <button class="btn" data-afsave>${a ? 'Save' : 'Add account'}</button>
       ${a ? `<button class="btn danger" data-afdel>${uses ? 'Hide account' : 'Remove account'}</button>
         <p class="hint">${uses ? `It has ${uses} entr${uses===1?'y':'ies'}, so it's hidden rather than deleted — its history stays. Tick Active on the Accounts tab to bring it back.` : 'It has no entries, so it is removed from the Accounts tab.'}</p>` : ''}
