@@ -182,7 +182,8 @@ main{padding:0}
 .tile.gd{--tile:#fdf4dc;--tileink:#8a6a00}
 .tile.ch{--tile:#eeeef0;--tileink:#6e6e73}
 .tile.lq{--tile:#e2f4f7;--tileink:#0b6b7d}   /* liquid / parking          */
-.tile.rt{--tile:#eceaf7;--tileink:#4a44a8}   /* NPS, EPF, PPF             */
+.tile.rt{--tile:#eceaf7;--tileink:#4a44a8}   /* NPS, PPF                  */
+.tile.ep{--tile:#fbe9e7;--tileink:#b4361f}   /* EPF                       */
 .tile.bk{--tile:#e9f1ee;--tileink:#2d6b5c}   /* wallets, bank balances    */
 .tile.bu{--tile:#eef0f4;--tileink:#4a5568}   /* anything unknown */
 .tile.pk{--tile:#fdeaf0;--tileink:#b8326a}   /* buckets: one more colour */
@@ -909,6 +910,7 @@ html[data-theme=dark] .tile.gd{--tile:rgba(255,214,10,.16);--tileink:#ffd60a}
 html[data-theme=dark] .tile.ch{--tile:#2c2c2e;--tileink:#a1a1a6}
 html[data-theme=dark] .tile.lq{--tile:rgba(100,210,255,.16);--tileink:#64d2ff}
 html[data-theme=dark] .tile.rt{--tile:rgba(94,92,230,.22);--tileink:#a5a3ff}
+html[data-theme=dark] .tile.ep{--tile:rgba(255,105,80,.18);--tileink:#ff8a73}
 html[data-theme=dark] .tile.bk{--tile:rgba(48,176,140,.18);--tileink:#63d1b0}
 html[data-theme=dark] .tile.bu{--tile:#2c2c2e;--tileink:#aeb4c2}
 html[data-theme=dark] .tile.pk{--tile:rgba(255,55,95,.18);--tileink:#ff7a9a}
@@ -1684,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zza';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzb';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2112,6 +2114,7 @@ const ICONS = {
   crypto:  S(`<path d="M12 2.9 20.1 7.5v9L12 21.1 3.9 16.5v-9z"/><path d="M12 8.2 15.4 12 12 15.8 8.6 12z"/>`),
   charges: S(`<path d="M6 3.4h12v17.2l-2.4-1.6-2.4 1.6-2.4-1.6L8.4 20.6 6 19z"/><path d="M9.2 8.2h5.6M9.2 12.2h5.6"/>`),
   liquid:  S(`<path d="M12 3.2c3.4 3.7 5.6 6.4 5.6 9.2A5.6 5.6 0 0 1 6.4 12.4c0-2.8 2.2-5.5 5.6-9.2z"/>`),
+  epf:     S(`<circle cx="14" cy="7.5" r="3.5"/><path d="M3 14h3.5l3.2-1.1a2 2 0 0 1 1.6.1l2.4 1.2a1.2 1.2 0 0 1-.6 2.3H10"/><path d="M6.5 19.5H12l7.2-3.6a1.6 1.6 0 0 0-1.4-2.8L14 15"/><path d="M3 14v6"/>`),
   retire:  S(`<path d="M12 3.2 19 6v5.6c0 4.2-2.9 7.4-7 9.2-4.1-1.8-7-5-7-9.2V6z"/><path d="M9.4 12.1l1.9 1.9 3.5-3.6"/>`),
   bank:    S(`<rect x="3.2" y="6.6" width="17.6" height="12.4" rx="2.6"/><path d="M3.2 10.4h17.6"/><path d="M16.4 15.2h1.6"/>`),
   bucket:  S(`<path d="M4.4 6.6h15.2l-1.5 12.1a2 2 0 0 1-2 1.7H7.9a2 2 0 0 1-2-1.7z"/><path d="M3.2 6.6a8.8 3.2 0 0 1 17.6 0"/>`),
@@ -2127,7 +2130,8 @@ const ICON_MAP = [
   [/^crypto/i,                            ['crypto','cr']],
   [/^(charges?|fees?|less:)/i,            ['charges','ch']],
   [/^liquid/i,                            ['liquid','lq']],
-  [/^(nps|epf|ppf|pension)/i,             ['retire','rt']],
+  [/^epf/i,                               ['epf','ep']],      // its own icon and colour, apart from NPS
+  [/^(nps|ppf|pension)/i,                 ['retire','rt']],
   [/(bank|wallet|account|balance|cash)/i, ['bank','bk']],
   [/^smallcap/i,                          [()=>cap(1),'in']],
   [/^midcap/i,                            [()=>cap(2),'in']],
@@ -5004,7 +5008,7 @@ function spAccountsHtml(){
   const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
   // pills under the Liquid card: Construction, Zakat, Interest, each wearing the same icon as its own page
   const ter = [hasC ? `<button data-constr>${xTile('Construction')}Constr. <b class="num money">${fKL(cf.total)}</b></button>` : '',
-    I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Interest <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : '',
+    I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Int. <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : '',
     n ? `<button data-zi="zakat"><span class="zico">${MOON_IC}</span>Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : ''].filter(Boolean).join('');   // Construction · Interest · Zakat
   const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
       <div class="big num money">${fINR(liquid)}</div>
