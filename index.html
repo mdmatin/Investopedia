@@ -377,7 +377,11 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .row .m.cardm{white-space:normal;overflow:visible}
 .ccl .pbar{height:5px;margin-top:5px}          /* card rows: name, bar, available · due — evenly spaced */
 .ccl .pbar + .cardm{margin-top:3px}
-.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}.epseg{margin-top:18px}.epseg + .cbform.epform{margin-top:2px}.sechead.epadd{margin-top:0;padding-top:0;min-height:0}.sechead.epadd + .cmhead{padding-top:4px}
+.cbform.epform{margin:0 16px 14px}@media (max-width:400px){.cbform.epform{margin:0 12px 14px}}   /* same edges as the list cards */.epform .eph{font-size:12.5px;color:var(--ink-2);margin-top:6px}.epform select{position:absolute;inset:0;opacity:0;width:100%}
+.tabsw{display:flex;align-items:center;gap:10px;margin:18px 16px 14px}.tabsw .seg{flex:1;margin:0}.tabsw .seg button{font-size:14px;padding:8px 4px;letter-spacing:-.2px}
+.epaddrow .n{color:var(--blue);font-weight:500}.epai{width:32px;height:32px;border-radius:50%;background:rgba(0,102,204,.1);color:var(--blue);display:grid;place-items:center;flex:0 0 auto}.epai svg{width:16px;height:16px}html[data-theme=dark] .epai{background:rgba(41,151,255,.16)}
+.card.tight .epaddrow:first-child{border-top:0}.epaddc{margin-bottom:4px}
+.tabbody{min-height:calc(100vh - 150px)}
 .epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
 .epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
@@ -1653,7 +1657,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zg';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zj';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3935,13 +3939,13 @@ function holdingBody(ticker){
              : txns.length ? txns.map(t=>txnRow(t,true)).join('')
              : '<div class="pg-load">No orders found for this ticker</div>';
   const top = pageStack[pageStack.length-1] || {}, tab = top.tab || 'overview';
-  const seg = `<div class="utabs" id="hdSeg">
+  const seg = `<div class="tabsw"><div class="seg" id="hdSeg">
       <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
-      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div></div>`;
   const body = tab==='orders'
     ? `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight">${list}</div>`
     : stats + held;
-  return card + seg + body;
+  return card + seg + `<div class="tabbody">` + body + `</div>`;   // room below the tabs so switching never jumps
 }
 
 // Annualised return from the platform's orders: buys out, sells in, today's value in.
@@ -4020,9 +4024,9 @@ function platformBody(name){
   const c = platCache[name] || {}, txns = c.txns || [];
   const xr = c.txns && !c.partial ? platXirr(txns, val) : null;
   const top = pageStack[pageStack.length-1] || {}, tab = top.tab || 'overview';
-  const seg = `<div class="utabs" id="hdSeg">
+  const seg = `<div class="tabsw"><div class="seg" id="hdSeg">
       <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
-      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div></div>`;
 
   if (tab==='orders'){
     const buys = txns.filter(t=>t.order==='Buy').length, sells = txns.length - buys;
@@ -4031,7 +4035,7 @@ function platformBody(name){
                : txns.length ? txns.map(t=>txnRow(t,true,true)).join('')
                : '<div class="pg-load">No orders found on this platform</div>';
     const srch = c.txns && txns.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search orders')}</div>` : '';
-    return card + seg + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>`;
+    return card + seg + `<div class="tabbody">` + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>` + `</div>`;   // room below the tabs so switching never jumps
   }
 
   // 2 · Overview — the same tiles as a ticker, then the holdings on this platform
@@ -4057,7 +4061,7 @@ function platformBody(name){
         <div class="r"><div class="v num money">${fINR(r.value)}</div>
           <div class="p"><span class="pill sm ${cls(g)} num money">${fPct(gp)}</span></div></div></div>`;
     }).join('') || '<div class="empty">Nothing held here</div>'}</div>`;
-  return card + seg + stats + held;
+  return card + seg + `<div class="tabbody">` + stats + held + `</div>`;   // room below the tabs so switching never jumps
 }
 
 /* ---------- one bucket's page ----------
@@ -4117,9 +4121,9 @@ function bucketBody(name){
       ${anyDay ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(day, fINR)}${dayPct!=null?` <span class="${cls(dayPct)}">(${fPct(Math.abs(dayPct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
       ${histInner('B:'+name, top.showChart)}
     </div>`;
-  const seg = `<div class="utabs" id="hdSeg">
+  const seg = `<div class="tabsw"><div class="seg" id="hdSeg">
       <button data-ht="overview" class="${tab==='overview'?'on':''}">Overview</button>
-      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div>`;
+      <button data-ht="orders" class="${tab==='orders'?'on':''}">Orders</button></div></div>`;
 
   if (tab==='orders'){
     const buys = txns.filter(t=>t.order==='Buy').length, sells = txns.length - buys;
@@ -4128,7 +4132,7 @@ function bucketBody(name){
                : txns.length ? txns.map(t=>txnRow(t,true,true)).join('')
                : '<div class="pg-load">No orders in this bucket</div>';
     const srch = c.txns && txns.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search orders')}</div>` : '';
-    return card + seg + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>`;
+    return card + seg + `<div class="tabbody">` + srch + `${c.txns&&txns.length?`<div class="ocnt">${buys} buy${buys===1?'':'s'} · ${sells} sell${sells===1?'':'s'}</div>`:''}<div class="card tight" id="pgList">${list}</div>` + `</div>`;   // room below the tabs so switching never jumps
   }
   const stats = `<div class="card hstats num"><div class="kgrid k2">
       <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
@@ -4149,7 +4153,7 @@ function bucketBody(name){
     }).join('') || '<div class="empty">Nothing held in this bucket</div>'}</div>`;
   // XIRR needs the orders: fetch them quietly once the page is up
   if (!c.txns && !c.loading && !c.err) setTimeout(()=>loadBucket(name), 0);
-  return card + seg + stats + held;
+  return card + seg + `<div class="tabbody">` + stats + held + `</div>`;   // room below the tabs so switching never jumps
 }
 
 /* ==========================================================================
@@ -5005,11 +5009,13 @@ function epfBody(p){
 const EPF_TABS = [['c','Contributions','data-epfc'],['i','Interest','data-epfi'],['w','Withdrawals','data-epfw']];
 function epfTabs(p, c, ints, wds, contrib){
   const t = p.epfTab = p.epf || p.epfTab || 'c', T = EPF_TABS.find(x=>x[0]===t);
-  const seg = `<div class="seg segwide epseg">${EPF_TABS.map(([k,l])=>`<button data-epft="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div>`;
-  const head = (p.epf===t ? '' : `<div class="sechead epadd"><span></span><button class="hadd" ${T[2]}>+ Add ${T[1]==='Interest' ? 'interest' : T[1]==='Contributions' ? 'contribution' : 'withdrawal'}</button></div>`) + (p.epf===t ? epfForm(p, c) : '');   // the tab is the title
-  const body = t==='c' ? (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>')
-    : `<div class="card tight">${(t==='i' ? ints : wds) || `<div class="empty">No ${t==='i' ? 'interest' : 'withdrawals'} yet</div>`}</div>`;
-  return seg + head + body;
+  const word = t==='c' ? 'contribution' : t==='i' ? 'interest' : 'withdrawal', open = p.epf===t;
+  const seg = `<div class="tabsw"><div class="seg epseg">${EPF_TABS.map(([k,l])=>`<button data-epft="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div></div>`;
+  // "+ Add …" is the list's first row; tapped, the form takes its place
+  const add = open ? '' : `<button class="row tap epaddrow" ${T[2]}><span class="epai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><div class="l"><div class="n">Add ${word}</div></div></button>`;
+  const body = t==='c' ? (add ? `<div class="card tight epaddc">${add}</div>` : '') + (contrib || '<div class="card tight"><div class="empty">No contributions yet</div></div>')
+    : `<div class="card tight">${add}${(t==='i' ? ints : wds) || `<div class="empty">No ${t==='i' ? 'interest' : 'withdrawals'} yet</div>`}</div>`;
+  return seg + `<div class="tabbody">${open ? epfForm(p, c) : ''}${body}</div>`;   // tabbody keeps a screen's height below the tabs, so switching never jumps
 }
 // a year with contributions and no interest yet: from August after it ends (EPFO credits it then)
 function epfIntDue(c){
