@@ -1650,7 +1650,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31y';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31z';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5225,12 +5225,12 @@ function cashbackHtml(a, p){
         <div class="btns"><button class="cancel" data-cbx>Cancel</button><button class="save" data-cbsave>Save</button></div></div>`;
     }
   }
-  return `<div class="cbk"><div class="hd"><h2>Cashback</h2></div>
+  return `<div class="cbk"><div class="hd"><h2>Cashback</h2>${form ? '' : `<button class="hadd" data-cbadd>${mode==='total' ? 'Update total' : '+ Add'}</button>`}</div>
     <div class="st"><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>Avg / month</span><b class="num money">${active ? fINR(yearSum/active) : '—'}</b></div></div>
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
     ${rows ? `<div class="lst">${rows}</div>` : ''}
-    ${form || `<button class="addcb" data-cbadd>${mode==='total' ? 'Update cashback total' : '+ Add cashback received'}</button>`}
+    ${form || ''}
   </div>`;
 }
 function wireCashback(p){
