@@ -1213,7 +1213,7 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .lpills{display:flex;justify-content:space-between;gap:6px;margin:0 16px 4px;overflow-x:auto;scrollbar-width:none}.lpills::-webkit-scrollbar{display:none}
 .lpills button{flex:1 1 auto;justify-content:center;display:flex;align-items:center;gap:4px;padding:6px 8px 6px 6px;border-radius:999px;background:var(--canvas);border:1px solid var(--card-edge);font-size:12px;letter-spacing:-.15px;color:var(--ink-2);white-space:nowrap}
 .lpills b{color:var(--ink);font-weight:600}
-.lpi{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);flex:none}.lpi svg{width:11px;height:11px}
+.lpills .tile,.lpills .zico{flex:0 0 20px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center}.lpills .tile svg,.lpills .zico svg{width:12px;height:12px}
 .liq .ter,.liq.ter{display:flex;justify-content:space-between;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--hairline)}
 .liq .ter button,.liq.ter button{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--ink-3);white-space:nowrap;padding:2px 0}
 .liq .ter b,.liq.ter b{font-weight:500;color:var(--ink-2)}.liq .ter svg,.liq.ter svg{width:10px;height:10px}
@@ -1681,7 +1681,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zq';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zr';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4994,11 +4994,10 @@ function spAccountsHtml(){
   // quieter line for Construction (whole fund, investments included), Zakat and Interest
   const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(ymNow()) : null;
   const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
-  // pills under the Liquid card: Construction, Zakat, Interest, each with its own tinted icon
-  const lpi = (c, d) => `<span class="lpi" style="--c:${c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>`;
-  const ter = [hasC ? `<button data-constr>${lpi('#ff9f0a','M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6')}Constr. <b class="num money">${fKL(cf.total)}</b></button>` : '',
-    n ? `<button data-zi="zakat">${lpi('#30a46c','M12 3v18M7 8c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3')}Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : '',
-    I ? `<button data-zi="interest">${lpi('#0a84ff','M19 5L5 19M7 7h.01M17 17h.01')}Interest <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : ''].filter(Boolean).join('');
+  // pills under the Liquid card: Construction, Zakat, Interest, each wearing the same icon as its own page
+  const ter = [hasC ? `<button data-constr>${xTile('Construction')}Constr. <b class="num money">${fKL(cf.total)}</b></button>` : '',
+    n ? `<button data-zi="zakat"><span class="zico">${MOON_IC}</span>Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : '',
+    I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Interest <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : ''].filter(Boolean).join('');
   const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
       <div class="big num money">${fINR(liquid)}</div>
       <div class="g3"><div><span>Bank</span><b class="num money">${fLakh(sum.bank)}</b></div><div><span>Wallet</span><b class="num money">${fLakh(sum.wallet)}</b></div>
