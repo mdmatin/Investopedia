@@ -167,6 +167,7 @@ main{padding:0}
 /* logos arrive with white or transparent backgrounds; a white tile with a
    hairline keeps both kinds legible against the card, and contain stops any
    of them being cropped */
+.tile.cardic{overflow:hidden;background:none}.tile.cardic svg{width:100%!important;height:100%!important}
 .tile img{position:absolute;inset:0;width:100%;height:100%;border-radius:11px;
   object-fit:contain;padding:5px;background:#fff;
   box-shadow:inset 0 0 0 .5px rgba(0,0,0,.08);
@@ -1633,7 +1634,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31r';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4858,7 +4859,16 @@ function accMoves(name){
 const accBalance = name => { const a = accByName(name); return (a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+m.amt,0); };
 // one icon per account, the same everywhere (lists, its page, the entry form, Net Worth rows):
 // cash accounts (Cash, Cash · C) the cash note, everything else its bank's logo (or the bank fallback)
-const accMark = a => a && (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}</div>` : bankMark(a ? a.name : '');
+// credit cards get a small picture of the card itself (colours from the real card, no logos)
+let CARD_IC_N = 0;
+const CARD_CHIP = (x,y) => `<rect x="${x}" y="${y}" width="5" height="4" rx="1" fill="#d6d6dc"/><path d="M${x} ${y+2}h5M${x+2.5} ${y}v4" stroke="#a9a9b2" stroke-width=".6"/>`;
+const CARD_ICONS = [
+  [/sbi/i, () => { const id = 'cc' + (++CARD_IC_N); return `<svg viewBox="0 0 40 40"><defs><clipPath id="${id}"><rect x="5" y="11" width="30" height="18" rx="3"/></clipPath></defs><rect width="40" height="40" fill="#efe9f7"/><rect x="5" y="11" width="30" height="18" rx="3" fill="#5b2d8e"/><path clip-path="url(#${id})" d="M38 13l-11 7 11 7" fill="none" stroke="#ffd21f" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>${CARD_CHIP(9,15.5)}</svg>`; }],
+  [/icici/i, () => `<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="#ececef"/><rect x="5" y="11" width="30" height="18" rx="3" fill="#232326"/>${CARD_CHIP(9,15.5)}<path d="M9 24.5h11" stroke="#f08a24" stroke-width="1.8" stroke-linecap="round"/></svg>`]
+];
+const cardMark = a => { const m = CARD_ICONS.find(([re])=>re.test(a.name)); return m ? `<div class="tile cardic">${m[1]()}</div>` : null; };
+const accMark = a => !a ? bankMark('') : (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}</div>`
+  : (accKind(a)==='card' && cardMark(a)) || bankMark(a.name);
 const nameMark = n => { const a = accByName(n); return a ? accMark(a) : bankMark(n); };
 const accIcon = a => {
   const k = accKind(a), p = k==='card' ? 'M3 6.5h18v11H3zM3 10h18M6.5 14.5h3'
