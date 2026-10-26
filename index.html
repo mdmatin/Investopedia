@@ -1686,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zze';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzf';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5773,8 +5773,8 @@ function accFormBody(p){
         <div class="f"><label>Bill due day</label><input id="afDue" inputmode="numeric" value="${esc(String(f.dueDay||''))}" placeholder="1–31"></div>` : ''}
       </div>
       <p class="hint" style="margin:0 4px 14px">${card ? 'What you owed on the card on the “Since” date.' : 'The balance on the “Since” date.'} Entries before that date don't count toward the balance.</p>
-      ${card && a ? `<div class="xlbl">Cashback is entered as</div>
-      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${cbMode(a.name)===k?'on':''}">${l}</button>`).join('')}</div>` : ''}
+      ${card ? `<div class="xlbl">Cashback is entered as</div>
+      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${(f.cbm || cbMode(a ? a.name : f.name||''))===k?'on':''}">${l}</button>`).join('')}</div>` : ''}
       <button class="btn" data-afsave>${a ? 'Save' : 'Add account'}</button>
       ${a ? `<button class="btn danger" data-afdel>${uses ? 'Hide account' : 'Remove account'}</button>
         <p class="hint">${uses ? `It has ${uses} entr${uses===1?'y':'ies'}, so it's hidden rather than deleted — its history stays. Tick Active on the Accounts tab to bring it back.` : 'It has no entries, so it is removed from the Accounts tab.'}</p>` : ''}
@@ -5786,7 +5786,7 @@ function wireAccForm(p){
     if ($('#afLimit')) f.limit = numPlain($('#afLimit').value); if ($('#afDue')) f.dueDay = $('#afDue').value; };
   commaInput($('#afOpen'), 'en-IN'); if ($('#afLimit')) commaInput($('#afLimit'), 'en-IN');
   $$('#page [data-at]').forEach(b=>b.onclick=()=>{ keep(); f.type = b.dataset.at; rer(); });
-  $$('#page [data-cbm]').forEach(b=>b.onclick=()=>{ keep(); setPref('cbMode', Object.assign({}, PREF.cbMode, { [p.acc]: b.dataset.cbm })); rer(); });
+  $$('#page [data-cbm]').forEach(b=>b.onclick=()=>{ keep(); p.f.cbm = b.dataset.cbm; rer(); });   // kept with the form, saved with it (new cards too)
   $('#page [data-afsave]').onclick = ()=>{ keep(); saveAccount(p); };
   const del = $('#page [data-afdel]'); if (del) del.onclick = ()=>{
     if (del.dataset.arm!=='1'){ del.dataset.arm='1'; del.textContent='Tap again to confirm'; return; }
@@ -5801,6 +5801,9 @@ async function saveAccount(p){
   const rec = { name, type:f.type, opening: card ? -Math.abs(open) : open, openDate: f.openDate || todayISO(),
     limit: card ? Number(f.limit)||null : null, dueDay: card ? Number(f.dueDay)||null : null, active:true };
   const d = xd(); d.accounts = d.accounts || [];
+  // cashback entry style lives in prefs by card name: set it for a new card, carry it across a rename
+  if (card){ const cm = Object.assign({}, PREF.cbMode), m = f.cbm || cbMode(was ? was.name : name);
+    if (was && was.name!==name) delete cm[was.name]; cm[name] = m; setPref('cbMode', cm); }
   const snap = JSON.stringify({ a:d.accounts, e:d.entries, i:d.incomes, t:d.transfers });
   if (was){
     const old = was.name; Object.assign(was, rec);
