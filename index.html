@@ -1665,7 +1665,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zn';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zo';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1697,12 +1697,19 @@ function save(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 /* ---------- formatting ---------- */
 const inr  = new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
 const inr2 = new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
-const usd  = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
-const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inr.format(Math.abs(v));
 const inrP = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Settings ▸ Two decimals drives every full money figure in the app (₹ and $).
+// Compact forms (₹2.4L, ₹12K) and quantities are untouched.
+const paiseOn = () => PREF.paise!==false;
+const inrM = () => paiseOn() ? inrP : inr;
+const usd2 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+const usd0 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+const usd  = { format: v => (paiseOn() ? usd2 : usd0).format(v) };
+const DEC  = () => paiseOn() ? {minimumFractionDigits:2,maximumFractionDigits:2} : {maximumFractionDigits:0};
+const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
 // Spend tab: rupees with paise, like Money Manager
-const fINR2 = v => v==null ? '—' : (v<0?'−':'') + '₹' + (PREF.paise===false ? inr : inrP).format(Math.abs(v));
-const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inr.format(Math.abs(v));
+const fINR2 = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
+const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inrM().format(Math.abs(v));
 const fCompact = v => { if(v==null) return '—'; const a=Math.abs(v), s=v<0?'−':'';
   if(a>=1e7) return s+'₹'+(a/1e7).toFixed(2)+'Cr'; if(a>=1e5) return s+'₹'+(a/1e5).toFixed(1)+'L';
   if(a>=1e3) return s+'₹'+(a/1e3).toFixed(1)+'k'; return s+'₹'+inr.format(a); };
@@ -1946,12 +1953,12 @@ const EL = {
   cons:  { sel:'#construction', rows:[], open:-1, foot:'', empty:'Nothing allocated' },
   cfs:   { sel:'#cfOther',      rows:[], open:-1, foot:'', empty:'' }
 };
-const fUSD = v => '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fUSD = v => '$' + Number(v||0).toLocaleString('en-US',DEC());
 function editRowMeta(b){
   // a dollar wallet in the Wallets list: its rupee value underneath
   if (b.wccy==='USD' && b.usd==null && b.amount!=null) return '≈ ' + fINR(b.amount);
   // INDmoney · C: its dollar balance (Net Worth C23), not a gain
-  if (b.usd!=null) return `$${b.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  if (b.usd!=null) return fUSD(b.usd);
   // only the Invested row (it has a Current value) carries a real gain
   if (b.pnl==null || b.current==null) return '';
   return `<span class="${cls(b.pnl)}"><span class="arrow">${b.pnl>=0?'▲':'▼'}</span> ${fINR(Math.abs(b.pnl))}</span>`;
@@ -2288,14 +2295,14 @@ function renderAssets(holdings, usdInr){
   const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
   // rupee cost: US lots at the rate of their buy dates (h.invInr, from the sheet), never today's rate
   const invInr = h => isUSD(h) ? (h.invInr!=null ? h.invInr : (h.invested||0) * fx) : (h.invested||0);
-  const two = {minimumFractionDigits:2, maximumFractionDigits:2};
+  const two = DEC();
   // US rows read in dollars, or in rupees at today's rate when the US card's toggle says ₹
   const inD = h => isUSD(h) && !inrMode, kx = h => isUSD(h) && inrMode ? fx : 1;
   const money = h => v => { v = v * kx(h); return inD(h)
     ? '$' + (v<0?'−':'') + Math.abs(v).toLocaleString('en-US', two)
     : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN', two); };
-  const rup2 = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const money2 = h => v => inD(h) ? usd.format(v) : '₹' + rup2.format(v * kx(h));
+  // LTP / Avg are unit prices: always two decimals
+  const money2 = h => v => inD(h) ? usd2.format(v) : '₹' + inrP.format(v * kx(h));
   const qtyf = n => n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
   // the fallback when a row's three figures won't fit side by side
   const short = h => v => { const a=Math.abs(v * kx(h)), sym = inD(h) ? '$' : '₹';
@@ -3552,7 +3559,10 @@ const tkCache = {};            // ticker → { txns, at } | { loading } | { err 
 
 const nativeMoney = usdRow => v => v==null ? '—'
   : usdRow ? (v<0?'−':'') + usd.format(Math.abs(v))
-           : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+           : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
+// unit prices keep their paise whatever the Two decimals setting says (₹0.45 must not read ₹0)
+const priceMoney = usdRow => v => v==null ? '—'
+  : (v<0?'−':'') + (usdRow ? usd2.format(Math.abs(v)) : '₹' + inrP.format(Math.abs(v)));
 const qtyFmt = n => n==null ? '—' : n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
 const arrowAmt = (v, m) => v==null ? '—'
   : `<span class="${cls(v)}">${v?`<span class="arrow">${v>0?'▲':'▼'}</span> `:''}${m(Math.abs(v))}</span>`;
@@ -3936,7 +3946,7 @@ function holdingBody(ticker){
   const c = tkCache[ticker] || {};
   const txns = c.txns || [];
   const cat = (h&&h.category) || (led[0]&&led[0].category) || (txns[0]&&txns[0].category) || '';
-  const usdRow = cat==='US Stocks', m = nativeMoney(usdRow);
+  const usdRow = cat==='US Stocks', m = nativeMoney(usdRow), pm = priceMoney(usdRow);
   const fx = d.netWorth && d.netWorth.head && d.netWorth.head.usdInr;
 
   const divs = divsFor(ticker), divTot = divs.reduce((a,x)=>a+x.amount,0);
@@ -3949,7 +3959,7 @@ function holdingBody(ticker){
     // 1 · value, current returns under it, then the history chart — like the Overview hero
     card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
-        <div class="grow"><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${m(h.ltp)}</span>`:''}</div></div>
+        <div class="grow"><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${pm(h.ltp)}</span>`:''}</div></div>
         ${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}</div>
       <div class="pg-big num money">${m(h.value)}</div>
       ${day!=null?`<div class="pg-sub num money"><span class="grp">${arrowAmt(day, m)}${h.dayPct!=null?` <span class="${cls(h.dayPct)}">(${fPct(h.dayPct,false)})</span>`:''} <span class="k">today</span></span></div>`:''}
@@ -3967,7 +3977,7 @@ function holdingBody(ticker){
     const wAll = tot ? toInr(h)/tot : null, wCat = catTot ? toInr(h)/catTot : null;
     stats = `<div class="card hstats num"><div class="kgrid">
       <div><span>Invested</span><b>${mm(h.invested)}</b></div>
-      <div><span>Avg cost</span><b>${m(h.avg)}</b></div>
+      <div><span>Avg cost</span><b>${pm(h.avg)}</b></div>
       <div><span>Quantity</span><b>${qtyFmt(h.qty)}</b></div>
       <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${fPct(pct,false)})</em>`:''}</span><b class="${cls(ret)}">${sgn(ret,mm)}</b></div>
       <div><span>Realised</span><b class="${cls(h.realized)}">${sgn(h.realized,mm)}</b></div>
