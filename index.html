@@ -1651,7 +1651,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zb';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zc';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5042,7 +5042,9 @@ function wireEpf(p){
       if (!(data.amount > 0)){ p.epfErr = 'Enter the interest.'; again(); return; } }
     p.epfBusy = true; p.epfErr = ''; again();
     try{ const r = await apiPost('epfAdd', data); if (r && r.epf && D && D.data){ D.data.epf = r.epf; save(LS.data, D); }
-      p.epf = null; p.epfF = null; p.epfBusy = false; again(); toast(data.kind==='contrib' ? 'Contribution added' : 'Interest added'); refresh(false, true);
+      p.epf = null; p.epfF = null; p.epfBusy = false; again();
+      toast(r && r.moneyError ? 'Saved to EPF, not to Money: ' + r.moneyError : data.kind==='contrib' ? 'Contribution added' : 'Interest added');
+      refresh(false, true); loadExpenses(true);   // Money got its income + Investment › EPF lines too
     }catch(e){ p.epfBusy = false; p.epfErr = e.message || 'Could not save'; again(); }
   };
   const gs = $('#page .mbscroll'); if (!gs) return;
