@@ -1207,6 +1207,7 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .liq .big{font:600 32px/1.1 var(--font-disp);letter-spacing:-.8px;margin-top:4px}
 .okchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--up);background:var(--up-bg);padding:3px 9px;border-radius:999px;cursor:pointer}
 .okchip[hidden]{display:none}.okchip i{width:6px;height:6px;border-radius:50%;background:var(--up)}
+.okchip .bi{width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:currentColor;flex:none}.okchip .bi svg{width:10px;height:10px;color:var(--canvas)}.okchip:has(.bi){padding:3px 10px 3px 5px}   /* Reconciled ✓ / Mismatch ! */
 .okchip.bad{color:#c77700;background:rgba(255,159,10,.16)}.okchip.bad i{background:#ff9f0a}html[data-theme=dark] .okchip.bad{color:#ffb340}
 .liq .g3{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline)}
 .liq .g3>div:nth-child(2){text-align:center}.liq .g3>div:nth-child(3){text-align:right}
@@ -1683,7 +1684,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zz';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zza';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5282,12 +5283,13 @@ function paintBooks(){
   const iv = b.inv, ivOff = !!(iv && Math.abs(iv.gap||0) >= 1), bad = off || ivOff;
   const gap = off && ivOff ? (Math.abs(b.diff) >= Math.abs(iv.gap) ? b.diff : iv.gap) : off ? b.diff : ivOff ? iv.gap : 0;
   el.classList.toggle('off', bad);
-  el.setAttribute('aria-label', bad ? `Books off by ${fINR2(Math.abs(gap))}` : 'Books balanced');
+  el.setAttribute('aria-label', bad ? `Books mismatch of ${fINR2(Math.abs(gap))}` : 'Books reconciled');
   el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
   // the Liquid card's chip: green "Books", or orange with the gap
-  if (el.classList.contains('okchip')){ el.classList.toggle('bad', bad); el.innerHTML = `<i></i>Books${bad ? ' ' + (gap<0?'−':'+') + fINR(Math.abs(gap)) : ''}`; return; }
+  if (el.classList.contains('okchip')){ el.classList.toggle('bad', bad);
+    el.innerHTML = `<span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${bad ? 'M12 7v6M12 17.5v.01' : 'M5 12.5l4.5 4.5L19 7.5'}"/></svg></span>${bad ? 'Mismatch ' + fINR(Math.abs(gap)) : 'Reconciled'}`; return; }
   el.innerHTML = `<span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
-    <span class="bk-t">${bad ? 'Books off' : 'Books balanced'}</span>${bad ? `<span class="bk-v num money">${gap<0?'−':'+'}${fINR2(Math.abs(gap))}</span>` : ''}
+    <span class="bk-t">${bad ? 'Mismatch' : 'Reconciled'}</span>${bad ? `<span class="bk-v num money">${gap<0?'−':'+'}${fINR2(Math.abs(gap))}</span>` : ''}
     <svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
   el.onclick = ()=>{ pushPage({ kind:'books' }); loadExpenses(true); };   // the latest check from the server
 }
@@ -5296,14 +5298,14 @@ function applyBooks(b){
   if (!b || !xd()) return;
   const was = booksNow(); xd().books = b; save('inv.exp', X); paintBooks();
   if (!booksBusy && booksOff(b) && (!booksOff(was) || Math.abs((was.diff||0) - b.diff) >= 0.01))
-    setTimeout(()=>toast(`Books off by ${fINR2(Math.abs(b.diff))} — see Spend › Accounts`), 2600);
+    setTimeout(()=>toast(`Books mismatch of ${fINR2(Math.abs(b.diff))} — see Spend › Accounts`), 2600);
   const top = pageStack[pageStack.length-1]; if (top && /^(books|bklog)$/.test(top.kind)) renderPage();
 }
 // the refresh button: the server works both totals out again, right now
 let booksBusy = false;
 async function booksRecheck(){
   if (booksBusy) return; booksBusy = true; const b = $('#pgRefresh'); if (b) b.classList.add('spin');
-  try{ const r = await apiPost('books', {}); if (r && r.avl != null){ applyBooks(r); toast(booksOff(r) ? `Books off by ${fINR2(Math.abs(r.diff))}` : 'Books balanced'); } }
+  try{ const r = await apiPost('books', {}); if (r && r.avl != null){ applyBooks(r); toast(booksOff(r) ? `Books mismatch of ${fINR2(Math.abs(r.diff))}` : 'Books reconciled'); } }
   catch(e){ toast(e.message || 'Could not check'); }
   finally{ booksBusy = false; const top = pageStack[pageStack.length-1]; if (top && top.kind==='books') renderPage(); }
 }
@@ -5332,14 +5334,14 @@ function booksBody(){
   const off = booksOff(b), when = b.at ? new Date(b.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
   const hero = `<div class="card pg-card pg-hero bk-hero">
       <div class="pg-id"><div class="tile" style="${off?'background:rgba(255,159,10,.16);color:#ff9f0a':'background:var(--up-bg);color:var(--up)'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${off?BK_WARN:BK_OK}"/></svg></div>
-        <div class="grow"><div class="t">${off?'Books off':'Books balanced'}</div><div class="s">${when?'Checked '+esc(when):''}</div></div></div>
+        <div class="grow"><div class="t">${off?'Mismatch':'Reconciled'}</div><div class="s">${when?'Checked '+esc(when):''}</div></div></div>
       <div class="pg-big num money ${off?'off':''}">${off ? (b.diff<0?'−':'+')+fINR2(Math.abs(b.diff)) : fINR2(0)}</div>
       <div class="pg-sub"><span class="k">difference</span></div>
       <div class="spstats"><div><span>Available</span><b class="num money">${fINR2(b.avl)}</b></div>
         <div><span>Expected</span><b class="num money">${fINR2(b.expected)}</b></div></div>
       ${b.inv ? (()=>{ const g = b.inv.gap||0, bad = Math.abs(g) >= 1;
         return `<button class="bk-ivrow" id="bkIvGo"><span class="bk-ic ${bad?'off':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${bad?BK_WARN:BK_OK}"/></svg></span>
-          <span class="t">Investment log</span><b class="num money ${bad?'bk-amber':''}">${bad ? (g<0?'−':'+')+fINR2(Math.abs(g))+' apart' : 'In step'}</b></button>`; })() : ''}</div>`;
+          <span class="t">Investment log</span><b class="num money ${bad?'bk-amber':''}">${bad ? 'Mismatch '+(g<0?'−':'+')+fINR2(Math.abs(g)) : 'Reconciled'}</b></button>`; })() : ''}</div>`;
   // what moved the books, newest first (All Investments › Activity log)
   const log = (b.log || []).filter(e=>!e.same);
   let html = '', cur = null;
@@ -5363,7 +5365,7 @@ function booksBody(){
     html += `<div class="sechead" id="bkIvSec"><h2>Investment log</h2></div><div class="card hstats xsubs bkrows">
       <div class="hrow"><span>Logged in Money</span><b class="num money">${fINR2(iv.logged)}</b></div>
       <div class="hrow"><span>All Investments</span><b class="num money">${fINR2(iv.ai)}</b></div>
-      <div class="hrow sub"><span>${g ? 'Apart by' : 'In step'}</span><b class="num money ${g?'bk-amber':''}">${g ? fINR2(Math.abs(iv.gap)) : '✓'}</b></div>
+      <div class="hrow sub"><span>${g ? 'Mismatch' : 'Reconciled'}</span><b class="num money ${g?'bk-amber':''}">${g ? fINR2(Math.abs(iv.gap)) : '✓'}</b></div>
       ${(iv.missed||[]).map(m=>`<div class="hrow"><span>${esc(fDate(m.date))} · <em>${esc(m.what)}</em></span><b class="num money bk-amber">${fINR2(m.amount)}</b></div>`).join('')}
       ${g ? `<div class="bk-why" style="padding:4px 0 14px">${iv.gap > 0 ? 'All Investments has more than you logged: a transfer to an investment was not logged in Money (log it as an Investment expense).' : 'You logged more than All Investments has: money came back from an investment without a Liquidation entry, or a buy is missing in All Investments.'} This doesn\u2019t affect the books above.</div>` : ''}
     </div>`;
