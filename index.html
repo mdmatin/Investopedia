@@ -439,6 +439,13 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-row.slim .vb-tr em{top:-7px;bottom:auto;width:0;height:0;margin-left:-4px;background:none;border-radius:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink-2)}
 .vb-row.slim .vb-n{font-size:12.5px;margin-top:6px}
 /* monthly pie (Money Manager style) */
+.captabs{display:flex;gap:26px;margin:2px 0 12px;padding:0 20px;border-bottom:1px solid var(--hairline);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.captabs::-webkit-scrollbar{display:none}
+.captabs button{flex:none;padding:10px 0 11px;font-size:15px;letter-spacing:-.2px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.captabs button.on{color:var(--ink);font-weight:600;border-bottom-color:var(--blue)}
+.capstat .k{font-size:13px;color:var(--ink-2)}.capstat .big{font:600 26px/1.15 var(--font-disp);letter-spacing:-.6px;margin-top:3px}.caphd{display:flex;align-items:center;justify-content:space-between}.capmore{width:30px;height:30px;margin:-6px -8px -6px 0;border-radius:50%;display:grid;place-items:center;color:var(--ink-3)}.capmore svg{width:18px;height:18px;transition:transform .2s}.capmore.on svg{transform:rotate(180deg)}.capx[hidden]{display:none}
+.capstat .kgrid span{white-space:nowrap}.capstat em{font-style:normal;font-weight:500}.capstat .kgrid.k2>div:nth-child(2){align-items:flex-end;text-align:right}.capstat .kl{display:flex;align-items:baseline;gap:4px;flex-wrap:nowrap}.capstat .kl b{flex:none}.capstat .kl em{flex:none}.capstat .kgrid:not(.x)>div:nth-child(3n+2) .kl{justify-content:center}.capstat .kl em{font-style:normal;font-size:11.5px;font-weight:500;opacity:.75;letter-spacing:-.1px}
+.tipv{cursor:pointer}.tipb{position:fixed;z-index:80;transform:translate(-50%,-100%);margin-top:-8px;background:var(--ink);color:var(--canvas);font-size:13px;font-weight:600;padding:6px 10px;border-radius:9px;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums;box-shadow:0 4px 14px rgba(0,0,0,.18)}.capstat .kgrid{margin-top:14px;padding-top:14px;border-top:1px solid var(--hairline)}
 .iotabs{display:grid;grid-template-columns:1fr 1fr;margin:0 16px 12px;border-bottom:1px solid var(--hairline)}
 .iotabs button{padding:10px 4px 11px;font-size:15px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px}
 .iotabs button b{font-weight:600}
@@ -1542,6 +1549,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
         <div class="search" id="assetSearch"></div>
         <div class="chips" id="assetChips"></div>
         <div class="card asum" id="assetSum" hidden></div>
+        <div id="capWrap"></div>
         <div class="card tight" id="assetList"></div>
       </div>
 
@@ -1657,7 +1665,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zk';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zl';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2218,7 +2226,7 @@ function assetCatFor(name, holdings){
   return c && (holdings||[]).some(h=>h.category===c) ? c : null;
 }
 function openAssetCat(cat){
-  assetCat = cat;
+  assetCat = cat; capOpen = false;
   show('break'); showHoldSec('assets');
   renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
   const chip = $('#assetChips .chip.on'); if (chip) chip.scrollIntoView({inline:'center', block:'nearest'});
@@ -2263,11 +2271,20 @@ function wireSearch(box, list, get, set){
   box.classList.toggle('has', !!get());
   applySearch(list(), get());
 }
-let assetQuery = '';
+let assetQuery = '', capTab = 'All', capOpen = false;   // the details list starts collapsed
+// a tap on a short figure (data-full) shows the exact amount above it for a moment
+document.addEventListener('click', e=>{
+  document.querySelectorAll('.tipb').forEach(t=>t.remove());
+  const el = e.target.closest && e.target.closest('[data-full]'); if (!el) return;
+  const r = el.getBoundingClientRect(), t = document.createElement('div'); t.className = 'tipb'; t.textContent = el.dataset.full;
+  t.style.left = Math.min(window.innerWidth - 70, Math.max(70, r.left + r.width/2)) + 'px'; t.style.top = r.top + 'px';
+  document.body.append(t); setTimeout(()=>t.remove(), 2500);
+}, true);
+window.addEventListener('scroll', ()=>document.querySelectorAll('.tipb').forEach(t=>t.remove()), { passive:true });   // Indian stocks: All / Liquid / Large / Small / Mid
 
 let usInr = false;   // US Stocks in rupees at today's rate; starts in dollars every time
 function renderAssets(holdings, usdInr){
-  const all = holdings || [], fx = usdInr || 1, haveFx = !!usdInr;
+  const all = holdings || [], all0 = all, fx = usdInr || 1, haveFx = !!usdInr;
   const inInr = h => isUSD(h) ? (h.value||0) * fx : (h.value||0);
   // rupee cost: US lots at the rate of their buy dates (h.invInr, from the sheet), never today's rate
   const invInr = h => isUSD(h) ? (h.invInr!=null ? h.invInr : (h.invested||0) * fx) : (h.invested||0);
@@ -2289,7 +2306,7 @@ function renderAssets(holdings, usdInr){
   const cats = CAT_ORDER.filter(c=>all.some(h=>h.category===c));
   $('#assetChips').innerHTML = ['All',...cats].map(c=>
     `<button class="chip ${c===assetCat?'on':''}" data-c="${esc(c)}">${esc(CAT_LABEL[c]||c)}</button>`).join('');
-  $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; usInr=false; renderAssets(all, fx); });
+  $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; usInr=false; capOpen=false; renderAssets(all, fx); });
 
   const rows = all.filter(h=>assetCat==='All'||h.category===assetCat)
                   .sort((a,b)=>inInr(b)-inInr(a));
@@ -2358,7 +2375,43 @@ function renderAssets(holdings, usdInr){
     }
   }
 
-  $('#assetList').innerHTML = rows.map(h=>{
+  // Indian stocks: tabs by market cap (the Master List's Sub-Category), each with its
+  // figures from the Breakdown tab's Asset Level table, then only those holdings
+  const capOn = assetCat==='Stocks', CAPS = [['All','All'],['Largecap','Largecap'],['Smallcap','Smallcap'],['Midcap','Midcap'],['Debt','Liquid']];
+  const capOf = h => { const x = String(h.sub||'').toLowerCase(); return /small/.test(x) ? 'Smallcap' : /mid/.test(x) ? 'Midcap' : /large/.test(x) ? 'Largecap' : /debt|liquid/.test(x) ? 'Debt' : ''; };
+  let list = rows;
+  if (capOn){
+    if (!CAPS.some(c=>c[0]===capTab)) capTab = 'All';
+    list = rows.filter(h=>capTab==='All' || capOf(h)===capTab);
+    const bd = (D && D.data && D.data.breakdown) || [], BDN = { Debt:'Liquid', Largecap:'Largecap', Smallcap:'Smallcap', Midcap:'Midcap' };
+    const fromBd = c => { const keys = c==='All' ? Object.values(BDN) : [BDN[c]], rs = bd.filter(r=>keys.includes(String(r.type)));
+      return rs.length===keys.length ? rs.reduce((o,r)=>({ value:o.value+r.value, invested:o.invested+r.invested, realized:o.realized+r.realized, pnl:o.pnl+r.currPnl, alloc:o.alloc+r.allocation }), { value:0, invested:0, realized:0, pnl:0, alloc:0 }) : null; };
+    const fromHold = c => { const hs = rows.filter(h=>c==='All' || capOf(h)===c);   // when the sheet's table isn't there
+      return { value:hs.reduce((a,h)=>a+(h.value||0),0), invested:hs.reduce((a,h)=>a+(h.invested||0),0), realized:hs.reduce((a,h)=>a+(h.realized||0),0), pnl:hs.reduce((a,h)=>a+(h.pnl!=null?h.pnl:(h.value||0)-(h.invested||0)),0), alloc:null }; };
+    const S = c => fromBd(c) || fromHold(c), all = S('All'), st = S(capTab), n = list.length;
+    const sp = v => `${v<0?'−':v>0?'+':''}${fINR(Math.abs(v))}`, tot = st.realized + st.pnl;
+    // short figures (₹24.8K, ₹1.64L); a tap shows the exact amount
+    const kv = (v, signed) => `<b class="money tipv ${signed ? cls(v) : ''}" data-full="${esc(signed ? (v<0?'−':v>0?'+':'') + fINR2(Math.abs(v)) : fINR2(v))}">${signed && v>0 ? '+' : ''}${fKL(v)}</b>`;
+    const pc = v => st.invested ? ` <em class="${cls(v)}">(${fPct(v/st.invested,false)})</em>` : '';
+    $('#capWrap').innerHTML = `<div class="captabs">${CAPS.map(([k,l])=>`<button data-cap="${k}" class="${k===capTab?'on':''}">${l}</button>`).join('')}</div>
+      ${capTab==='All' ? '' : `<div class="card capstat hstats num"><div class="caphd"><div class="k">${capTab==='All' ? 'Indian stocks' : esc(capTab==='Debt' ? 'Liquid (debt)' : capTab)}</div>
+          <button class="capmore ${capOpen?'on':''}" data-capmore aria-expanded="${capOpen}" aria-label="${capOpen ? 'Fewer details' : 'More details'}">${chev('M6 9l6 6 6-6')}</button></div>
+        <div class="big money">${fINR(st.value)}</div>
+        <div class="kgrid k2">
+          <div><span>Invested</span>${kv(st.invested)}</div>
+          <div><span>Current P&amp;L${pc(st.pnl)}</span>${kv(st.pnl, true)}</div>
+        </div>
+        <div class="capx" ${capOpen ? '' : 'hidden'}>
+        <div class="hrow"><span>Realised</span><b class="${cls(st.realized)}">${sp(st.realized)}</b></div>
+        <div class="hrow"><span>Total P&amp;L${pc(tot)}</span><b class="${cls(tot)}">${sp(tot)}</b></div>
+        <div class="hrow"><span>Holdings</span><b>${n}</b></div>
+        <div class="hrow"><span>Share of Indian stocks</span><b>${all.value ? fPct(st.value/all.value,false) : '—'}</b></div>
+        <div class="hrow"><span>Share of portfolio</span><b>${st.alloc!=null ? fPct(st.alloc,false) : '—'}</b></div></div></div>`}`;   // All: the card above already covers it
+    $$('#capWrap [data-cap]').forEach(b=>b.onclick=()=>{ capTab = b.dataset.cap; renderAssets(all0, usdInr); });
+    { const on = $('#capWrap .captabs .on'), bar = $('#capWrap .captabs'); if (on && bar) bar.scrollLeft = Math.max(0, on.offsetLeft - (bar.clientWidth - on.offsetWidth)/2); }
+    const cm = $('#capWrap [data-capmore]'); if (cm) cm.onclick = ()=>{ capOpen = !capOpen; renderAssets(all0, usdInr); };
+  } else $('#capWrap').innerHTML = '';
+  $('#assetList').innerHTML = list.map(h=>{
     const m = money(h), m2 = money2(h);
     // a US card in ₹: cost at buy-date rates, so returns include what the dollar did since
     const inrCost = isUSD(h) && inrMode && h.invInr!=null;
@@ -2388,12 +2441,15 @@ function renderAssets(holdings, usdInr){
           <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}">${ret>=0?'+':'−'}<span class="amt">${m(Math.abs(ret))}</span></div></div>
       </div>
     </div>`;
-  }).join('') + (rows.length
-      ? `<div class="listfoot"><span>${rows.length} holding${rows.length===1?'':'s'}</span>
-         <span>${native && !inrMode ? '$'+Math.round(sum).toLocaleString('en-US') : fCompact(native ? sum*fx : sum)}</span></div>`
+  }).join('') + (list.length
+      ? `<div class="listfoot"><span>${list.length} holding${list.length===1?'':'s'}</span>
+         <span>${(()=>{ const sm = list===rows ? sum : list.reduce((s,h)=>s+(native ? (h.value||0) : inInr(h)),0); return native && !inrMode ? '$'+Math.round(sm).toLocaleString('en-US') : fCompact(native ? sm*fx : sm); })()}</span></div>`
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
+  // a short tab still leaves a screen below the cap tabs, so switching never makes the page jump
+  { const L = $('#assetList'), tw = $('#capWrap'); L.style.marginBottom = '';
+    if (capOn && tw.firstChild){ const need = window.innerHeight - 140 - (L.getBoundingClientRect().bottom - tw.getBoundingClientRect().top); if (need > 0) L.style.marginBottom = need + 'px'; } }
   // the search box is drawn once; later renders only re-apply the query
   const sb = $('#assetSearch');
   if (!sb.firstChild) sb.innerHTML = searchInner(assetQuery, 'Search holdings');
