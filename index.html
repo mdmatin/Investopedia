@@ -1289,9 +1289,9 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .kitepay b{display:block;font-size:15.5px;font-weight:600}.kitepay small{display:block;font-size:12.5px;color:var(--ink-2);margin-top:1px}
 .cbk{margin-bottom:18px}
 .acclist .card.tight{margin-left:16px;margin-right:16px}   /* lines up with the hero and the Interest / Cashback block above */
-.cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:16px 16px 4px}
-.cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.4px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
-.cbk .hd .hadd{font-size:15px;font-weight:600;color:var(--blue);padding:4px 0}
+.cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:14px 24px 8px}   /* same insets as .sechead */
+.cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.45px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
+.cbk .hd .hadd{font-size:14px;color:var(--blue);letter-spacing:-.224px;padding:0}   /* same as a .sechead button */
 .cbk .st{display:flex;margin:6px 16px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
 .cbk .st div{flex:1;text-align:left}.cbk .st div:nth-child(2){text-align:center}.cbk .st div:last-child:not(:first-child){text-align:right}   /* left · centre · right, no dividers */
 .cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
@@ -1686,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzb';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzc';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
