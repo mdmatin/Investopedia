@@ -1686,7 +1686,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzf';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzg';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5765,7 +5765,7 @@ function accFormBody(p){
         <div class="f"><label>Name</label><input id="afName" value="${esc(f.name)}" placeholder="e.g. HDFC Bank" autocomplete="off"></div>
       </div>
       <div class="xlbl">Type</div>
-      <div class="seg afType">${ACC_TYPES.map(t=>`<button data-at="${t}" class="${f.type===t?'on':''}">${t==='Credit card'?'Card':t==='Construction'?'Build':t}</button>`).join('')}</div>
+      <div class="seg afType">${ACC_TYPES.map(t=>`<button data-at="${t}" class="${f.type===t?'on':''}">${t==='Credit card'?'Card':t==='Construction'?'Constr.':t}</button>`).join('')}</div>
       <div class="fields">
         <div class="f"><label>${card ? 'Owed at start' : 'Opening balance'}</label><input id="afOpen" inputmode="decimal" value="${openVal}" placeholder="0"></div>
         <div class="f"><label>Since</label><input id="afDate" type="date" value="${esc(f.openDate||'')}"></div>
