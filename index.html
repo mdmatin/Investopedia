@@ -207,22 +207,22 @@ main{padding:0}
 .row .r .s{font-size:12.5px;color:var(--ink-2)}
 
 /* ---------- asset card (Breakdown ▸ Assets) ---------- */
-.hcard{padding:14px 0;border-top:1px solid var(--hairline)}
+.hcard{padding:12px 0;border-top:1px solid var(--hairline)}
 .hcard:first-child{border-top:0}
 .hc-top{display:flex;align-items:center;gap:12px}
 .hc-name{flex:1;min-width:0}
-.hc-name .n{font-size:16px;font-weight:600;letter-spacing:-.35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hc-name .sub{font-size:13.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
-.hc-stats{text-align:right;font-size:13px;color:var(--ink-3);line-height:1.5;white-space:nowrap}
+.hc-name .n{font-size:14.5px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-name .sub{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.hc-stats{text-align:right;font-size:11.5px;color:var(--ink-3);line-height:1.45;white-space:nowrap}
 .hc-stats b{font-weight:400;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .hc-bot{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
-  align-items:flex-end;margin-top:11px;gap:8px}
-.hc-bot .k{font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px;white-space:nowrap}
+  align-items:flex-end;margin-top:9px;gap:8px}
+.hc-bot .k{font-size:10.5px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px;white-space:nowrap}
 /* same weight and size as the value column on the By type rows below, so the
    three figures sit quieter than the ticker itself */
 .hc-bot .right{text-align:right}
 .hc-bot .mid{text-align:center}
-.hc-bot .vv{font-size:16px;font-weight:600;letter-spacing:-.35px;font-variant-numeric:tabular-nums;
+.hc-bot .vv{font-size:14px;font-weight:600;letter-spacing:-.25px;font-variant-numeric:tabular-nums;
   line-height:1.25;white-space:nowrap}
 /* sized in em so the arrow scales with whatever it sits in — the small label
    and the larger amount — instead of being a fixed 10px in both */
@@ -232,8 +232,8 @@ main{padding:0}
 @media (max-width:400px){
   .card.tight{padding:6px 14px;margin:0 12px 14px}
   .hc-bot{gap:6px}
-  .hc-bot .k{font-size:11px}
-  .hc-bot .vv{font-size:15px;letter-spacing:-.3px}
+  .hc-bot .k{font-size:10px}
+  .hc-bot .vv{font-size:13.5px;letter-spacing:-.25px}
 }
 .loadmore{display:block;width:calc(100% - 32px);margin:4px 16px 0;padding:13px;border-radius:14px;
   background:var(--canvas);border:1px solid var(--card-edge);font-size:15px;font-weight:600;color:var(--blue)}
@@ -1351,7 +1351,7 @@ body.paged{overflow:hidden}
 .kgrid.k2 b{overflow:visible;font-size:17px}
 .hrow.tr2{align-items:center}
 .hrow.tr2 b{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
-.hrow.tr2 b em{font-style:normal;font-size:12.5px;font-weight:500}
+.hrow.tr2 b em{font-style:normal;font-size:12.5px;font-weight:500}.hrow span em{font-style:normal;font-size:12.5px;font-weight:500}
 em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .kgrid.k2{grid-template-columns:auto auto;justify-content:space-between}
 .kgrid.k2 span{white-space:nowrap}
@@ -1665,7 +1665,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zm';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zn';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4106,7 +4106,7 @@ function platformBody(name){
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
     ${pdivs.length ? `<button class="hrow hlink" data-pdiv><span>Dividends earned</span><b class="money">${nativeMoney(true)(pdivs.reduce((a,x)=>a+x.amount,0))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></b></button>` : ''}
-    <div class="hrow tr2"><span>Total P&amp;L</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
+    <div class="hrow tr2"><span>Total P&amp;L${tp!=null?` <em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</span><b class="money">${(ret+rl)<0?'−':(ret+rl)>0?'+':''}${fINR(Math.abs(ret+rl))}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
     ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
@@ -4196,7 +4196,7 @@ function bucketBody(name){
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
     <div class="hrow"><span>Realised</span><b class="money">${fINR(rl)}</b></div>
-    <div class="hrow tr2"><span>Total P&amp;L</span><b class="money">${tot<0?'−':tot>0?'+':''}${fINR(Math.abs(tot))}${tp!=null?`<em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</b></div>
+    <div class="hrow tr2"><span>Total P&amp;L${tp!=null?` <em class="${cls(tp)}">(${arrowPct(tp)})</em>`:''}</span><b class="money">${tot<0?'−':tot>0?'+':''}${fINR(Math.abs(tot))}</b></div>
     </div>`;
   const held = `<div class="sechead"><h2>Holdings</h2></div>
     ${rows.length > 1 ? `<div class="search pg-srch" id="pgSearch">${searchInner(top.q, 'Search holdings')}</div>` : ''}
