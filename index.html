@@ -245,7 +245,7 @@ main{padding:0}
 /* ---------- editable cash row ---------- */
 .row.tap{cursor:pointer}
 .row .chev{flex:none;color:var(--ink-3);font-size:15px;line-height:1}
-#cfOther .row .chev:empty{display:none}   /* Construction page: a read-only fund row (Invested) has no chevron, so its amount sits flush right like the accounts */
+.row .chev:empty{display:none}   /* only rows you can edit by hand carry a chevron; read-only rows (Invested) sit flush right */
 .ed{padding:16px 0 18px;border-top:1px solid var(--hairline)}
 .pg-edit{display:inline-flex;align-items:center;gap:8px;color:inherit;text-align:left}
 .pg-edit svg{width:18px;height:18px;color:var(--blue);flex:none}
@@ -1683,7 +1683,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zx';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zy';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
