@@ -1682,7 +1682,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zs';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zt';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2300,11 +2300,16 @@ let assetQuery = '', capTab = 'All', capOpen = false;   // the details list star
 document.addEventListener('click', e=>{
   document.querySelectorAll('.tipb').forEach(t=>t.remove());
   const el = e.target.closest && e.target.closest('[data-full]'); if (!el) return;
-  const r = el.getBoundingClientRect(), t = document.createElement('div'); t.className = 'tipb'; t.textContent = el.dataset.full;
-  t.style.left = Math.min(window.innerWidth - 70, Math.max(70, r.left + r.width/2)) + 'px'; t.style.top = r.top + 'px';
-  document.body.append(t); setTimeout(()=>t.remove(), 2500);
+  const t = document.createElement('div'); t.className = 'tipb'; t.textContent = el.dataset.full; t._el = el;
+  document.body.append(t); placeTip(t); setTimeout(()=>t.remove(), 2500);
 }, true);
-window.addEventListener('scroll', ()=>document.querySelectorAll('.tipb').forEach(t=>t.remove()), { passive:true });   // Indian stocks: All / Liquid / Large / Small / Mid
+// the tip rides along with its figure: any scroll (the window or a page sliding over the tabs) moves it too
+function placeTip(t){
+  const el = t._el, r = el && el.isConnected ? el.getBoundingClientRect() : null;
+  if (!r || r.bottom < 0 || r.top > window.innerHeight){ t.remove(); return; }
+  t.style.left = Math.min(window.innerWidth - 70, Math.max(70, r.left + r.width/2)) + 'px'; t.style.top = r.top + 'px';
+}
+document.addEventListener('scroll', ()=>document.querySelectorAll('.tipb').forEach(placeTip), { passive:true, capture:true });   // Indian stocks: All / Liquid / Large / Small / Mid
 
 let usInr = false;   // US Stocks in rupees at today's rate; starts in dollars every time
 function renderAssets(holdings, usdInr){
@@ -5195,7 +5200,7 @@ function constrBody(p){
   const spentAll = vals.reduce((a,v)=>a+v,0), spentM = tot(ymNow()), raise = typeof d.cbRaise==='number' ? d.cbRaise : null;
   // short figures (₹60.5K); a tap shows the exact amount
   const kq = v => `<b class="num money tipv" data-full="${esc(fINR2(v))}">${fKL(v)}</b>`;
-  const accTot = xAccounts().filter(a=>accKind(a)==='construction' && !a.other).reduce((t,a)=>t+accBalance(a.name),0);
+  const accTot = f.total;   // everything listed under Accounts: your construction accounts + the fund's other rows
   const sel = p.ym && months.includes(p.ym) ? p.ym : months[months.length-1];
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id">${xTile('Construction')}<div class="grow"><div class="t">Construction</div>
