@@ -3,7 +3,7 @@
    while a fresh copy is fetched in the background. When the fresh page differs,
    the app is told, and it switches to the new version the next time it is opened.
    Calls to Google (your data) never pass through here. */
-const CACHE = 'centric-v2';   // a new name clears the old copies when this version takes over
+const CACHE = 'centric-v3';   // a new name clears the old copies when this version takes over
 const CORE = ['./', './index.html', './manifest.json', './icon.png', './apple-touch-icon.png', './favicon-32.png'];
 
 self.addEventListener('install', e => {
@@ -14,7 +14,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
     .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
-    .then(() => self.clients.claim()));
+    .then(() => self.clients.claim())
+    .then(() => tell('centric-updated')));   // an open app reloads into the new copy when next brought back
 });
 
 async function tell(msg){
@@ -32,11 +33,12 @@ self.addEventListener('fetch', e => {
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
     const hit = await c.match(key, { ignoreSearch: true });
+    const prev = hit ? hit.clone() : null;   // read before hit goes to the browser: a used body can't be cloned later (that kept the old page forever)
     // by URL: a page request can't be re-sent with options (that threw, so the copy never updated)
     const fresh = fetch(r.url, { cache: 'no-store', credentials: 'same-origin' }).then(async res => {
       if (!res || !res.ok) return res;
       if (page){
-        const [a, b] = await Promise.all([res.clone().text(), hit ? hit.clone().text() : Promise.resolve(null)]);
+        const [a, b] = await Promise.all([res.clone().text(), prev ? prev.text() : Promise.resolve(null)]);
         await c.put(key, res.clone());
         if (b != null && a !== b) tell('centric-updated');   // a new build: the app picks it up on its next open
       } else await c.put(key, res.clone());
