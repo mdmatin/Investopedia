@@ -402,6 +402,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .taxnext b{color:var(--ink)}.taxnext .pill{margin-left:auto}
 .row.tot .n{font-weight:600}.row.tot .v{font-weight:700}
 .row.sub .n{color:var(--ink-2);font-weight:400}
+.taxin .row .l{flex:1;min-width:0}.taxin .row .r{max-width:45%;min-width:0}
+.taxin .row .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .npsf .npstrip{display:flex;gap:3px;height:10px;margin:14px 0 6px}
 .npsf .npstrip i{border-radius:4px;min-width:6px;background:color-mix(in srgb, var(--c) 22%, var(--canvas));box-shadow:inset 0 0 0 1.3px var(--c)}
 .tile.npk{background:color-mix(in srgb, var(--c) 18%, var(--canvas));color:var(--c)}
@@ -1724,7 +1726,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzv';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzx';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5294,7 +5296,7 @@ function taxTabs(p, Y){
 }
 // Inputs: the settings the computation cannot read from the records; tap a row to change it on the sheet and recompute
 const TAX_INPUTS = [
-  ['Your income', [['prof.expected','Consultancy expected this year', 'whole-year total, ₹; blank = only what has come in so far'], ['professional.companies','Consultancy clients', 'Income rows from these companies are 44ADA fees, not salary'], ['freelance.presumptive','44ADA taxable share', '% of the receipts taxed'], ['epfTaxable','EPF payout taxable', 'auto = the whole withdrawal'], ['hra.exempt','HRA exemption', 'old regime'], ['profTax','Professional tax', 'old regime']]],
+  ['Your income', [['prof.expected','Consultancy expected this year', 'whole-year total, ₹; blank = only what has come in so far'], ['professional.companies','Consultancy clients', 'Income rows from these companies are 44ADA fees, not salary'], ['freelance.presumptive','44ADA taxable share', '% of the receipts taxed'], ['epfTaxable','EPF payout taxable', 'auto = employer share + interest; or interest, all, a number'], ['hra.exempt','HRA exemption', 'old regime'], ['profTax','Professional tax', 'old regime']]],
   ['From AIS / 26AS', [['indianDividends','Indian dividends', 'this year, from AIS'], ['indianDividends.prev','Indian dividends', 'the year before'], ['usDividendTax','US tax withheld', 'this year, ₹ · INDmoney tax report › Form 44'], ['usDividendTax.prev','US tax withheld', 'the year before'], ['tcs','TCS on remittances', 'this year, Form 26AS'], ['tcs.prev','TCS on remittances', 'the year before']]],
   ['Old-regime deductions', [['d80c.extra','80C besides EPF / ELSS / NPS', 'LIC, PPF, tuition…'], ['d80d','80D health insurance', 'up to 25,000; parents separately'], ['d80g','80G donations', 'deductible part']]],
   ['Computation', [['regime','Regime', 'new, old or auto'], ['tax.year','Tax year', 'blank = the current one'], ['lossBroughtForward.st','Short-term loss brought forward', 'from earlier returns'], ['lossBroughtForward.lt','Long-term loss brought forward', 'from earlier returns'], ['nonEquity.tickers','International ETFs', 'listed ETFs on foreign indices: 12.5% long-term, no ₹1.25L exemption'], ['usGainRule','US gain conversion', '115 = one rate on the dollar gain; sep = cost and sale separately'], ['fx.ttbr','SBI TT buying rates', 'optional, "2026-03:85.9,2026-04:86.2"']]]
@@ -5302,7 +5304,7 @@ const TAX_INPUTS = [
 function taxInputs(p, Y){
   const T = taxD(), S = (T && T.settings) || {};
   const need = k => (k==='indianDividends' || k==='usDividendTax' || k==='prof.expected') && !(S[k] && String(S[k].value).trim());
-  const sec = ([h, keys]) => `<div class="cmhead"><h3>${h}</h3></div><div class="card tight">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num">${v.trim() ? esc(v) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
+  const sec = ([h, keys]) => `<div class="cmhead"><h3>${h}</h3></div><div class="card tight taxin">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num" title="${esc(v)}">${v.trim() ? esc(v.replace(/,\s*/g, ', ')) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
   return `<div class="ft" style="padding:4px 24px 10px;color:var(--ink-3);font-size:12.5px">What the records cannot tell: tap to change. Saved on the Tax Computation tab, then recomputed.</div>` + TAX_INPUTS.map(sec).join('');
 }
 function wireTax(p){
