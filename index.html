@@ -436,6 +436,16 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .vb-pc{text-align:right;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink-2)}
 /* Budget graph card: Daily (this month vs last, cumulative) | Monthly (last 6 months) */
 .vbg-ch{position:relative;height:140px;margin-top:4px;touch-action:pan-y}
+.tbar{position:relative;height:10px;border-radius:6px;background:var(--sunken);margin:7px 0 5px}
+.tbar.big{height:18px;margin:2px 0 6px}
+.tbar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:color-mix(in srgb, var(--c) 20%, var(--canvas));box-shadow:inset 0 0 0 1.4px var(--c)}
+.tbar em{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink-2);border-radius:1px}
+.vbx .l{flex:1;min-width:0}
+.vbx-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.vbx-p{font-size:13px;font-weight:600;color:var(--ink-2)}
+.vbx-m{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.vbx-m .down,.vbx-p.down{color:var(--over)}
+.vbx-tot{padding:14px 0 16px;border-top:1px solid var(--hairline)}
 .vbg-ch svg{width:100%;height:100%;display:block;overflow:hidden}
 .vbg-ch text{font-size:10px;fill:var(--ink-2)}
 /* under the graph: legend (Daily only) and the two dots that say which graph is showing; swipe the graph to switch */
@@ -472,6 +482,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 html[data-theme=dark]{--pc0:#328aea;--pc1:#6c6ad8;--pc2:#6ac2e7;--pc3:#4ec26c;--pc4:#f0a02d;--pc5:#ec5574;--pc6:#b06bdb;--pc7:#ecca32;--pc8:#62c4be;--pc9:#e8584e;--pc10:#aa8f71;--pc11:#94949a}
 .pie .pl{font-size:11.5px;font-weight:500;fill:var(--ink)}
 .pie .pp{font-size:10.5px;fill:var(--ink-3)}
+.pie.rings .rl{font-size:11px;font-weight:600;letter-spacing:-.1px;font-variant-numeric:tabular-nums}
+.piecard:has(.rings){padding:16px 0 12px}
 .prow .pchip{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.35);padding:4px 6px;border-radius:7px;margin-right:2px}
 .prow .pchip.neg{background:var(--hairline,#d2d2d7);color:var(--ink-2);text-shadow:none}
 .prow .v.neg{color:var(--ink-3)}
@@ -1688,7 +1700,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzh';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzk';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4351,6 +4363,9 @@ const XMAP = [[/food|eat|grocer/i,'food','mf'],[/house|home/i,'home','in'],[/tra
   [/shop/i,'bag','cr'],[/invest/i,'invest','rt'],[/health|medic/i,'health','lq'],[/donat|zakat|charity/i,'gift','gd'],
   [/bill|util/i,'bolt','gd'],[/ott|subscri|stream/i,'tv','cr'],[/travel|trip/i,'trip','us'],[/rent/i,'rent','bu'],
   [/sip|mom/i,'leaf','in'],[/construct/i,'build','mf']];
+// the system hue that goes with a category's icon tile, so its bar matches its icon
+const TILE_PC = { us:0, rt:1, lq:2, in:3, mf:4, pk:5, cr:6, gd:7, bk:8, ep:9, bu:10, ch:11 };
+const catCol = cat => { const m = XMAP.find(([re])=>re.test(cat||'')) || [0,'more','ch']; return `var(--pc${TILE_PC[m[2]]})`; };
 function xTile(cat){
   const m = XMAP.find(([re])=>re.test(cat||'')) || [0,'more','ch'];
   return `<div class="tile ${m[2]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${m[1]==='more'?3:1.7}" stroke-linecap="round" stroke-linejoin="round"><path d="${XI[m[1]]}"/></svg></div>`;
@@ -4456,6 +4471,16 @@ function spBudgetHtml(){
       <div>${total?'':`<div class="vb-pc num">${Math.round(u*100)}%</div>`}<div class="vb-tr ${over?'over':''} ${u>=0.97?'full':''}"><i style="width:${Math.min(100,u*100).toFixed(1)}%"></i>${today!=null?`<em style="left:${(today*100).toFixed(1)}%"></em>`:''}${total?`<span>${Math.round(u*100)}%</span>`:''}</div>
       <div class="vb-n"><span class="num money ${over?'down':'sp'}">${fINR2(s)}</span><span class="num money ${total?'':over?'down':''}">${fINR2(b-s)}</span></div></div></div>`;
   };
+  // a tinted bar (tint inside, coloured edge, like the icon tiles) with a tick at today
+  const tbar = (u, col, cls) => `<div class="tbar ${cls||''}" style="--c:${col}"><i style="width:${Math.min(100,u*100).toFixed(1)}%"></i>${today!=null?`<em style="left:${(today*100).toFixed(1)}%"></em>`:''}</div>`;
+  // each budgeted category: its icon, % used, the bar, then spent of budget · left (or over)
+  const catRow = (x, i) => {
+    const u = x.s/x.b, over = x.s > x.b, col = over ? 'var(--over)' : catCol(x.c);
+    return `<div class="row tap vbx" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l">
+      <div class="vbx-h"><div class="n">${esc(x.c)}</div><div class="vbx-p num ${over?'down':''}">${Math.round(u*100)}%</div></div>
+      ${tbar(u, col)}
+      <div class="vbx-m"><span class="num money">${fINR2(x.s)} of ₹${fCmp(x.b)}</span><span class="num money ${over?'down':''}">${fINR2(Math.abs(x.b-x.s))} ${over?'over':'left'}</span></div></div></div>`;
+  };
   // data for the graph card, drawn by drawBudgetChart() once the page is on screen
   const isNowM = ym===ymNow();
   vbData = { ym, cs: budgeted.map(x=>x.c), bud, isNow: isNowM };
@@ -4472,10 +4497,9 @@ function spBudgetHtml(){
   return `<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${fINR2(left)}</div></div>
       <button data-budgets class="bset" aria-label="Budget settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
       ${graph}
-      <div class="vb-mo">${row('Monthly', spent, bud, true)}</div>
       ${figs}</div>
     ${!budgeted.length ? '<div class="card tight vbc"><div class="empty">No budgets set</div></div>' : ''}
-    ${budgeted.length ? `<div class="card tight vbc">${budgeted.map(x=>row(x.c, x.s, x.b)).join('')}</div>` : ''}
+    ${budgeted.length ? `<div class="card tight">${budgeted.map((x,i)=>catRow(x,i)).join('')}</div>` : ''}
     ${looseRows ? `<div class="sechead"><h2>Not budgeted</h2><span class="cnt num money">${fINR2(loose.reduce((a,x)=>a+x.s,0))}</span></div><div class="card tight">${looseRows}</div>` : ''}
     ${inv.length ? `<div class="sechead"><h2>Construction</h2></div><div class="card tight">${inv.map(x=>x.b ? row(x.c, x.s, x.b) : `<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">From the construction fund</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('')}</div>` : ''}`;
@@ -4487,6 +4511,16 @@ function spBudgetHtml(){
 // month's budget. Either way a one-off far past everything else would flatten
 // the rest, so the height is then set by the others and the outlier runs off
 // the top with a label. Tap/drag shows the same card as the other graphs.
+// spent so far as a label pinned to the chart point: a small pill to its left
+// (or right, when the point is near the left edge), kept inside the plot
+function ptLabel(px, py, t, over, W, Hp, above){
+  const w = t.length*6.1 + 14, h = 20, left = px - w - 9 >= 0;
+  const x = above ? Math.min(W - w, Math.max(0, px - w/2)) : left ? px - w - 9 : px + 9, y = above ? Math.max(0, py - h - 6) : Math.min(Hp - h - 2, Math.max(2, py - h/2));
+  const c = over ? 'var(--over)' : 'var(--blue)';
+  return `<g class="ptl"><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="${h/2}" fill="var(--canvas)" stroke="${c}" stroke-width="1.2"/>
+    <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="${h/2}" fill="color-mix(in srgb, ${c} 16%, transparent)"/>
+    <text x="${(x+w/2).toFixed(1)}" y="${(y+13.5).toFixed(1)}" text-anchor="middle" style="fill:${c};font-size:11px;font-weight:700">${t}</text></g>`;
+}
 function drawBudgetChart(){
   const el = $('#spBody .vbg-ch'), D0 = vbData; if (!el || !D0) return;
   const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), {W,H} = chartBox(el), PB = 18, Hp = H - PB;
@@ -4510,9 +4544,10 @@ function drawBudgetChart(){
       ${prev ? `<path d="${L(prev.slice(0,dim))}L${x(Math.min(dim,prev.length)-1)},${Hp}L${x(0)},${Hp}Z" fill="url(#vbgD)"/><path d="${L(prev.slice(0,dim))}" fill="none" stroke="var(--ink-3)" stroke-opacity=".6"/>` : ''}
       <line x1="0" x2="${W}" y1="${y(D0.bud)}" y2="${y(D0.bud)}" stroke="var(--ink-3)" stroke-dasharray="4 4"/>
       <text x="0" y="${y(D0.bud)-5}">Budget ₹${fCmp(D0.bud)}</text>
-      ${cur.length>1 ? `<path d="${L(cur)}L${lx},${Hp}L${x(0)},${Hp}Z" fill="url(#vbgG)"/><path d="${L(cur)}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
+      ${cur.length>1 ? `<path d="${L(cur)}L${lx},${Hp}L${x(0)},${Hp}Z" fill="color-mix(in srgb, var(--blue) 18%, transparent)"/><path d="${L(cur)}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
       ${cap ? `<text x="${Math.min(lx+4, W-48)}" y="11" style="fill:var(--blue);font-weight:700;font-size:10.5px">₹${fCmp(cMax)} ↑</text>`
-            : cur.length ? `<circle cx="${lx}" cy="${y(cMax)}" r="3.5" fill="var(--blue)" stroke="var(--canvas)" stroke-width="2"/>` : ''}
+            : cur.length ? `<circle cx="${lx}" cy="${y(cMax)}" r="4" fill="var(--canvas)" stroke="var(--blue)" stroke-width="2"/>` : ''}
+      ${cur.length ? ptLabel(lx, cap ? 18 : y(cMax), `₹${fCmp(cMax)} · ${Math.round(cMax/D0.bud*100)}%`, cMax > D0.bud, W, Hp) : ''}
       <line x1="0" x2="${W}" y1="${Hp}" y2="${Hp}" stroke="var(--hairline)"/>
       ${lbl(0,'1 '+ymShort(ym),'start')}${D0.isNow && upTo>3 && upTo<dim-3 ? lbl(lx,'Today','middle') : ''}${lbl(W,dim+' '+ymShort(ym),'end')}
       <line id="ah" class="gridline" y1="0" y2="${Hp}" stroke-dasharray="3 3" style="display:none"/>`;
@@ -4532,10 +4567,11 @@ function drawBudgetChart(){
   const bx = i => 4 + i*(bw+gap), y = v => Hp - Math.min(v,mx)/mx*(Hp-4);
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.innerHTML = ms.map((v,i)=>{ const o = v.s > v.b && v.b > 0, x0 = bx(i), last = i===n-1;
-      return `<rect data-vbb="${i}" x="${x0}" y="${y(v.s)}" width="${bw}" height="${Math.max(0,Hp-y(v.s))}" rx="5" fill="${o?'var(--over)':'var(--blue)'}" opacity="${last?1:.6}"/>
+      return `<rect data-vbb="${i}" x="${x0}" y="${y(v.s)}" width="${bw}" height="${Math.max(0,Hp-y(v.s))}" rx="5" fill="color-mix(in srgb, ${o?'var(--over)':'var(--blue)'} 20%, var(--canvas))" stroke="${o?'var(--over)':'var(--blue)'}" stroke-width="1.4" opacity="${last?1:.6}"/>
         ${v.b ? `<line x1="${x0-4}" x2="${x0+bw+4}" y1="${y(v.b)}" y2="${y(v.b)}" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>` : ''}
         ${v.s > mx ? `<text x="${x0-4}" y="11" text-anchor="end" style="fill:var(--over);font-weight:700;font-size:10.5px">₹${fCmp(v.s)} ↑</text>` : ''}
         <text x="${x0+bw/2}" y="${H-4}" text-anchor="middle" style="${last?'fill:var(--ink)':''}">${esc(ymShort(v.m).slice(0,3))}</text>`; }).join('')
+    + (()=>{ const v = ms[n-1]; return v.s && v.b ? ptLabel(bx(n-1)+bw/2, y(v.s), `₹${fCmp(v.s)} · ${Math.round(v.s/v.b*100)}%`, v.s > v.b, W, Hp, true) : ''; })()
     + `<line x1="0" x2="${W}" y1="${Hp}" y2="${Hp}" stroke="var(--hairline)"/>`;
   const bars = [...svg.querySelectorAll('[data-vbb]')], dimAll = () => bars.forEach((r,i)=>r.setAttribute('opacity', i===n-1 ? 1 : .6));
   hoverable(el, svg, tip, ms, i=>bx(i)+bw/2, W, v=>{ const i = ms.indexOf(v); bars.forEach((r,k)=>r.setAttribute('opacity', k===i || k===n-1 ? 1 : .6));
@@ -4551,42 +4587,28 @@ function monthIncome(ym){
   const o = {}; ((xd()||{}).incomes||[]).forEach(i=>{ if (i.date.slice(0,7)===ym && i.type!=='Adjustment' && i.amount>0 && !constrAcc(i.account)) o[i.type||'Other']=(o[i.type||'Other']||0)+i.amount; });
   return o;
 }
-function pieSvg(items, total){
-  // labels around the pie with elbow leaders; the small slices are turned to
-  // face left so their labels have room
-  const W = 361, H = 270, cx = W/2, cy = H/2, R = 80, G = 27;
-  const tail = items.filter(x=>x.v/total<0.05).reduce((a,x)=>a+x.v,0)/total;
-  let a0 = -Math.PI + tail*Math.PI, s = '';
-  const labs = [], P = (a,rr) => [(cx+rr*Math.cos(a)).toFixed(1), (cy+rr*Math.sin(a)).toFixed(1)];
-  items.forEach((it,i)=>{
-    it.col = pieCol(i);
-    const a1 = a0 + it.v/total*2*Math.PI, mid = (a0+a1)/2;
-    if (items.length===1) s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${it.col}"/>`;
-    else { const [x0,y0] = P(a0,R), [x1,y1] = P(a1,R);
-      s += `<path d="M${cx},${cy}L${x0},${y0}A${R},${R} 0 ${a1-a0>Math.PI?1:0} 1 ${x1},${y1}Z" fill="${it.col}" stroke="var(--canvas)" stroke-width="1.5"/>`; }
-    const pct = it.v/total*100;
-    if (pct >= 2) labs.push({ mid, col:it.col, k:it.k, pct });
-    a0 = a1;
+// Radial rings: the biggest six categories each get a ring; its length is the
+// category's spend against the biggest (the biggest runs three-quarters round).
+// Tinted fill with a coloured edge, like the icon tiles. Every item gets a colour
+// (it.col) so the list below can match it.
+const tintOf = c => `color-mix(in srgb, ${c} 18%, transparent)`;
+function ringsSvg(items, total){
+  items.forEach((it,i)=>{ it.col = pieCol(i); });
+  const top = items.slice(0,6), W = 361, R0 = 114, step = 17, sw = 12, cx = W/2, cy = R0+8, H = cy + R0 + 8, SPAN = 1.5*Math.PI, a0 = -Math.PI/2;
+  const P = (r,a) => (cx + r*Math.cos(a)).toFixed(1) + ',' + (cy + r*Math.sin(a)).toFixed(1);
+  const arcD = (r,a1) => `M${P(r,a0)}A${r},${r} 0 ${a1-a0>Math.PI?1:0} 1 ${P(r,a1)}`;
+  let s = '';
+  top.forEach((it,i)=>{
+    const r = R0 - i*step, a1 = a0 + Math.max(0.04, SPAN*(it.v/top[0].v)), d = arcD(r,a1), pct = it.v/total*100;
+    s += `<path d="${arcD(r, a0+SPAN)}" fill="none" stroke="var(--sunken)" stroke-width="${sw}" stroke-linecap="round"/>`
+      + `<path d="${d}" fill="none" stroke="${it.col}" stroke-width="${sw}" stroke-linecap="round"/>`
+      + `<path d="${d}" fill="none" stroke="var(--canvas)" stroke-width="${sw-3}" stroke-linecap="round"/>`
+      + `<path d="${d}" fill="none" stroke="${tintOf(it.col)}" stroke-width="${sw-3}" stroke-linecap="round"/>`
+      + `<text x="${cx-10}" y="${(cy-r+4).toFixed(1)}" text-anchor="end" class="rl" style="fill:${it.col}">${esc(it.k.length>13 ? it.k.slice(0,11)+'…' : it.k)} ${pct<10 ? pct.toFixed(1) : Math.round(pct)}%</text>`;
   });
-  labs.forEach(l=>{ l.right = Math.cos(l.mid) >= 0; l.y = cy + (R+10)*Math.sin(l.mid); l.ex = cx + (R+10)*Math.cos(l.mid); l.x = l.right ? cx+R+28 : cx-R-28; });
-  ['l','r'].forEach(sd=>{
-    const L = labs.filter(l=>(sd==='r')===l.right).sort((a,b)=>a.y-b.y);
-    for (let i=1;i<L.length;i++) if (L[i].y-L[i-1].y < G) L[i].y = L[i-1].y + G;
-    const over = L.length ? L[L.length-1].y - (H-14) : 0; if (over>0) L.forEach(l=>l.y -= over);
-    for (let i=L.length-2;i>=0;i--) if (L[i+1].y-L[i].y < G) L[i].y = L[i+1].y - G;
-  });
-  labs.forEach(l=>{
-    const [sx,sy] = P(l.mid, R+1), anc = l.right ? 'start' : 'end', tx = (l.x + (l.right?5:-5)).toFixed(1), name = l.k.length>11 ? l.k.slice(0,9)+'…' : l.k;
-    s += `<path d="M${sx},${sy}L${l.ex.toFixed(1)},${l.y.toFixed(1)}L${l.x.toFixed(1)},${l.y.toFixed(1)}" stroke="${l.col}" stroke-width="1.2" fill="none" stroke-linejoin="round"/>`
-      + `<text x="${tx}" y="${(l.y-1).toFixed(1)}" text-anchor="${anc}" class="pl">${esc(name)}</text>`
-      + `<text x="${tx}" y="${(l.y+12).toFixed(1)}" text-anchor="${anc}" class="pp">${l.pct<10 ? l.pct.toFixed(1) : Math.round(l.pct)}%</text>`;
-  });
-  // crop to what's drawn so there's no empty band above or below
-  let y0 = cy - R - 2, y1 = cy + R + 2;
-  labs.forEach(l=>{ y0 = Math.min(y0, l.y - 14); y1 = Math.max(y1, l.y + 16); });
-  y0 = Math.max(0, Math.floor(y0) - 6); y1 = Math.min(H, Math.ceil(y1) + 6);
-  return `<svg class="pie" viewBox="0 ${y0} ${W} ${y1-y0}">${s}</svg>`;
+  return `<svg class="pie rings" viewBox="0 0 ${W} ${H}">${s}</svg>`;
 }
+const ringTile = (k, col) => xTile(k).replace('<div class="tile', `<div style="--tile:${tintOf(col)};--tileink:${col}" class="tile`);
 function spMonthlyHtml(){
   const ym = spMonth, raw = xMonth(ym), exp = personal(raw), invested = Object.entries(raw).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0), inc = monthIncome(ym);
   const tE = Object.values(exp).filter(v=>v>0).reduce((a,v)=>a+v,0), tI = xTotal(inc);
@@ -4605,17 +4627,17 @@ function spMonthlyHtml(){
       <div class="l"><div class="n">Investment</div><div class="m">Not counted in spends</div></div><div class="r"><div class="v num money">${fINR2(cInv)}</div></div></div>` : '');
   const invRow = spIO==='exp' && cRows ? `<div class="sechead"><h2>Construction</h2>${invested>0 && cInv>0 ? `<span class="cnt num money">${fINR2(invested+cInv)}</span>` : ''}</div><div class="card tight">${cRows}</div>` : '';
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
-  const svg = pieSvg(items, total);
+  const svg = ringsSvg(items, total);
   const rows = items.map(it=>{
     const pct = Math.round(it.v/total*100);
     const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : `class="row tap prow" data-icat="${esc(it.k)}" data-ymc="${ym}"`;
-    return `<div ${tap}><span class="pchip" style="background:${it.col}">${pct<1?'<1':pct}%</span>
-      <div class="l"><div class="n">${esc(it.k)}</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
+    return `<div ${tap}>${ringTile(it.k, it.col)}
+      <div class="l"><div class="n">${esc(it.k)}</div><div class="m">${pct<1?'<1':pct}%</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
   // a category whose refunds outweigh its spending nets below zero: it can't be
   // a slice, so it is listed under the others
   const negRows = spIO==='exp' ? Object.entries(src).filter(([,v])=>v<0).sort((a,b)=>a[1]-b[1]).map(([k,v])=>
-    `<div class="row tap prow" data-xcat="${esc(k)}" data-ymc="${ym}"><span class="pchip neg">—</span>
+    `<div class="row tap prow" data-xcat="${esc(k)}" data-ymc="${ym}">${xTile(k)}
       <div class="l"><div class="n">${esc(k)}</div><div class="m">Refunds more than spent</div></div><div class="r"><div class="v num money neg">−${fINR2(-v)}</div></div></div>`).join('') : '';
   return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}${negRows}</div>` + invRow;
 }
