@@ -385,6 +385,19 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .tabsw{display:flex;align-items:center;gap:10px;margin:18px 16px 14px}.tabsw .seg{flex:1;margin:0}.tabsw .seg button{font-size:14px;padding:8px 4px;letter-spacing:-.2px}
 .epaddrow .n{color:var(--blue);font-weight:500}.epai{width:32px;height:32px;border-radius:50%;background:rgba(0,102,204,.1);color:var(--blue);display:grid;place-items:center;flex:0 0 auto}.epai svg{width:16px;height:16px}html[data-theme=dark] .epai{background:rgba(41,151,255,.16)}
 .card.tight .epaddrow:first-child{border-top:0}.epaddc{margin-bottom:4px}
+/* NPS: the three schemes' shares as one strip, and a lettered tile per scheme */
+.npstats{margin-top:14px}
+.npsform .npg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.npsform .npg>div{display:flex;align-items:center;gap:8px;background:var(--parchment);border-radius:12px;padding:8px 10px}
+.npsform .npg i{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font:700 11px var(--font-disp);font-style:normal;color:var(--c);background:color-mix(in srgb, var(--c) 18%, var(--canvas))}
+.npsform .npg input{flex:1;min-width:0;width:100%;border:0;outline:0;background:none;color:var(--ink);font:600 16px var(--font-disp);font-variant-numeric:tabular-nums}
+.npsform .npsrm input{font-size:16px;font-weight:500;letter-spacing:0}
+.npsf .npstrip{display:flex;gap:3px;height:10px;margin:14px 0 6px}
+.npsf .npstrip i{border-radius:4px;min-width:6px;background:color-mix(in srgb, var(--c) 22%, var(--canvas));box-shadow:inset 0 0 0 1.3px var(--c)}
+.tile.npk{background:color-mix(in srgb, var(--c) 18%, var(--canvas));color:var(--c)}
+.tile.npk b{font:700 16px var(--font-disp)}
+.npsf .row .r .s{font-size:12px;color:var(--ink-2)}
+
 .tabbody{min-height:calc(100vh - 150px)}
 .epform .btns .del{flex:0 0 auto;padding:11px 14px;background:var(--down-bg);color:var(--down)}.epform .ttl{font-size:15px;font-weight:600;margin-bottom:10px}.epbtn{display:flex;gap:16px}
 .epform .epdate{width:100%;font-size:16px;background:var(--parchment);border:0;border-radius:12px;padding:10px 12px;color:var(--ink)}
@@ -1701,7 +1714,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzp';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzq';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1918,7 +1931,7 @@ function renderHome(d){
   const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && (a.value!==0 || (/^EPF$/i.test(a.name) && epfD())) && !/^Less:|^Charges/i.test(a.name))
     .sort((a,b)=>(b.value||0)-(a.value||0));
   $('#assets').innerHTML = rows.map(a=>`
-    <div class="row platrow${/^EPF$/i.test(a.name) && epfD() ? ' tap" data-epf="1' : ''}"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
+    <div class="row platrow${/^EPF$/i.test(a.name) && epfD() ? ' tap" data-epf="1' : /^NPS$/i.test(a.name) && npsD() ? ' tap" data-nps="1' : ''}"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>${a.dayChange!=null
@@ -1930,6 +1943,7 @@ function renderHome(d){
   // an asset class opens Holdings ▸ Assets with that filter on
   $$('#assets .row[data-acat]').forEach(r=>r.onclick=()=>openAssetCat(r.dataset.acat));
   $$('#assets .row[data-epf]').forEach(r=>r.onclick=()=>pushPage({ kind:'epf' }));
+  $$('#assets .row[data-nps]').forEach(r=>r.onclick=()=>pushPage({ kind:'nps' }));
 
   // recent
   // (the Recent list was removed from Overview — Activity has every order)
@@ -3636,7 +3650,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='nps' ? 'NPS' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3678,7 +3692,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3692,6 +3706,7 @@ function renderPage(){
   if (p.kind==='intq'){ wireZiQ(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
   if (p.kind==='epf'){ wireEpf(p); return; }
+  if (p.kind==='nps'){ wireNps(p); return; }
   if (p.kind==='bklog'){ const o = $('#bkOnly'); if (o) o.onclick = ()=>{ save('inv.bkOnly', !o.classList.contains('on')); renderPage(); }; }
   if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
     const m = $('#bkLogAll'); if (m) m.onclick = ()=>pushPage({ kind:'bklog' });
@@ -4767,10 +4782,12 @@ function expcatBody(p){
 /* Line graph for a category / income type: one point per month, its value in k
    above it, the picked month as a ring. Scrolls sideways; each month's column
    is a tap target (data-mbym). Over-budget months turn red when budFn is given. */
-function monthLineChart(months, vals, sel, budFn, bud){
+function monthLineChart(months, vals, sel, budFn, bud, fit){
   const K = v => { v = Math.round(v||0); return v ? (v/1000).toFixed(Math.abs(v)>=1e4?0:1).replace(/\.0$/,'')+'k' : '0'; };
   const W = 64, H = 170, top = 26, bot = 34, ph = H - top - bot, w = months.length * W;
-  const mx = Math.max(1, bud||0, ...vals), mn = Math.min(0, ...vals);
+  let mx = Math.max(1, bud||0, ...vals), mn = Math.min(0, ...vals);
+  // fit: a balance that never nears zero (NPS) gets a scale around its own range, or the line is flat
+  if (fit){ const lo = Math.min(...vals), hi = Math.max(...vals), pad = Math.max((hi - lo) * 0.25, hi * 0.01); mn = Math.max(0, lo - pad); mx = hi + pad; }
   const x = i => i*W + W/2, y = v => top + ph - ((v-mn)/(mx-mn))*ph;
   let g = ''; for (let k=0;k<=3;k++){ const yy = (top + ph*k/3).toFixed(1); g += `<line class="grid" x1="0" x2="${w}" y1="${yy}" y2="${yy}"/>`; }
   const pts = vals.map((v,i)=>[x(i), y(v)]);
@@ -5033,6 +5050,156 @@ function epfBody(p){
   return hero
     + (due != null && p.epf !== 'i' ? `<button class="card bkpill bankrow zirem" data-epfi data-fy="${due}"><span class="bk-ic iq">${PCT_IC}</span><span class="bk-t">Add ${esc(fyLbl(due))} interest</span><span class="bk-v zis">EPF</span>${CHEV_R}</button>` : '')
     + epfTabs(p, c, ints, wds, contrib);
+}
+/* ---------- NPS ----------
+   From All Investments › NPS: one row per movement — contributions (amount, fee, units
+   bought in E / C / G at that day's NAVs), charges taken as units (CRA, persistency), the
+   joining fee, and rebalancing between schemes. Value = units held × today's NAV (the
+   NAVs update hourly). Contributions are linked to Money (Investment › NPS) by an ID. */
+const npsD = () => (D && D.data && D.data.nps) || null;
+const NPS_K = [['E','Equity','var(--pc0)'],['C','Corporate bonds','var(--pc4)'],['G','Govt securities','var(--pc3)']];
+function npsCalc(){
+  const N = npsD(); if (!N) return null;
+  const rows = (N.rows||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.row||0)-(b.row||0));
+  const u = { E:0, C:0, G:0 }, uv = r => NPS_K.reduce((s,[k])=>s + (Number((r.units||{})[k])||0) * (Number((r.nav||{})[k])||0), 0);
+  rows.forEach(r=>{ NPS_K.forEach(([k])=>{ u[k] += Number((r.units||{})[k])||0; });
+    const unitsIn = NPS_K.some(([k])=>Number((r.units||{})[k]) > 0), unitsOut = NPS_K.some(([k])=>Number((r.units||{})[k]) < 0);
+    r.kind = r.amount > 0 ? 'contrib' : /rebalanc/i.test(r.remark||'') || (unitsIn && unitsOut) ? 'rebal' : !unitsIn && !unitsOut && r.fee > 0 ? 'fee' : 'charge';
+    r.worth = Math.round(uv(r) * 100) / 100; });
+  // rebalancing comes in two rows days apart (sold, then bought): shown as one move
+  const funds = NPS_K.map(([k,label,col])=>{ const f = (N.funds||[]).find(x=>x.k===k) || {}; return { k, label, col, nav:f.nav||0, units:Math.round(u[k]*10000)/10000, value:Math.round(u[k]*(f.nav||0)*100)/100 }; });
+  const value = funds.reduce((s,f)=>s+f.value,0), C = rows.filter(r=>r.kind==='contrib'), invested = C.reduce((s,r)=>s+r.amount,0);
+  const fees = rows.reduce((s,r)=>s+(r.fee||0),0), taken = rows.filter(r=>r.kind==='charge').reduce((s,r)=>s-r.worth,0);
+  const H = (N.hist||[]).slice().sort((a,b)=>a.date<b.date?-1:1), months = [], vals = [];
+  if (H.length){ for (let m = H[0].date.slice(0,7); m <= ymNow(); m = ymAdd(m,1)){ const last = H.filter(h=>h.date.slice(0,7)<=m).pop(); months.push(m); vals.push(last ? last.value : 0); } }
+  return { N, rows, C, funds, value, invested, pnl:value - invested, fees, taken, charges:fees + taken, months, vals };
+}
+function npsBody(p){
+  const c = npsCalc(); if (!c) return '<div class="pg-load">Loading…</div>';
+  const pc = c.invested ? c.pnl / c.invested : null, N = c.N;
+  const hero = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${mark('NPS')}<div class="grow"><div class="t">NPS</div><div class="s">${esc(N.manager || 'SBI Pension Fund')} · Tier I</div></div></div>
+      <div class="pg-big num money">${fINR2(c.value)}</div>
+      ${N.dayChange!=null ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(N.dayChange, fINR)}${N.dayChangePct!=null ? ` <span class="${cls(N.dayChangePct)}">(${fPct(Math.abs(N.dayChangePct),false)})</span>` : ''} <span class="k">today</span></span></div>` : ''}
+      ${c.months.length > 1 ? monthLineChart(c.months, c.vals, c.months[c.months.length-1], null, 0, true) : ''}
+      <div class="spstats lcr npstats"><div><span>Invested</span><b class="num money">${fINR(c.invested)}</b></div>
+        <div><span>Returns</span><b class="num money ${cls(c.pnl)}">${c.pnl<0?'−':c.pnl>0?'+':''}${fINR(Math.abs(c.pnl))}${pc!=null ? ` <em class="pct">${fPct(pc)}</em>` : ''}</b></div>
+        <div><span>Charges</span><b class="num money">${fINR(c.charges)}</b></div></div>
+    </div>`;
+  // the three schemes: a strip of their shares, then units × today's NAV
+  const strip = `<div class="npstrip">${c.funds.map(f=>`<i style="flex:${Math.max(f.value,0.01)};--c:${f.col}"></i>`).join('')}</div>`;
+  const funds = `<div class="sechead"><h2>Schemes</h2><span class="cnt">NAV updates hourly</span></div>
+    <div class="card tight npsf">${strip}${c.funds.map(f=>`<div class="row"><div class="tile npk" style="--c:${f.col}"><b>${f.k}</b></div>
+      <div class="l"><div class="n">${esc(f.label)}</div><div class="m num">${(+f.units.toFixed(2)).toLocaleString('en-IN')} units · NAV ₹${f.nav.toFixed(2)}</div></div>
+      <div class="r"><div class="v num money">${fINR(f.value)}</div><div class="s num">${c.value ? Math.round(f.value / c.value * 100) : 0}%</div></div></div>`).join('')}</div>`;
+  return hero + funds + npsTabs(p, c);
+}
+function npsTabs(p, c){
+  const t = p.npsTab = p.npsTab || 'c';
+  const seg = `<div class="tabsw"><div class="seg epseg">${[['c','Contributions'],['x','Charges']].map(([k,l])=>`<button data-npst="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div></div>`;
+  const open = p.nps===t;
+  const add = w => open ? '' : `<button class="row tap epaddrow" data-npsadd="${t}"><span class="epai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><div class="l"><div class="n">Add ${w}</div></div></button>`;
+  const unitsTxt = r => NPS_K.map(([k])=>{ const v = Number((r.units||{})[k])||0; return v ? k + ' ' + (v>0?'+':'−') + Math.abs(v).toFixed(2) : ''; }).filter(Boolean).join(' · ');
+  const row = (r, title, meta, v, vc) => (r.kind==='contrib' || r.kind==='charge') && r.id ? `<div class="row tap" data-npse="${esc(r.id)}" role="button"><div class="l"><div class="n">${title}</div><div class="m">${meta}</div></div><div class="r"><div class="v num money ${vc||''}">${v}</div></div></div>`
+    : `<div class="row"><div class="l"><div class="n">${title}</div><div class="m">${meta}</div></div><div class="r"><div class="v num money ${vc||''}">${v}</div></div></div>`;
+  let body;
+  if (t==='c'){
+    const byFY = {}; c.C.forEach(r=>{ (byFY[fyOf(r.date)] = byFY[fyOf(r.date)] || []).push(r); });
+    const ys = Object.keys(byFY).sort().reverse();
+    body = ys.map((s,i)=>{ const L = byFY[s].slice().reverse();
+      return `<div class="cmhead"><h3>${esc(fyLbl(+s))}</h3><span class="num money">${fINR(L.reduce((a,r)=>a+r.amount,0))}</span></div>
+        <div class="card tight">${i===0 ? add('contribution') : ''}${L.map(r=>row(r, esc(fDateY(r.date)), [r.remark && !/^voluntary/i.test(r.remark) ? esc(r.remark) : '', r.fee ? 'Fee ' + fINR2(r.fee) : '', NPS_K.reduce((a,[k])=>a+(Number((r.units||{})[k])||0),0).toFixed(2) + ' units'].filter(Boolean).join(' · '), fINR(r.amount))).join('')}</div>`; }).join('')
+      || `<div class="card tight">${add('contribution')}<div class="empty">No contributions yet</div></div>`;
+  } else {
+    // a rebalance comes as two rows a few days apart (sold, then bought): one line, both dates
+    const X = []; c.rows.filter(r=>r.kind!=='contrib').forEach(r=>{ const q = X[X.length-1];
+      if (r.kind==='rebal' && q && q.kind==='rebal' && (new Date(r.date) - new Date(q.date)) <= 10*864e5){
+        X[X.length-1] = { ...q, date2:r.date, units: Object.fromEntries(NPS_K.map(([k])=>[k, (Number((q.units||{})[k])||0) + (Number((r.units||{})[k])||0)])), out:q.units, inn:r.units };
+      } else X.push(r); });
+    X.reverse();
+    const fx = c.C.filter(r=>r.fee), lbl = r => r.kind==='rebal' ? 'Rebalanced' : r.kind==='fee' ? (r.remark || 'Joining fee') : (r.remark || 'Account charges').replace(/\s*for\s+/i,' · ').replace(/,\s*/,' ');
+    const moved = r => { const o = NPS_K.filter(([k])=>Number(((r.out||r.units)||{})[k]) < 0).map(([k])=>k), i = NPS_K.filter(([k])=>Number(((r.inn||r.units)||{})[k]) > 0).map(([k])=>k); return o.join(' + ') + ' → ' + i.join(' + '); };
+    body = `<div class="cmhead"><h3>Taken so far</h3><span class="num money">${fINR2(c.charges)}</span></div>
+      <div class="card tight">${add('charge')}${X.map(r=>row(r, esc(lbl(r)), r.kind==='rebal' ? esc(fDateY(r.date)) + ' · ' + moved(r) : esc(fDateY(r.date)) + (unitsTxt(r) ? ' · ' + unitsTxt(r) : ''),
+          r.kind==='rebal' ? '—' : '−' + fINR2(r.kind==='fee' ? r.fee : -r.worth), r.kind==='rebal' ? 'faint' : '')).join('')}
+        ${fx.length ? `<div class="row"><div class="l"><div class="n">Transaction fees</div><div class="m">On ${fx.length} contribution${fx.length===1?'':'s'}</div></div><div class="r"><div class="v num money">−${fINR2(fx.reduce((s,r)=>s+r.fee,0))}</div></div></div>` : ''}</div>`;
+  }
+  return seg + `<div class="tabbody">${open ? npsForm(p, c) : ''}${body}</div>`;   // tabbody keeps the height, so switching never jumps
+}
+// a contribution (amount, fee, units bought at the day's NAVs, the account it was paid from) or a
+// charge (units taken). The NAVs start at today's; the line under the units checks them against the amount.
+function npsAccs(){ return xAccounts().filter(a=>!a.other && a.active!==false && (accKind(a)==='bank' || accKind(a)==='card')).map(a=>a.name); }
+function npsForm(p, c){
+  const f = p.npsF || {}, ch = p.nps==='x', N = c.N;
+  const nav0 = k => { const x = (N.funds||[]).find(y=>y.k===k); return x ? x.nav : ''; };
+  const val = (k, d) => f[k]!=null ? f[k] : d;
+  const inp = (k, v, ph, cur) => `<div class="inwrap">${cur ? '<span>₹</span>' : ''}<input data-npsv="${k}" inputmode="decimal" value="${v!=null && v!=='' ? esc(String(v)) : ''}" placeholder="${esc(ph)}"></div>`;
+  const grid = (pre, ph, d) => `<div class="npg">${NPS_K.map(([k,,col])=>`<div><i style="--c:${col}"><b>${k}</b></i><input data-npsv="${pre}${k}" inputmode="decimal" value="${esc(String(val(pre+k, d(k))))}" placeholder="${ph}"></div>`).join('')}</div>`;
+  const accs = npsAccs(), acc = val('acc', p.npsEd ? '' : (N.defAcct && accs.includes(N.defAcct) ? N.defAcct : accOk(DEF('exp.investAccount')) && accs.includes(DEF('exp.investAccount')) ? DEF('exp.investAccount') : accs[0] || ''));
+  const body = `<label>Date</label><input type="date" class="epdate" data-npsd value="${esc(f.date || todayISO())}" max="${todayISO()}">
+    ${ch ? '' : `<label style="margin-top:12px">Amount</label>${inp('amt', val('amt',''), '0', 1)}
+    <label style="margin-top:12px">Transaction fee</label>${inp('fee', val('fee',''), '0', 1)}`}
+    <label style="margin-top:12px">${ch ? 'Units taken' : 'Units bought'}</label>${grid('u', '0', ()=>'')}
+    <label style="margin-top:12px">NAV that day</label>${grid('n', '0', nav0)}
+    <div class="eph npsh">${npsHint(p)}</div>
+    ${ch ? '' : `<label style="margin-top:12px">Paid from</label><div class="cbm"><b>${esc(acc || 'Pick an account')}</b><select data-npsacc>${(acc ? [] : ['']).concat(accs).map(n=>`<option value="${esc(n)}" ${n===acc?'selected':''}>${esc(n || 'Pick an account')}</option>`).join('')}</select></div>`}
+    <label style="margin-top:12px">Remark</label><div class="inwrap npsrm"><input data-npsv="rm" value="${esc(val('rm', ch ? '' : ''))}" placeholder="${ch ? 'CRA Billing for Q2, 2026-2027' : 'Voluntary Contribution'}"></div>`;
+  const ttl = `<div class="ttl">${p.npsEd ? 'Edit' : 'Add'} ${ch ? 'charge' : 'contribution'}</div>`;
+  return `<div class="cbform epform npsform">${ttl}${body}${p.npsErr ? `<div class="err">${esc(p.npsErr)}</div>` : ''}
+    <div class="btns">${p.npsEd ? `<button class="del" data-npsdel ${p.npsBusy?'disabled':''}>${p.npsDelArm ? 'Delete?' : 'Delete'}</button>` : ''}<button class="cancel" data-npsx>Cancel</button><button class="save" data-npssave ${p.npsBusy?'disabled':''}>${p.npsBusy ? 'Saving…' : 'Save'}</button></div></div>`;
+}
+// units × NAV, against what was paid (amount less the fee) or as the value taken
+function npsHint(p){
+  const f = p.npsF || {}, ch = p.nps==='x', N = npsD() || {};
+  const nav = k => { const v = f['n'+k]; if (v!=null && v!=='') return Number(v) || 0; const x = (N.funds||[]).find(y=>y.k===k); return x ? x.nav : 0; };
+  const w = NPS_K.reduce((s,[k])=>s + (Number(f['u'+k]) || 0) * nav(k), 0);
+  if (!w) return ch ? 'Units come off each scheme at the day’s NAV' : 'From the statement: the units each scheme bought';
+  if (ch) return '≈ ' + fINR2(w) + ' taken';
+  const net = (Number(f.amt) || 0) - (Number(f.fee) || 0), d = Math.round((w - net) * 100) / 100;
+  return 'Units × NAV = ' + fINR2(w) + (net > 0 ? (Math.abs(d) < 1 ? ' · matches amount − fee' : ' · ' + fINR2(Math.abs(d)) + (d > 0 ? ' over' : ' short of') + ' amount − fee') : '');
+}
+function wireNps(p){
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  const reset = ()=>{ p.nps = null; p.npsF = null; p.npsEd = null; p.npsErr = ''; p.npsDelArm = false; };
+  $$('#page [data-npst]').forEach(b=>b.onclick=()=>{ p.npsTab = b.dataset.npst; reset(); again(); });
+  $$('#page [data-npsadd]').forEach(b=>b.onclick=()=>{ reset(); p.nps = b.dataset.npsadd; p.npsF = {}; again(); });
+  // tap an entry to change or delete it (the server moves its Money lines with it)
+  $$('#page [data-npse]').forEach(r=>r.onclick=()=>{ const x = (npsCalc().rows||[]).find(y=>y.id===r.dataset.npse); if (!x) return;
+    reset(); const ch = x.kind==='charge'; p.nps = ch ? 'x' : 'c'; p.npsTab = p.nps; p.npsEd = { id:x.id, row:x.row, date:x.date };
+    const F = { date:x.date, amt:ch ? '' : x.amount, fee:ch ? '' : (x.fee || ''), rm:x.remark || '', acc:x.acct || undefined };
+    NPS_K.forEach(([k])=>{ const u = Number((x.units||{})[k]) || 0; F['u'+k] = u ? Math.abs(u) : ''; F['n'+k] = u ? (Number((x.nav||{})[k]) || '') : ''; });
+    p.npsF = F; again(); const fm = $('#page .npsform'); if (fm) $('#page').scrollTop += fm.getBoundingClientRect().top - 140; });
+  const f = () => (p.npsF = p.npsF || {});
+  $$('#page [data-npsv]').forEach(i=>i.oninput=()=>{ f()[i.dataset.npsv] = i.dataset.npsv==='rm' ? i.value : numPlain(i.value); const h = $('#page .npsh'); if (h) h.textContent = npsHint(p); });
+  const dd = $('#page [data-npsd]'); if (dd) dd.onchange = ()=>{ f().date = dd.value; };
+  const ac = $('#page [data-npsacc]'); if (ac) ac.onchange = ()=>{ f().acc = ac.value; again(); };
+  const x = $('#page [data-npsx]'); if (x) x.onclick = ()=>{ reset(); again(); };
+  const post = async (data, msg) => {
+    p.npsBusy = true; p.npsErr = ''; again();
+    try{ const r = await apiPost(p.npsEd ? 'npsEdit' : 'npsAdd', p.npsEd ? { old:p.npsEd, new:data } : data);
+      if (r && r.rows && D && D.data){ D.data.nps = r; save(LS.data, D); }
+      p.npsBusy = false; reset(); again();
+      toast(r && r.warn ? 'Saved to NPS. ' + r.warn : msg);
+      refresh(false, true); loadExpenses(true);   // Money's lines for it changed too
+    }catch(e){ p.npsBusy = false; p.npsErr = e.message || 'Could not save'; again(); }
+  };
+  const dl = $('#page [data-npsdel]'); if (dl) dl.onclick = ()=>{ if (!p.npsDelArm){ p.npsDelArm = true; again(); return; } post(null, 'Deleted from NPS' + (p.nps==='c' ? ' and Money' : '')); };
+  const sv = $('#page [data-npssave]'); if (sv) sv.onclick = ()=>{
+    const F = f(), ch = p.nps==='x', N = npsD() || {};
+    const num = k => { const v = F[k]; return v!=null && v!=='' ? Number(v) : NaN; };
+    const navOf = k => { const v = num('n'+k); if (isFinite(v)) return v; const x = (N.funds||[]).find(y=>y.k===k); return x ? x.nav : NaN; };
+    const units = {}, nav = {}; NPS_K.forEach(([k])=>{ const u = num('u'+k); if (u > 0){ units[k] = u; nav[k] = navOf(k); } });
+    const acc = F.acc != null ? F.acc : (($('#page [data-npsacc]')||{}).value || '');
+    const data = { kind: ch ? 'charge' : 'contrib', date: F.date || todayISO(), units, nav, remark: (F.rm || '').trim() };
+    const err = m => { p.npsErr = m; again(); };
+    if (!Object.keys(units).length) return err(ch ? 'Enter the units taken.' : 'Enter the units bought.');
+    if (Object.keys(nav).some(k=>!(nav[k] > 0))) return err('Enter the NAV for each scheme with units.');
+    if (!ch){ data.amount = num('amt'); data.fee = num('fee') || 0; data.acct = acc;
+      if (!(data.amount > 0)) return err('Enter the amount.');
+      if (data.fee < 0 || data.fee >= data.amount) return err('The fee must be less than the amount.');
+      if (!acc) return err('Pick the account it was paid from.'); }
+    post(data, p.npsEd ? 'Updated in NPS' + (ch ? '' : ' and Money') : ch ? 'Charge added' : 'Contribution added');
+  };
 }
 // Contributions | Interest | Withdrawals under the overview; each tab has its title with + Add beside it
 const EPF_TABS = [['c','Contributions','data-epfc'],['i','Interest','data-epfi'],['w','Withdrawals','data-epfw']];
@@ -7043,7 +7210,7 @@ if(cfg) start(); else $('#setup').hidden=false;
   btn.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>';
   document.body.appendChild(btn);
   let cur = null;
-  const ok = el => el && el.tagName==='INPUT' && !el.closest('.xa-in') && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
+  const ok = el => el && el.tagName==='INPUT' && !el.closest('.xa-in') && !el.closest('.npg') && !el.readOnly && !el.disabled && !/^(date|month|time|datetime-local|search|checkbox|radio|file|hidden|range|color|button|submit)$/i.test(el.type||'text');
   // the × lives inside the field's own row, so it scrolls with it (the iPhone keyboard shifts
   // the viewport, which used to leave a fixed-position × floating above the field)
   const place = ()=>{
