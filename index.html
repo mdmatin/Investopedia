@@ -1724,7 +1724,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzu';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzv';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5247,7 +5247,7 @@ function taxTabs(p, Y){
   let body;
   if (t==='i'){
     const sal = Object.keys(inc.salary||{}).map(co=>row(esc(co), fINR(inc.salary[co]), 'Salary')).join('');
-    const prof = Object.keys(inc.prof||{}).map(co=>row(esc(co), fINR(inc.prof[co]), 'Consultancy · 44ADA, receipts')).join('');
+    const prof = Object.keys(inc.prof||{}).map(co=>row(esc(co), fINR(inc.prof[co]), /expected/i.test(co) ? 'Projected from the Inputs tab' : 'Consultancy · 44ADA, received')).join('');
     const presGross = R.presGross != null ? R.presGross : inc.freelance, presRate = R.presRate || 50;
     body = `<div class="cmhead"><h3>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
       ${sal}${inc.epfTaxable ? row('EPF payout', fINR(inc.epfTaxable), 'Taxed as salary, service under 5 years') : ''}
@@ -5294,14 +5294,14 @@ function taxTabs(p, Y){
 }
 // Inputs: the settings the computation cannot read from the records; tap a row to change it on the sheet and recompute
 const TAX_INPUTS = [
-  ['Your income', [['professional.companies','Consultancy clients', 'Income rows from these companies are 44ADA fees, not salary'], ['freelance.presumptive','44ADA taxable share', '% of the receipts taxed'], ['epfTaxable','EPF payout taxable', 'auto = the whole withdrawal'], ['hra.exempt','HRA exemption', 'old regime'], ['profTax','Professional tax', 'old regime']]],
+  ['Your income', [['prof.expected','Consultancy expected this year', 'whole-year total, ₹; blank = only what has come in so far'], ['professional.companies','Consultancy clients', 'Income rows from these companies are 44ADA fees, not salary'], ['freelance.presumptive','44ADA taxable share', '% of the receipts taxed'], ['epfTaxable','EPF payout taxable', 'auto = the whole withdrawal'], ['hra.exempt','HRA exemption', 'old regime'], ['profTax','Professional tax', 'old regime']]],
   ['From AIS / 26AS', [['indianDividends','Indian dividends', 'this year, from AIS'], ['indianDividends.prev','Indian dividends', 'the year before'], ['usDividendTax','US tax withheld', 'this year, ₹ · INDmoney tax report › Form 44'], ['usDividendTax.prev','US tax withheld', 'the year before'], ['tcs','TCS on remittances', 'this year, Form 26AS'], ['tcs.prev','TCS on remittances', 'the year before']]],
   ['Old-regime deductions', [['d80c.extra','80C besides EPF / ELSS / NPS', 'LIC, PPF, tuition…'], ['d80d','80D health insurance', 'up to 25,000; parents separately'], ['d80g','80G donations', 'deductible part']]],
-  ['Computation', [['regime','Regime', 'new, old or auto'], ['tax.year','Tax year', 'blank = the current one'], ['lossBroughtForward.st','Short-term loss brought forward', 'from earlier returns'], ['lossBroughtForward.lt','Long-term loss brought forward', 'from earlier returns'], ['usGainRule','US gain conversion', '115 = one rate on the dollar gain; sep = cost and sale separately'], ['fx.ttbr','SBI TT buying rates', 'optional, "2026-03:85.9,2026-04:86.2"']]]
+  ['Computation', [['regime','Regime', 'new, old or auto'], ['tax.year','Tax year', 'blank = the current one'], ['lossBroughtForward.st','Short-term loss brought forward', 'from earlier returns'], ['lossBroughtForward.lt','Long-term loss brought forward', 'from earlier returns'], ['nonEquity.tickers','International ETFs', 'listed ETFs on foreign indices: 12.5% long-term, no ₹1.25L exemption'], ['usGainRule','US gain conversion', '115 = one rate on the dollar gain; sep = cost and sale separately'], ['fx.ttbr','SBI TT buying rates', 'optional, "2026-03:85.9,2026-04:86.2"']]]
 ];
 function taxInputs(p, Y){
   const T = taxD(), S = (T && T.settings) || {};
-  const need = k => (k==='indianDividends' || k==='usDividendTax') && !(S[k] && String(S[k].value).trim());
+  const need = k => (k==='indianDividends' || k==='usDividendTax' || k==='prof.expected') && !(S[k] && String(S[k].value).trim());
   const sec = ([h, keys]) => `<div class="cmhead"><h3>${h}</h3></div><div class="card tight">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num">${v.trim() ? esc(v) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
   return `<div class="ft" style="padding:4px 24px 10px;color:var(--ink-3);font-size:12.5px">What the records cannot tell: tap to change. Saved on the Tax Computation tab, then recomputed.</div>` + TAX_INPUTS.map(sec).join('');
 }
