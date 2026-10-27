@@ -1701,7 +1701,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzo';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzp';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4635,7 +4635,7 @@ async function pollDrafts(){
   }catch(e){ if (/unknown action/i.test(e.message||'')) draftsNoApi = true; }
   finally{ draftsBusy = false; }
 }
-setInterval(pollDrafts, 30 * 1000);   // every 30s while Spend is on screen (skipped elsewhere and when hidden); opening Spend checks at once
+setInterval(pollDrafts, 10 * 1000);   // every 10s while Spend is on screen (skipped elsewhere and when hidden); opening Spend checks at once
 document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') setTimeout(pollDrafts, 300); });
 function openDrafts(){
   closeDrafts(); const list = xDrafts(); if (!list.length) return;
