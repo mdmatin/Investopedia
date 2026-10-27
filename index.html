@@ -1701,7 +1701,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzm';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzn';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1723,7 +1723,7 @@ function acctPrefsMigrate(){
 }
 let range = PREF.chartRange || load(LS.range) || '3M';
 if (!['1W','1M','3M','6M','1Y','All'].includes(range)) range = '3M';   // 1D was dropped
-let bucketFilter = 'All', openBucket = null, editing = null;
+let editing = null;
 
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -1732,7 +1732,6 @@ function save(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 
 /* ---------- formatting ---------- */
 const inr  = new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
-const inr2 = new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
 const inrP = new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 // Settings ▸ Two decimals drives every full money figure in the app (₹ and $).
 // Compact forms (₹2.4L, ₹12K) and quantities are untouched.
@@ -2167,7 +2166,6 @@ function mark(label, fb){
   return `<div class="tile ${tint}">${svg}</div>`;
 }
 const FB_BANK   = ['bank','bk'];
-const FB_BUCKET = ['bucket','bu'];
 // Buckets get their own colour and an icon from what the name says (a goal, a
 // time horizon, a purpose); names that say nothing take the next icon in turn.
 // Colours go round in list order, so neighbours never share one.
@@ -2377,7 +2375,6 @@ function renderAssets(holdings, usdInr){
       const nwRow = assetCat==='All' ? nwA.find(a=>a.isTotal) : nwA.find(a=>!a.isTotal && assetCatFor(a.name, all)===assetCat);
       const useNW = !native && nwRow && nwRow.value!=null && nwRow.invested!=null;
       const k = inrMode ? fx : 1;   // US in rupees: every dollar figure × today's rate
-      const conv = h => native ? k : (isUSD(h) ? fx : 1);
       const total = useNW ? nwRow.value : sum * k;
       const invested = useNW ? nwRow.invested : rows.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0);
       const ret = useNW && nwRow.currReturns!=null ? nwRow.currReturns : total - invested;
@@ -2390,7 +2387,6 @@ function renderAssets(holdings, usdInr){
       const dp = useNW && nwRow.dayChangePct!=null ? nwRow.dayChangePct : day!=null && (total-day) ? day/(total-day) : null;
       const usdOut = native && !inrMode;
       const mo = usdOut ? (v => usd.format(v)) : (v => fINR(v));
-      const sg = v => `${v<0?'−':v>0?'+':''}${mo(Math.abs(v))}`;
       const xr = nwRow && nwRow.xirr!=null ? nwRow.xirr : null;
       el.hidden = false;
       // short side figures: dollars in K / M, rupees in K / L / Cr
@@ -2780,42 +2776,6 @@ function areaChart(el, pts){
   hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}${p.investment>0?`<br>Investments ${fINR(p.investment)}`:''}`);
 }
 
-function lineChart(el, pts, perDay){
-  const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), {W,H}=chartBox(el);
-  if(pts.length<2){ svg.innerHTML=`<text class="axis" x="${W/2}" y="${H/2}" text-anchor="middle">Not enough data yet</text>`; return; }
-  // day view labels every day on two lines (weekday, date), so it needs more room below
-  const P={t:8,r:perDay?14:8,b:perDay?34:20,l:40};
-  const series=[{k:'netWorth',c:'var(--blue)'},{k:'investment',c:'var(--ink-3)'}];
-  const all=pts.flatMap(p=>series.map(s=>p[s.k])).filter(v=>v!=null);
-  let lo=Math.min(...all), hi=Math.max(...all); const pad=(hi-lo)*0.08||1; lo-=pad; hi+=pad;
-  const x=i=>P.l+(i/(pts.length-1))*(W-P.l-P.r), y=v=>P.t+(1-(v-lo)/(hi-lo))*(H-P.t-P.b);
-  let g='';
-  for(let i=0;i<=3;i++){ const v=lo+(hi-lo)*i/3, yy=y(v);
-    g+=`<line class="gridline" x1="${P.l}" x2="${W-P.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${P.l-6}" y="${yy+3.5}" text-anchor="end">${fCompact(v).replace('₹','')}</text>`; }
-  if (perDay){
-    pts.forEach((p,i)=>{ const d=new Date(p.date+'T00:00:00');
-      g+=`<text class="axis" x="${x(i)}" y="${H-18}" text-anchor="middle">${d.toLocaleDateString('en-GB',{weekday:'short'})}</text>`
-       + `<text class="axis" x="${x(i)}" y="${H-4}" text-anchor="middle">${d.getDate()}${i===0||d.getDate()===1?' '+d.toLocaleDateString('en-GB',{month:'short'}):''}</text>`; });
-  } else {
-  const n=Math.min(3,pts.length-1);
-  for(let i=0;i<=n;i++){ const idx=Math.round(i*(pts.length-1)/n);
-    g+=`<text class="axis" x="${x(idx)}" y="${H-4}" text-anchor="${i===0?'start':i===n?'end':'middle'}">${fDate(pts[idx].date)}</text>`; }
-  }
-  const paths=series.map(s=>{ const d=pts.map((p,i)=>p[s.k]==null?null:`${i===0||pts[i-1][s.k]==null?'M':'L'}${x(i).toFixed(1)},${y(p[s.k]).toFixed(1)}`).filter(Boolean).join('');
-    return `<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`; }).join('');
-  const last=pts[pts.length-1];
-  const dots = perDay
-    // a dot on every day so each one reads as its own point
-    ? series.map(s=>pts.map((p,i)=>p[s.k]==null?'':`<circle cx="${x(i)}" cy="${y(p[s.k])}" r="${i===pts.length-1?3.6:2.6}" fill="${s.c}" stroke="var(--canvas)" stroke-width="1.5"/>`).join('')).join('')
-    : series.map(s=>last[s.k]==null?'':`<circle cx="${x(pts.length-1)}" cy="${y(last[s.k])}" r="3.6" fill="${s.c}" stroke="var(--canvas)" stroke-width="2"/>`).join('');
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.innerHTML = g + paths + dots + `<line id="ah" class="gridline" y1="${P.t}" y2="${H-P.b}" stroke-dasharray="3 3" style="display:none"/>`;
-  // day view: each day's move against the day before
-  const dayMove = p => { const i = pts.indexOf(p), q = pts[i-1]; if (!perDay || !q) return '';
-    const v = p.totalReturns!=null && q.totalReturns!=null ? p.totalReturns - q.totalReturns : p.netWorth - q.netWorth;
-    return `<br>Day change <span class="${cls(v)}">${fINRs(v)}</span>`; };
-  hoverable(el, svg, tip, pts, x, W, p=>`<b>${fDate(p.date)}</b><br>Net worth ${fINR(p.netWorth)}<br>Investments ${fINR(p.investment)}${dayMove(p)}`);
-}
 
 function hoverable(el, svg, tip, pts, x, W, fmt){
   const ah = svg.querySelector('#ah');
@@ -2871,7 +2831,7 @@ function openSheet(t){
   $('#btnDelete').hidden = !t; $('#btnDelete').textContent='Delete transaction'; $('#btnDelete').dataset.arm='';
   setOrder(t?.order || 'Buy');
   f('fTicker').value=t?.ticker||''; f('fCategory').value=t?.category||'US Stocks'; f('fPlatform').value=t?.platform||'INDMoney';
-  f('fDate').value=t?.date||new Date().toISOString().slice(0,10);
+  f('fDate').value=t?.date||todayISO();   // India date, not UTC (before 5:30 AM UTC is still yesterday)
   f('fBucket').value=t?.bucket||''; f('fVolume').value=t?.volume??''; f('fPrice').value=t?.price??'';
   f('fAmount').value=t?.amount??''; f('fNotional').value=t?.notional??''; f('fDp').value=t?.dp??'';
   f('fFees').value=t?.fees??''; f('fRemark').value=t?.remark||'';
@@ -3087,7 +3047,7 @@ function fillForm(p){
   $('#fCategory').value = p.category || 'US Stocks'; onCategory();
   $('#fPlatform').value = p.platform || 'INDMoney';
   set('fTicker', p.ticker, true);
-  set('fDate', p.date || new Date().toISOString().slice(0,10), !!p.date);
+  set('fDate', p.date || todayISO(), !!p.date);
   set('fVolume', p.volume, true);
   set('fPrice', p.price, true);
   set('fAmount', p.amount, p.amount!=null);
@@ -3425,7 +3385,7 @@ function endNavDrag(e){
 ['pointerup','pointercancel'].forEach(ev => navBar.addEventListener(ev, endNavDrag));
 
 // Minimise while reading down, restore on the first upward scroll.
-let navLastY = 0, navSettle = null;
+let navLastY = 0;
 addEventListener('scroll', ()=>{
   const y = Math.max(0, window.scrollY);
   if (Math.abs(y - navLastY) < 12) return;
@@ -3463,7 +3423,7 @@ function show(v, sec){
   $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend'; paintDfab();
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
   if (v==='break' && prevView!=='break') showHoldSec('assets');    // Holdings always opens on Assets
-  if (v==='spend'){ spSec = sec || 'list'; if (prevView!=='spend') spMonth = ymNow(); renderSpend();   // Spend always opens on Activity
+  if (v==='spend'){ spSec = sec || 'list'; if (prevView!=='spend'){ spMonth = ymNow(); setTimeout(pollDrafts, 400); } renderSpend();   // Spend always opens on Activity
     if (!X || Date.now() - X.at > X_STALE) loadExpenses(); else pollDrafts(); }
   window.scrollTo(0,0);
   if(D){ if(v==='trend') renderTrends(D.data.daily,D.data.monthly); if(v==='home') renderHome(D.data); }
@@ -3650,7 +3610,6 @@ function popPageNow(instant){
 // In Safari the browser has its own back swipe (with its own animation); only the
 // home-screen app needs ours. When Safari's swipe goes back, skip our slide-out
 // so the page doesn't animate twice.
-const IS_STANDALONE = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 window.addEventListener('popstate', e=>{
   const want = (e.state && e.state.pg) || 0;
   const ours = backFromButton; backFromButton = false;
@@ -3666,38 +3625,6 @@ window.addEventListener('popstate', e=>{
 });
 try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
 
-// Swipe from the left edge of a detail page to go back, like a native app.
-// If iOS's own back gesture already went back, the stack has shrunk and this
-// does nothing more.
-(function edgeSwipe(){
-  let x0 = null, y0 = 0, dx = 0, depth = 0, horiz = null;
-  const el = () => $('#page');
-  return;                                        // iOS (Safari and the home-screen app) has its own back swipe
-  window.addEventListener('touchstart', e=>{
-    if (!pageStack.length || e.touches.length !== 1) return;
-    const t = e.touches[0];
-    if (t.clientX > 28) return;
-    x0 = t.clientX; y0 = t.clientY; dx = 0; horiz = null; depth = pageStack.length;
-  }, { passive:true });
-  window.addEventListener('touchmove', e=>{
-    if (x0 == null) return;
-    const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
-    if (horiz == null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horiz = Math.abs(mx) > Math.abs(my);
-    if (!horiz) return;
-    dx = Math.max(0, mx);
-    const p = el(); p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`;
-  }, { passive:true });
-  window.addEventListener('touchend', ()=>{
-    if (x0 == null) return;
-    const p = el(), go = horiz && dx > window.innerWidth * 0.33;
-    x0 = null;
-    p.style.transition = 'transform .25s cubic-bezier(.32,.72,0,1)';
-    if (!go){ p.style.transform = ''; return; }
-    // a top-level page slides fully out; a nested one snaps back as the previous page renders in place
-    p.style.transform = pageStack.length === 1 ? 'translateX(100%)' : '';
-    setTimeout(()=>{ if (pageStack.length === depth) popPage(); }, 60);
-  }, { passive:true });
-})();
 
 function stepper(p){
   if ((p.kind!=='holding' && p.kind!=='platform' && p.kind!=='bucket') || !p.list) return '';
@@ -4062,9 +3989,6 @@ function holdingBody(ticker){
 // short rupees for tight tiles: ₹850 · ₹34.6K · ₹2.07L · ₹1.36Cr
 // ▲12.30% / ▼4.10% — the sign carried by the arrow
 function arrowPct(p){ return p==null ? '—' : `${p?`<span class="arrow">${p>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(p),false)}`; }
-function kINR(v){ if (v==null) return '—'; const x=Math.abs(v), d=(n,k)=>String(+n.toFixed(k));
-  return (v<0?'−':'') + '₹' + (x>=1e7 ? d(x/1e7,2)+'Cr' : x>=1e5 ? (x/1e5).toFixed(x>=1e6?1:2)+'L' : x>=1e3 ? d(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); }
-function skINR(v){ return v==null ? '—' : (v>0?'+':'') + kINR(v); }
 function platXirr(txns, value){
   const fl = [];
   for (const t of txns){
@@ -4105,16 +4029,6 @@ function platformBody(name){
   // an exchange whose value is typed on the Crypto tab can be updated from here
   const top0 = pageStack[pageStack.length-1] || {};
   const canEdit = !!(ca && ca.manual && ca.row && ca.col);
-  const sgn = v => v==null ? '—' : `${v<0?'−':v>0?'+':''}${fINR(Math.abs(v))}`;
-  // Share of everything held across all platforms, counted the same way as this
-  // one (Bucket Ledger values, crypto apps from the Crypto tab). The Net Worth
-  // Total isn't used: it leaves out the excluded Construction bucket, which the
-  // platform figures include, so a platform could show over 100%.
-  const byP = {};
-  ((D.data.buckets&&D.data.buckets.holdings)||[]).forEach(h=>{ if (h.qty>1e-7){ const k=platKey(h.platform||'—'); byP[k]=(byP[k]||0)+(h.value||0); } });
-  ((D.data.cryptoApps)||[]).forEach(x=>{ if (x.current!=null) byP[platKey(x.name)] = x.current; });
-  const allP = Object.values(byP).reduce((a,v)=>a+v,0);
-  const share = allP ? val/allP : null;
 
   // 1 · hero — value, today, then the invested-vs-value chart, like a ticker
   const card = `<div class="card pg-card pg-hero">
@@ -4334,13 +4248,10 @@ const isConstr = cat => /^construction$/i.test(String(cat||'').trim());
 const constrAcc = name => { const a = typeof accByName==='function' && accByName(name); return !!(a && accKind(a)==='construction'); };
 const constrMoney = e => constrAcc(e.account) && !isConstr(e.category);
 const personal = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isConstr(k)));      // construction is its own fund
-const spendOnly = o => Object.fromEntries(Object.entries(o).filter(([k])=>!isInvest(k) && !isConstr(k)));
-const investOf = o => Object.entries(o).filter(([k])=>isInvest(k)).reduce((a,[,v])=>a+v,0);
 function xBudget(cat, ym){
   const b = (xd()||{}).budgets || {}, m = (b.by||{})[ym]||{};
   return m[cat]!=null ? m[cat] : (b.def||{})[cat] || 0;
 }
-const xBudgetTotal = ym => xCats().reduce((a,c)=>a+xBudget(c,ym),0);
 const xEntries = ym => ((xd()||{}).entries||[]).filter(e=>e.date.slice(0,7)===ym);
 
 /* ---------- look ---------- */
@@ -4702,7 +4613,7 @@ const DX_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 // next full money reload. Only a real change repaints.
 let draftsBusy = false, draftsNoApi = false;
 async function pollDrafts(){
-  if (!cfg || !X || draftsBusy || document.visibilityState!=='visible') return;
+  if (!cfg || !X || draftsBusy || document.visibilityState!=='visible' || activeView!=='spend') return;   // drafts only show on Spend
   if (draftsNoApi){ if (Date.now() - X.at > X_STALE && !xLoading) loadExpenses(); return; }   // script not updated yet
   draftsBusy = true;
   try{
@@ -4723,7 +4634,7 @@ async function pollDrafts(){
   }catch(e){ if (/unknown action/i.test(e.message||'')) draftsNoApi = true; }
   finally{ draftsBusy = false; }
 }
-setInterval(pollDrafts, 10 * 1000);   // every 10s while the app is on screen (skipped when hidden)
+setInterval(pollDrafts, 30 * 1000);   // every 30s while Spend is on screen (skipped elsewhere and when hidden); opening Spend checks at once
 document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') setTimeout(pollDrafts, 300); });
 function openDrafts(){
   closeDrafts(); const list = xDrafts(); if (!list.length) return;
@@ -4824,8 +4735,7 @@ function expcatBody(p){
   // picks a month without moving the chart
   const d0 = xd()||{}, firstYm = [ym].concat(Object.keys(d0.monthly||{}), (d0.entries||[]).map(e=>e.date.slice(0,7))).filter(Boolean).sort()[0];
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
-  const vals = months.map(m=>xMonth(m)[cat]||0), mx = Math.max(1, bud, ...vals);
-  const BH = 84;                                            // bar area height, px
+  const vals = months.map(m=>xMonth(m)[cat]||0);
   const chart = monthLineChart(months, vals, ym, m=>xBudget(cat,m), bud);
   const subs = {}; list.forEach(e=>{ const k=e.sub||'Other'; subs[k]=(subs[k]||0)+e.amount; });
   const subRows = Object.keys(subs).sort((a,b)=>subs[b]-subs[a]).map(s=>`<div class="hrow"><span>${esc(s)}</span><b class="num money">${fINR2(subs[s])}</b></div>`).join('');
@@ -4884,8 +4794,7 @@ function inccatBody(p){
   const list = all.filter(i=>i.date.slice(0,7)===ym), total = list.reduce((a,i)=>a+i.amount,0);
   const firstYm = [ym, ymAdd(ymNow(),-11)].concat(all.map(i=>i.date.slice(0,7))).sort()[0];   // at least a year
   const months = []; for (let m=firstYm; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
-  const vals = months.map(m=>all.filter(i=>i.date.slice(0,7)===m).reduce((a,i)=>a+i.amount,0)), mx = Math.max(1, ...vals);
-  const BH = 84;
+  const vals = months.map(m=>all.filter(i=>i.date.slice(0,7)===m).reduce((a,i)=>a+i.amount,0));
   const chart = monthLineChart(months, vals, ym, null, 0);
   const bySrc = {}; list.forEach(i=>{ const k=i.source||i.account||'Other'; bySrc[k]=(bySrc[k]||0)+i.amount; });
   const srcRows = Object.keys(bySrc).length > 1 ? Object.keys(bySrc).sort((a,b)=>bySrc[b]-bySrc[a]).map(k=>`<div class="hrow"><span>${esc(k)}</span><b class="num money">${fINR2(bySrc[k])}</b></div>`).join('') : '';
@@ -5020,13 +4929,6 @@ const cardMark = a => { const m = CARD_ICONS.find(([re])=>re.test(a.name)); retu
 const accMark = a => !a ? bankMark('') : (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}</div>`
   : (accKind(a)==='card' && cardMark(a)) || bankMark(a.name);
 const nameMark = n => { const a = accByName(n); return a ? accMark(a) : bankMark(n); };
-const accIcon = a => {
-  const k = accKind(a), p = k==='card' ? 'M3 6.5h18v11H3zM3 10h18M6.5 14.5h3'
-          : k==='wallet' ? 'M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1zM16 14.25h.01'
-          : /cash/i.test(a.name) ? 'M3 7h18v10H3zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 12h.01M18 12h.01'
-          : 'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18';
-  return `<div class="tile ${k==='card'?'cr':k==='wallet'?'mf':'bk'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg></div>`;
-};
 function spAccountsHtml(){
   const acc = xAccounts(); if (!acc.length) return '<div class="empty">No accounts yet — add them to the Accounts tab in your sheet</div>';
   // each card on its own: one card in credit must not hide another card's dues
@@ -5036,7 +4938,7 @@ function spAccountsHtml(){
   // one card: Liquid (bank + wallet − what the cards owe), its three parts, the Books chip, and a
   // quieter line for Construction (whole fund, investments included), Zakat and Interest
   const hasC = acc.some(a=>accKind(a)==='construction'), cf = hasC ? constrFund(ymNow()) : null;
-  const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest, C = chev('M9 5l7 7-7 7');
+  const liquid = sum.bank + sum.wallet - cards.owed, n = ziZakatNow(), I = (ziD()||{}).interest;
   // pills under the Liquid card: Construction, Zakat, Interest, each wearing the same icon as its own page
   const ter = [hasC ? `<button data-constr>${xTile('Construction')}Constr. <b class="num money">${fKL(cf.total)}</b></button>` : '',
     I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Int. <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : '',
@@ -5233,7 +5135,7 @@ function constrBody(p){
     : Object.entries((d.monthly||{})[m]||{}).filter(([k])=>isConstr(k)).reduce((a,[,v])=>a+v,0);
   const has = Array.from(new Set(Object.keys(d.monthly||{}).concat(list.map(e=>e.date.slice(0,7))))).filter(m=>tot(m)).sort();
   const first = has[0] || ymNow(), months = []; for (let m=first; m<=ymNow(); m=ymAdd(m,1)) months.push(m);
-  const vals = months.map(tot), live = vals.filter(Boolean).length;
+  const vals = months.map(tot);
   const spentAll = vals.reduce((a,v)=>a+v,0), spentM = tot(ymNow()), raise = typeof d.cbRaise==='number' ? d.cbRaise : null;
   // short figures (₹60.5K); a tap shows the exact amount
   const kq = v => `<b class="num money tipv" data-full="${esc(fINR2(v))}">${fKL(v)}</b>`;
@@ -5292,8 +5194,6 @@ function bankCheck(name){
   return { ok: Math.abs(diff) < 1, diff, bal: r.bal, at: r.at };
 }
 const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok) : [];
-const bankWhen = at => { const d = new Date(at), t = d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toUpperCase();
-  return d.toDateString()===new Date().toDateString() ? t : d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ', ' + t; };
 // one row, styled like the Books pill: which account differs (or how many) and by how much;
 // tapping opens that account, or with several, scrolls to the Bank list
 function bankBannerHtml(){
@@ -5453,7 +5353,6 @@ function accBody(p){
     const at = (y,m) => new Date(y, m, Math.min(d, new Date(y, m+1, 0).getDate()));
     let x = at(t.getFullYear(), t.getMonth()); if (x < t) x = at(t.getFullYear(), t.getMonth()+1); return x; };
   const due = card && a.dueDay ? nextDue(a.dueDay) : null;
-  const dueIn = due ? Math.round((due - new Date(new Date().toDateString()))/864e5) : null;
   const owed = Math.max(0,-bal);
   const ccHero = !card ? '' : `<div class="cch"><div><span>${bal>0?'Credit':'Outstanding'}</span><b class="num money ${owed>0?'down':''}">${fINR2(bal>0?bal:owed)}</b></div>
       <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b></div></div>
@@ -5474,7 +5373,6 @@ function accBody(p){
       ${card ? ccHero : `<div class="pg-big num money">${big}</div>`}
       ${p.accMenu ? `<div class="menu accmenu" role="menu"><button data-setbal role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Set actual balance</button><button data-editacc role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Edit account</button></div>` : ''}
       ${ed}
-      ${false ? `<div class="ccl pgcc">${pbar(Math.max(0,-bal)/a.limit)}<div class="cardm">${fINR2(a.limit + bal)} available of ${fINR2(a.limit)}</div></div>` : ''}
       <div class="spstats lcr"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
         <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
@@ -5599,16 +5497,6 @@ const MOON_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const CHEV_R = '<svg class="bk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 
 // Accounts: two tiles under Bank & wallet / Construction
-function ziTilesHtml(){
-  const z = ziD(), n = ziZakatNow(), I = z && z.interest; if (!n && !I) return '';
-  const zt = n ? `<div class="card tap" data-zi="zakat" role="button"><div class="k">Zakat · 1 Jan ’${n.yr.slice(2)}${chev('M9 5l7 7-7 7')}</div>
-      <div class="b2 num money">${fINR(n.owing ? n.cur.left : n.cur.due)}</div>
-      <div class="s">${n.owing ? `left of <b class="num money">${fINR(n.cur.due)}</b>` : `est. on <b class="num money">${fLakh(n.Z.nw)}</b>`}<br>Paid <b class="num money ${n.cur.paid>0?'up':''}">${fINR(n.cur.paid)}</b></div></div>` : '';
-  const it = I ? `<div class="card tap" data-zi="interest" role="button"><div class="k">Interest to give${chev('M9 5l7 7-7 7')}</div>
-      <div class="b2 num money">${fINR(Math.max(0, I.left))}</div>
-      <div class="s">Earned <b class="num money">${fINR(I.earned)}</b><br>Given <b class="num money">${fINR(I.given)}</b></div></div>` : '';
-  return `<div class="acctiles zitiles">${zt}${it}</div>`;
-}
 function ziRemindHtml(){
   const q = ziDue(); if (!q) return '';
   const n = ziBanks().cols.length;
@@ -7171,6 +7059,21 @@ if(cfg) start(); else $('#setup').hidden=false;
   btn.addEventListener('pointerdown', e=>e.preventDefault());
   btn.addEventListener('mousedown', e=>e.preventDefault());
   btn.addEventListener('click', ()=>{ if (!cur) return; cur.value = ''; cur.dispatchEvent(new Event('input', {bubbles:true})); cur.dispatchEvent(new Event('change', {bubbles:true})); cur.focus(); place(); });
+})();
+// Offline + instant open: a service worker keeps a copy of the app on the phone (sw.js).
+// When a new build is published it downloads in the background; the app switches to it
+// the next time it is brought back to the screen, never in the middle of something.
+(function(){
+  if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
+  let ready = false;
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if (e.data !== 'centric-updated' || ready) return;
+    ready = true; toast('A new version is ready — it loads next time you open the app');
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if (ready && document.visibilityState === 'visible' && !document.querySelector('.sheet.show')) location.reload();
+  });
 })();
 </script>
 </body>
