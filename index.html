@@ -1714,7 +1714,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzq';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzr';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5060,7 +5060,7 @@ const npsD = () => (D && D.data && D.data.nps) || null;
 const NPS_K = [['E','Equity','var(--pc0)'],['C','Corporate bonds','var(--pc4)'],['G','Govt securities','var(--pc3)']];
 function npsCalc(){
   const N = npsD(); if (!N) return null;
-  const rows = (N.rows||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.row||0)-(b.row||0));
+  const rows = (N.rows||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(b.row||0)-(a.row||0));   // the sheet is newest first: on one day, the lower row came first
   const u = { E:0, C:0, G:0 }, uv = r => NPS_K.reduce((s,[k])=>s + (Number((r.units||{})[k])||0) * (Number((r.nav||{})[k])||0), 0);
   rows.forEach(r=>{ NPS_K.forEach(([k])=>{ u[k] += Number((r.units||{})[k])||0; });
     const unitsIn = NPS_K.some(([k])=>Number((r.units||{})[k]) > 0), unitsOut = NPS_K.some(([k])=>Number((r.units||{})[k]) < 0);
