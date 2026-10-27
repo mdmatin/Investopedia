@@ -1724,7 +1724,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzt';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzu';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5241,18 +5241,20 @@ function taxBody(p){
 }
 function taxTabs(p, Y){
   const t = p.taxTab = p.taxTab || 'i', R = Y.regimes[Y.chosen], inc = Y.income, g = Y.gains, A = Y.advance;
-  const seg = `<div class="tabsw"><div class="seg epseg">${[['i','Income'],['g','Gains'],['p','Paid']].map(([k,l])=>`<button data-taxt="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div></div>`;
+  const seg = `<div class="tabsw"><div class="seg epseg">${[['i','Income'],['g','Gains'],['p','Paid'],['s','Inputs']].map(([k,l])=>`<button data-taxt="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div></div>`;
   const row = (n, v, m, c) => `<div class="row ${c||''}"><div class="l"><div class="n">${n}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money">${v}</div></div></div>`;
   const neg = v => v ? '−' + fINR(v) : '—';
   let body;
   if (t==='i'){
     const sal = Object.keys(inc.salary||{}).map(co=>row(esc(co), fINR(inc.salary[co]), 'Salary')).join('');
+    const prof = Object.keys(inc.prof||{}).map(co=>row(esc(co), fINR(inc.prof[co]), 'Consultancy · 44ADA, receipts')).join('');
+    const presGross = R.presGross != null ? R.presGross : inc.freelance, presRate = R.presRate || 50;
     body = `<div class="cmhead"><h3>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
       ${sal}${inc.epfTaxable ? row('EPF payout', fINR(inc.epfTaxable), 'Taxed as salary, service under 5 years') : ''}
       ${R.std ? row('Standard deduction', neg(R.std), '', 'sub') : ''}${R.hra + R.pt ? row('HRA / professional tax', neg(R.hra + R.pt), '', 'sub') : ''}
-      ${R.freelance ? row('Freelancing', fINR(R.freelance), '44ADA: half of ' + fINR(inc.freelance)) : ''}
+      ${prof}${presGross ? row('Deemed expenses', neg(presGross - R.freelance), '44ADA: ' + (100 - presRate) + '% of ' + fINR(presGross) + ', no other expense or standard deduction', 'sub') : ''}
       ${inc.interest ? row('Bank interest', fINR(inc.interest), 'Interests tab') : ''}
-      ${inc.usDiv ? row('US dividends', fINR(inc.usDiv), '$' + inc.usDivUsd + ' gross, 25% withheld in the US') : ''}
+      ${inc.usDiv ? row('US dividends', fINR(inc.usDiv), '$' + inc.usDivUsd + ' gross · ' + fINR(inc.usTax) + ' withheld in the US') : ''}
       ${R.other - inc.interest - inc.usDiv > 0.5 ? row('Indian dividends / other', fINR(R.other - inc.interest - inc.usDiv), 'From AIS') : ''}
       ${R.slabCg ? row('Short-term gains at slab', fINR(R.slabCg), 'US stocks, gold, debt under their holding period') : ''}
       ${R.dedTotal ? row('Deductions', neg(R.dedTotal), Object.keys(R.ded).filter(k=>R.ded[k]).map(k=>({c80:'80C',nps1b:'NPS 80CCD(1B)',d80:'80D',tta:'80TTA',g80:'80G'})[k] + ' ' + fINR(R.ded[k])).join(' · '), 'sub') : ''}
@@ -5283,16 +5285,32 @@ function taxTabs(p, Y){
       <button class="row tap epaddrow" data-taxpay><span class="epai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><div class="l"><div class="n">Record a tax payment</div><div class="m">Goes to Money as Bills/Utility › Taxes</div></div></button></div>
       <div class="cmhead"><h3>Advance tax</h3><span class="num money">${A && A.needed ? fINR(A.due) + ' due' : 'not needed'}</span></div><div class="card tight">
       ${inst.length ? inst.map(x=>`<div class="row"><div class="l"><div class="n">${esc(fDateY(x.date))} · ${x.pct}%</div><div class="m">${fINR(x.want)} due · ${fINR(x.paid)} paid by then</div></div><div class="r">${st(x)}</div></div>`).join('') : '<div class="empty">Under ₹10,000 after TDS, so no instalments</div>'}
+      ${A && A.presumptiveShare ? row('44ADA share', fINR(A.presumptiveShare), 'On the consultancy income: due in one go by 15 Mar, not by the quarter', 'sub') : ''}
       ${A && A.interest234C ? row('Interest 234C (estimate)', fINR(A.interest234C), '1% a month on each shortfall') : ''}</div>
       <div class="ft ctr" style="padding:14px 24px 0;color:var(--ink-3);font-size:12px">Computed ${esc(fDateY(taxD().built))} from your sheets · <a data-taxrebuild style="color:var(--pc0)">recompute now</a></div>`;
   }
+  if (t==='s') body = taxInputs(p, Y);
   return seg + `<div class="tabbody">${body}</div>`;
+}
+// Inputs: the settings the computation cannot read from the records; tap a row to change it on the sheet and recompute
+const TAX_INPUTS = [
+  ['Your income', [['professional.companies','Consultancy clients', 'Income rows from these companies are 44ADA fees, not salary'], ['freelance.presumptive','44ADA taxable share', '% of the receipts taxed'], ['epfTaxable','EPF payout taxable', 'auto = the whole withdrawal'], ['hra.exempt','HRA exemption', 'old regime'], ['profTax','Professional tax', 'old regime']]],
+  ['From AIS / 26AS', [['indianDividends','Indian dividends', 'this year, from AIS'], ['indianDividends.prev','Indian dividends', 'the year before'], ['usDividendTax','US tax withheld', 'this year, ₹ · INDmoney tax report › Form 44'], ['usDividendTax.prev','US tax withheld', 'the year before'], ['tcs','TCS on remittances', 'this year, Form 26AS'], ['tcs.prev','TCS on remittances', 'the year before']]],
+  ['Old-regime deductions', [['d80c.extra','80C besides EPF / ELSS / NPS', 'LIC, PPF, tuition…'], ['d80d','80D health insurance', 'up to 25,000; parents separately'], ['d80g','80G donations', 'deductible part']]],
+  ['Computation', [['regime','Regime', 'new, old or auto'], ['tax.year','Tax year', 'blank = the current one'], ['lossBroughtForward.st','Short-term loss brought forward', 'from earlier returns'], ['lossBroughtForward.lt','Long-term loss brought forward', 'from earlier returns'], ['usGainRule','US gain conversion', '115 = one rate on the dollar gain; sep = cost and sale separately'], ['fx.ttbr','SBI TT buying rates', 'optional, "2026-03:85.9,2026-04:86.2"']]]
+];
+function taxInputs(p, Y){
+  const T = taxD(), S = (T && T.settings) || {};
+  const need = k => (k==='indianDividends' || k==='usDividendTax') && !(S[k] && String(S[k].value).trim());
+  const sec = ([h, keys]) => `<div class="cmhead"><h3>${h}</h3></div><div class="card tight">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num">${v.trim() ? esc(v) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
+  return `<div class="ft" style="padding:4px 24px 10px;color:var(--ink-3);font-size:12.5px">What the records cannot tell: tap to change. Saved on the Tax Computation tab, then recomputed.</div>` + TAX_INPUTS.map(sec).join('');
 }
 function wireTax(p){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-taxy]').forEach(b=>b.onclick=()=>{ p.taxFy = b.dataset.taxy; again(); });
   $$('#page [data-taxt]').forEach(b=>b.onclick=()=>{ p.taxTab = b.dataset.taxt; again(); });
   const pay = $('#page [data-taxpay]'); if (pay) pay.onclick = ()=>{ const Y = taxYear(p), n = Y && Y.advance && Y.advance.next; openXSheet(null, 'expense', { category:'Bills/Utility', sub:'Taxes', note:'Advance tax', amount: n ? Math.round(n.amount) : undefined }); };
+  $$('#page [data-taxset]').forEach(b=>b.onclick=async ()=>{ const k = b.dataset.taxset, T = taxD(), s = T && T.settings && T.settings[k]; const v = prompt((s && s.help) || k, s ? String(s.value) : ''); if (v === null) return; toast('Saving…'); try{ const r = await apiPost('taxSet', { key:k, value:v }); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Recomputed'); }catch(e){ toast(e.message || 'Could not save'); } });
   const rb = $('#page [data-taxrebuild]'); if (rb) rb.onclick = async ()=>{ toast('Recomputing…'); try{ const r = await apiPost('taxBuild', {}); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Tax recomputed'); }catch(e){ toast(e.message || 'Could not recompute'); } };
 }
 // Contributions | Interest | Withdrawals under the overview; each tab has its title with + Add beside it
