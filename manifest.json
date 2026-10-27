@@ -4,17 +4,17 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#04241c",
+  "background_color": "#0b1b33",
   "theme_color": "#f5f5f7",
   "icons": [
     {
-      "src": "icon.png?v=centric",
+      "src": "icon.png?v=c30",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "apple-touch-icon.png?v=centric",
+      "src": "apple-touch-icon.png?v=c30",
       "sizes": "180x180",
       "type": "image/png"
     }
