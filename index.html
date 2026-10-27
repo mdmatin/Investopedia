@@ -1186,6 +1186,7 @@ html[data-theme=dark] .books.off .n{color:#ff9f0a}
 #spSeg button.segdot::after{content:'';position:absolute;top:6px;right:4px;width:8px;height:8px;border-radius:50%;background:#ff9f0a}
 #spBody .bkpill{margin:0 16px 12px}
 #spBody .bkpill.bankrow{margin-top:-4px}
+#spBody .lpills + .bkpill.bankrow{margin-top:10px}   /* under the pills: a clear gap, not stuck to them */
 .bankrow .bk-t{overflow:hidden;text-overflow:ellipsis}
 .bkflag{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:13px;line-height:16px;font-weight:500;white-space:nowrap;overflow:hidden;min-width:0}
 .bkflag span{overflow:hidden;text-overflow:ellipsis}
@@ -1700,7 +1701,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzk';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzl';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4678,7 +4679,10 @@ function closeTxMenu(){ document.querySelectorAll('.fmenu,.fmenu-bd').forEach(e=
    (amount, date, account, payee). The small button beside + shows how many
    wait; open one to finish it in the add sheet (Save makes the entry and
    clears the draft) or ✕ it away. */
-const xDrafts = () => ((xd()||{}).drafts) || [];
+// drafts finished or discarded here stay hidden even if a poll or reload still
+// returns them before the server has caught up (the save is still in flight)
+const draftGone = new Set();
+const xDrafts = () => (((xd()||{}).drafts) || []).filter(d=>!draftGone.has(d.id));
 function paintDfab(){
   const b = $('#dfab'); if (!b) return;
   const n = xDrafts().length, on = activeView==='spend' && n > 0;
@@ -4702,7 +4706,10 @@ async function pollDrafts(){
   if (draftsNoApi){ if (Date.now() - X.at > X_STALE && !xLoading) loadExpenses(); return; }   // script not updated yet
   draftsBusy = true;
   try{
-    const j = await api({ action:'drafts' }), list = (j.data && j.data.drafts) || [], bb = j.data && j.data.bankBal;
+    const j = await api({ action:'drafts' }), raw = (j.data && j.data.drafts) || [], bb = j.data && j.data.bankBal;
+    if (xPending) return;                        // a save is on its way; its reply decides
+    draftGone.forEach(id=>{ if (!raw.some(d=>d.id===id)) draftGone.delete(id); });   // the server has caught up
+    const list = raw.filter(d=>!draftGone.has(d.id));
     const ids = l => l.map(d=>d.id).join('|');
     let changed = false;
     if (X && X.data && ids(list) !== ids(xDrafts())){
@@ -4742,12 +4749,12 @@ function openDraft(d){
   openXSheet(null, d.kind==='transfer' ? 'transfer' : d.kind==='income' ? 'income' : 'expense', tpl);
   if (d.check) toast('From a card OTP — check the payment went through');
 }
-function dropDraft(id){ const d = xd(); if (d && d.drafts) d.drafts = d.drafts.filter(x=>x.id!==id); save('inv.exp', X); paintDfab(); }
+function dropDraft(id){ draftGone.add(id); const d = xd(); if (d && d.drafts) d.drafts = d.drafts.filter(x=>x.id!==id); save('inv.exp', X); paintDfab(); }
 async function discardDraft(id){
   const d = xd(), keep = (d && d.drafts || []).slice();
   dropDraft(id); if (xDrafts().length) openDrafts(); else closeDrafts();
   try{ await apiPost('draftDelete', { id }); }
-  catch(e){ if (d) d.drafts = keep; save('inv.exp', X); paintDfab(); toast(e.message || 'Could not discard'); }
+  catch(e){ draftGone.delete(id); if (d) d.drafts = keep; save('inv.exp', X); paintDfab(); toast(e.message || 'Could not discard'); }
 }
 $('#dfab').onclick = openDrafts;
 const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', lq:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
@@ -6493,7 +6500,7 @@ async function saveMove(kind, rec, was){
   }catch(e){
     if (held){ held = false; xPending--; xSeq++; }
     if (was) Object.assign(was, prev); else { const i = list.indexOf(tmp); if (i>=0) list.splice(i,1); }
-    if (draftKeep && xd() && !xDrafts().some(x=>x.id===draftDone)) xd().drafts = draftKeep;
+    if (draftKeep && xd()){ draftGone.delete(draftDone); if (!xDrafts().some(x=>x.id===draftDone)) xd().drafts = draftKeep; }
     save('inv.exp', X); rerenderSpendViews(); toast(e.message || 'Could not save');
     if (xAgain && !xLoading){ xAgain = false; loadExpenses(true); }
   }
