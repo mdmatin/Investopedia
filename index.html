@@ -1701,7 +1701,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzn';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzo';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2319,6 +2319,7 @@ let assetQuery = '', capTab = 'All', capOpen = false;   // the details list star
 document.addEventListener('click', e=>{
   document.querySelectorAll('.tipb').forEach(t=>t.remove());
   const el = e.target.closest && e.target.closest('[data-full]'); if (!el) return;
+  e.stopPropagation(); e.preventDefault();          // the tap is for the figure, not the row it sits in
   const t = document.createElement('div'); t.className = 'tipb'; t.textContent = el.dataset.full; t._el = el;
   document.body.append(t); placeTip(t); setTimeout(()=>t.remove(), 2500);
 }, true);
@@ -2581,7 +2582,7 @@ function renderPlatforms(bk){
           ? ` (${d.dayChangePct?`<span class="arrow">${d.dayChangePct>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(d.dayChangePct),false)})` : ''}</div>` : '';
     return `<div class="row tap platrow" data-p="${esc(p.platform)}">${logoMark(p.platform, null, iconFor(p.cats[0] || ''))}
       <div class="l"><div class="n">${esc(p.platform)}</div>
-        <div class="m num money">${fINR(p.invested)} <span class="faint">(${fPct(pc)})</span></div></div>
+        <div class="m num money"><span class="tipv" data-full="Invested ${esc(fINR2(p.invested))}">${fKL(p.invested)}</span> <span class="faint">(${fPct(pc)})</span></div></div>
       <div class="r"><div class="v num money">${fINR(p.value)}</div>${day}</div>
     </div>`;
   }).join('') + (rows.length
@@ -4067,7 +4068,7 @@ function platformBody(name){
   const tp = inv ? (ret+rl)/inv : null;
   const pdivs = divsForPlatform(name);            // shown only when this platform has paid any
   const stats = `<div class="card hstats num"><div class="kgrid k2">
-      <div><span>Invested</span><b class="money tipv" data-full="${esc(fINR2(inv))}">${fKL(inv)}</b></div>
+      <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
       <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
