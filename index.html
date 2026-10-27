@@ -1701,7 +1701,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzl';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzm';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4153,7 +4153,7 @@ function platformBody(name){
   const tp = inv ? (ret+rl)/inv : null;
   const pdivs = divsForPlatform(name);            // shown only when this platform has paid any
   const stats = `<div class="card hstats num"><div class="kgrid k2">
-      <div><span>Invested</span><b class="money">${fINR(inv)}</b></div>
+      <div><span>Invested</span><b class="money tipv" data-full="${esc(fINR2(inv))}">${fKL(inv)}</b></div>
       <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${arrowPct(pct)})</em>`:''}</span><b class="money ${cls(ret)}">${ret<0?'−':ret>0?'+':''}${fINR(Math.abs(ret))}</b></div>
     </div>
     <div class="hrow"><span>XIRR</span><b>${xr!=null?fPct(xr,false):c.loading?'…':'—'}</b></div>
