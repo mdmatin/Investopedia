@@ -392,6 +392,16 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .npsform .npg i{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font:700 11px var(--font-disp);font-style:normal;color:var(--c);background:color-mix(in srgb, var(--c) 18%, var(--canvas))}
 .npsform .npg input{flex:1;min-width:0;width:100%;border:0;outline:0;background:none;color:var(--ink);font:600 16px var(--font-disp);font-variant-numeric:tabular-nums}
 .npsform .npsrm input{font-size:16px;font-weight:500;letter-spacing:0}
+.taxyr .seg button{flex:1}
+.taxreg{display:flex;gap:10px;margin:0 16px 4px}@media (max-width:400px){.taxreg{margin:0 12px 4px}}
+.taxreg .rg{flex:1;background:var(--card);border-radius:14px;padding:12px 14px;border:1.5px solid transparent}
+.taxreg .rg.on{border-color:var(--pc0)}
+.taxreg .rg span{display:block;font-size:12px;color:var(--ink-2)}.taxreg .rg b{display:block;font:600 19px var(--font-disp);letter-spacing:-.4px;margin-top:3px}
+.taxreg .rg small{display:block;font-size:11.5px;color:var(--pc0);margin-top:2px}
+.taxnext{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline);font-size:13.5px;color:var(--ink-2)}
+.taxnext b{color:var(--ink)}.taxnext .pill{margin-left:auto}
+.row.tot .n{font-weight:600}.row.tot .v{font-weight:700}
+.row.sub .n{color:var(--ink-2);font-weight:400}
 .npsf .npstrip{display:flex;gap:3px;height:10px;margin:14px 0 6px}
 .npsf .npstrip i{border-radius:4px;min-width:6px;background:color-mix(in srgb, var(--c) 22%, var(--canvas));box-shadow:inset 0 0 0 1.3px var(--c)}
 .tile.npk{background:color-mix(in srgb, var(--c) 18%, var(--canvas));color:var(--c)}
@@ -1714,7 +1724,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzr';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-10-31zzt';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3650,7 +3660,7 @@ function stepper(p){
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
 function pageTitle(p){ return p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
-  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='nps' ? 'NPS' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
+  : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='nps' ? 'NPS' : p.kind==='tax' ? 'Tax' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
 function divsFor(ticker){
@@ -3692,7 +3702,7 @@ function renderPage(){
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
-    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
+    : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='tax' ? taxBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   $('#page').innerHTML = `<div class="pg-head">
@@ -3707,6 +3717,7 @@ function renderPage(){
   if (p.kind==='constr'){ wireConstr(p); return; }
   if (p.kind==='epf'){ wireEpf(p); return; }
   if (p.kind==='nps'){ wireNps(p); return; }
+  if (p.kind==='tax'){ wireTax(p); return; }
   if (p.kind==='bklog'){ const o = $('#bkOnly'); if (o) o.onclick = ()=>{ save('inv.bkOnly', !o.classList.contains('on')); renderPage(); }; }
   if (p.kind==='books'){ const b = $('#pgRefresh'); if (b) b.onclick = booksRecheck;
     const m = $('#bkLogAll'); if (m) m.onclick = ()=>pushPage({ kind:'bklog' });
@@ -5200,6 +5211,89 @@ function wireNps(p){
       if (!acc) return err('Pick the account it was paid from.'); }
     post(data, p.npsEd ? 'Updated in NPS' + (ch ? '' : ' and Money') : ch ? 'Charge added' : 'Contribution added');
   };
+}
+/* ---------- Tax ----------
+   From the Tax Computation tab (built nightly by the script from Money, Transactions, the EPF/NPS
+   tabs and the Interests tab): both regimes, the gains by class, what is paid and the advance-tax
+   instalments. Read-only here, apart from recording an advance-tax payment (a Taxes expense). */
+const taxD = () => (D && D.data && D.data.tax && D.data.tax.years) ? D.data.tax : null;
+function taxYear(p){ const T = taxD(); if (!T) return null; const fy = (p && p.taxFy) || T.fy; return T.years[fy] || T.years[T.fy]; }
+// (fINRs: signed rupees, defined above)
+function taxBody(p){
+  const T = taxD(); if (!T) return `<div class="pg-load">${D && D.data && D.data.tax && D.data.tax.error ? esc(D.data.tax.error) : 'Loading…'}</div>`;
+  const Y = taxYear(p), R = Y.regimes[Y.chosen], o = Y.regimes[Y.chosen==='new' ? 'old' : 'new'], inc = Y.income, g = Y.gains, A = Y.advance;
+  const years = Object.keys(T.years).sort().reverse();
+  const yr = `<div class="tabsw taxyr"><div class="seg epseg">${years.map(k=>`<button data-taxy="${k}" class="${String(k)===String(Y.fy)?'on':''}">${esc(T.years[k].label)}</button>`).join('')}</div></div>`;
+  const refund = R.balance < 0, live = String(Y.fy)===String(T.fy);
+  const next = A && A.next ? A.next : null, days = next ? Math.ceil((new Date(next.date) - new Date(todayISO())) / 864e5) : null;
+  const hero = `<div class="card pg-card pg-hero">
+      <div class="pg-id">${mark('TAX')}<div class="grow"><div class="t">${refund ? 'Refund due' : 'Balance to pay'}</div><div class="s">${esc(Y.label)} · ${Y.chosen==='new' ? 'New' : 'Old'} regime · return by ${esc(fDateY(Y.dueDate))}</div></div></div>
+      <div class="pg-big num money ${refund ? 'up' : ''}">${fINR2(Math.abs(R.balance))}</div>
+      <div class="pg-sub num money"><span class="grp"><span class="k">Tax ${fINR(R.tax)} · paid ${fINR(R.credits)}${live ? ' so far' : ''}</span></span></div>
+      <div class="spstats lcr"><div><span>Income</span><b class="num money">${fKL(R.normal)}</b></div>
+        <div><span>Gains</span><b class="num money ${cls(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}">${fKL(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}</b></div>
+        <div><span>Tax</span><b class="num money">${fKL(R.tax)}</b></div></div>
+      ${next ? `<div class="taxnext"><span>Next instalment <b class="num money">${fINR(next.amount)}</b> by ${esc(fDateY(next.date))}</span><span class="pill sm ${days < 15 ? 'down' : ''}">${days <= 0 ? 'today' : days + ' days'}</span></div>`
+        : A && A.needed && live ? `<div class="taxnext"><span>Pay the balance with the return</span></div>` : ''}
+    </div>`;
+  const regime = `<div class="taxreg">${['new','old'].map(k=>{ const r = Y.regimes[k]; return `<div class="rg ${Y.chosen===k?'on':''}"><span>${k==='new' ? 'New regime' : 'Old regime'}</span><b class="num money">${fINR(r.tax)}</b>${Y.chosen===k ? '<small>Lower, used above</small>' : `<small style="color:var(--ink-3)">${fINRs(r.tax - R.tax)} more</small>`}</div>`; }).join('')}</div>`;
+  return yr + hero + regime + taxTabs(p, Y);
+}
+function taxTabs(p, Y){
+  const t = p.taxTab = p.taxTab || 'i', R = Y.regimes[Y.chosen], inc = Y.income, g = Y.gains, A = Y.advance;
+  const seg = `<div class="tabsw"><div class="seg epseg">${[['i','Income'],['g','Gains'],['p','Paid']].map(([k,l])=>`<button data-taxt="${k}" class="${k===t?'on':''}">${l}</button>`).join('')}</div></div>`;
+  const row = (n, v, m, c) => `<div class="row ${c||''}"><div class="l"><div class="n">${n}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money">${v}</div></div></div>`;
+  const neg = v => v ? '−' + fINR(v) : '—';
+  let body;
+  if (t==='i'){
+    const sal = Object.keys(inc.salary||{}).map(co=>row(esc(co), fINR(inc.salary[co]), 'Salary')).join('');
+    body = `<div class="cmhead"><h3>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
+      ${sal}${inc.epfTaxable ? row('EPF payout', fINR(inc.epfTaxable), 'Taxed as salary, service under 5 years') : ''}
+      ${R.std ? row('Standard deduction', neg(R.std), '', 'sub') : ''}${R.hra + R.pt ? row('HRA / professional tax', neg(R.hra + R.pt), '', 'sub') : ''}
+      ${R.freelance ? row('Freelancing', fINR(R.freelance), '44ADA: half of ' + fINR(inc.freelance)) : ''}
+      ${inc.interest ? row('Bank interest', fINR(inc.interest), 'Interests tab') : ''}
+      ${inc.usDiv ? row('US dividends', fINR(inc.usDiv), '$' + inc.usDivUsd + ' gross, 25% withheld in the US') : ''}
+      ${R.other - inc.interest - inc.usDiv > 0.5 ? row('Indian dividends / other', fINR(R.other - inc.interest - inc.usDiv), 'From AIS') : ''}
+      ${R.slabCg ? row('Short-term gains at slab', fINR(R.slabCg), 'US stocks, gold, debt under their holding period') : ''}
+      ${R.dedTotal ? row('Deductions', neg(R.dedTotal), Object.keys(R.ded).filter(k=>R.ded[k]).map(k=>({c80:'80C',nps1b:'NPS 80CCD(1B)',d80:'80D',tta:'80TTA',g80:'80G'})[k] + ' ' + fINR(R.ded[k])).join(' · '), 'sub') : ''}
+      ${row('Taxable income', fINR(R.normal), '', 'tot')}</div>
+      <div class="cmhead"><h3>Tax</h3><span class="num money">${fINR(R.tax)}</span></div><div class="card tight">
+      ${row('On income', fINR(R.tNormal), 'Slab rates')}${R.rebate ? row('Rebate', neg(R.rebate), 'Income up to ₹12L', 'sub') : ''}
+      ${R.tEqST ? row('Short-term equity 20%', fINR(R.tEqST)) : ''}${R.tEqLT ? row('Long-term equity 12.5%', fINR(R.tEqLT), 'Above the ₹1.25L exemption') : ''}
+      ${R.tOtherLT ? row('Other long-term 12.5%', fINR(R.tOtherLT), 'US stocks, gold, debt') : ''}${R.tCrypto ? row('Crypto 30%', fINR(R.tCrypto)) : ''}
+      ${R.surcharge ? row('Surcharge', fINR(R.surcharge)) : ''}${row('Cess 4%', fINR(R.cess))}${row('Total tax', fINR(R.tax), '', 'tot')}</div>`;
+  } else if (t==='g'){
+    const bc = g.byClass || {}, keys = Object.keys(bc).sort((a,b)=>Math.abs(bc[b].lt + bc[b].st) - Math.abs(bc[a].lt + bc[a].st));
+    const total = g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto;
+    const used = Math.min(g.net.exempt, 125000), pct = Math.round(used / 1250);
+    body = `<div class="cmhead"><h3>By asset</h3><span class="num money">${fINRs(total)}</span></div><div class="card tight">
+      ${keys.length ? keys.map(k=>{ const c = bc[k]; return `<div class="row"><div class="l"><div class="n">${esc(k)}</div><div class="m">${c.n} lot${c.n===1?'':'s'} · sold ${fKL(c.proceeds)}${c.lt ? ' · long ' + fINRs(c.lt) : ''}${c.st ? ' · short ' + fINRs(c.st) : ''}</div></div><div class="r"><div class="v num money ${cls(c.lt + c.st)}">${fINRs(c.lt + c.st)}</div></div></div>`; }).join('') : '<div class="empty">Nothing sold this year</div>'}</div>
+      <div class="cmhead"><h3>How it is taxed</h3></div><div class="card tight">
+      ${row('Long-term Indian equity', fINRs(g.net.eqLT), '12.5% above ₹1.25L a year')}
+      <div class="row"><div class="l"><div class="n">Exemption used</div><div class="tbar"><i style="width:${pct}%;--c:var(--pc0)"></i></div><div class="m">${fINR(used)} of ₹1,25,000 · ${fINR(125000 - used)} left this year</div></div></div>
+      ${row('Short-term Indian equity', fINRs(g.net.eqST), '20%')}${row('Long-term US / gold / debt', fINRs(g.net.otherLT), '12.5%, no exemption')}
+      ${row('Short-term US / gold / debt', fINRs(g.net.otherST), 'Added to income, slab rate')}${g.net.crypto || g.cryptoLoss ? row('Crypto', fINRs(g.net.crypto), '30% on each profitable trade' + (g.cryptoLoss ? ' · losses of ' + fINR(g.cryptoLoss) + ' not set off' : '')) : ''}
+      ${g.net.carry.st || g.net.carry.lt ? row('Loss carried forward', fINR(g.net.carry.st + g.net.carry.lt), 'Short ' + fINR(g.net.carry.st) + ' · long ' + fINR(g.net.carry.lt) + ', for 8 years') : ''}</div>`;
+  } else {
+    const inst = (A && A.inst) || [], paidRows = (inc.advance||[]).map(a=>row(esc(fDateY(a.date)), fINR(a.amount), esc(a.note || 'Advance tax')));
+    const st = x => !x.past ? '<span class="pill sm">upcoming</span>' : x.short > 0 ? `<span class="pill sm down">short ${fKL(x.short)}</span>` : '<span class="pill sm up">paid</span>';
+    body = `<div class="cmhead"><h3>Already paid</h3><span class="num money">${fINR(R.credits)}</span></div><div class="card tight">
+      ${inc.tds ? row('TDS on salary', fINR(inc.tds)) : ''}${inc.epfTds ? row('TDS on EPF payout', fINR(inc.epfTds)) : ''}
+      ${paidRows.join('') || row('Advance tax', '—', 'Nothing recorded yet', 'sub')}${R.ftc ? row('US tax credit', fINR(R.ftc), 'Form 67 with the return') : ''}
+      <button class="row tap epaddrow" data-taxpay><span class="epai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><div class="l"><div class="n">Record a tax payment</div><div class="m">Goes to Money as Bills/Utility › Taxes</div></div></button></div>
+      <div class="cmhead"><h3>Advance tax</h3><span class="num money">${A && A.needed ? fINR(A.due) + ' due' : 'not needed'}</span></div><div class="card tight">
+      ${inst.length ? inst.map(x=>`<div class="row"><div class="l"><div class="n">${esc(fDateY(x.date))} · ${x.pct}%</div><div class="m">${fINR(x.want)} due · ${fINR(x.paid)} paid by then</div></div><div class="r">${st(x)}</div></div>`).join('') : '<div class="empty">Under ₹10,000 after TDS, so no instalments</div>'}
+      ${A && A.interest234C ? row('Interest 234C (estimate)', fINR(A.interest234C), '1% a month on each shortfall') : ''}</div>
+      <div class="ft ctr" style="padding:14px 24px 0;color:var(--ink-3);font-size:12px">Computed ${esc(fDateY(taxD().built))} from your sheets · <a data-taxrebuild style="color:var(--pc0)">recompute now</a></div>`;
+  }
+  return seg + `<div class="tabbody">${body}</div>`;
+}
+function wireTax(p){
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  $$('#page [data-taxy]').forEach(b=>b.onclick=()=>{ p.taxFy = b.dataset.taxy; again(); });
+  $$('#page [data-taxt]').forEach(b=>b.onclick=()=>{ p.taxTab = b.dataset.taxt; again(); });
+  const pay = $('#page [data-taxpay]'); if (pay) pay.onclick = ()=>{ const Y = taxYear(p), n = Y && Y.advance && Y.advance.next; openXSheet(null, 'expense', { category:'Bills/Utility', sub:'Taxes', note:'Advance tax', amount: n ? Math.round(n.amount) : undefined }); };
+  const rb = $('#page [data-taxrebuild]'); if (rb) rb.onclick = async ()=>{ toast('Recomputing…'); try{ const r = await apiPost('taxBuild', {}); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Tax recomputed'); }catch(e){ toast(e.message || 'Could not recompute'); } };
 }
 // Contributions | Interest | Withdrawals under the overview; each tab has its title with + Add beside it
 const EPF_TABS = [['c','Contributions','data-epfc'],['i','Interest','data-epfi'],['w','Withdrawals','data-epfw']];
@@ -6821,7 +6915,8 @@ const PI = {
   tag:'<path d="M3 12V4h8l10 10-8 8z"/><path d="M7.5 7.5h.01"/>',
   dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   repeat:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
-  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  tax:'<path d="M5 4h14v16H5z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>'
 };
 const LOCK_OPTS = [[0,'Immediately'],[60000,'After 1 minute'],[300000,'After 5 minutes'],[900000,'After 15 minutes']];
 function profileBody(){
@@ -6864,6 +6959,7 @@ function profileBody(){
     ${row('tag','#ff9500','Defaults', `<span class="vl">${chv}</span>`, 'What new entries start with', 'data-act="defaults"')}
     ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
+    ${row('tax','#af52de','Tax', `<span class="vl">${taxD() ? esc(taxYear().label) : ''}${chv}</span>`, taxD() ? 'Estimate, gains and advance tax' : 'Computed on the sheet nightly', 'data-act="tax"')}
    </div>
 
    <h3>Data</h3><div class="grp">
@@ -6979,6 +7075,7 @@ function wireProfile(){
     else if (a==='refreshsheet') refreshSheet(again);
     else if (a==='recurring'){ if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; } pushPage({ kind:'recurring' }); }
     else if (a==='defaults'){ if (!xd()){ toast('Expenses are still loading'); loadExpenses(); return; } pushPage({ kind:'defaults' }); }
+    else if (a==='tax') pushPage({ kind:'tax' });
     else if (a==='clear'){
       if (!confirm('Clear cached data?\n\nCentric will download everything again from your sheet. Your connection and settings stay.')) return;
       ['inv.data','inv.exp'].forEach(k=>localStorage.removeItem(k)); location.reload();
