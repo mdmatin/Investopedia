@@ -1163,6 +1163,11 @@ html[data-theme=dark] .recf .segw button.on{background:#636366}
 .recf .r .sw,.recf .rin{margin-left:auto}
 .recf .danger .lb{flex:1}
 .recf .r .vl{margin-left:auto}
+.xsf{margin-top:4px}.xsf .segw{margin:0 16px}.xsf .grp{margin-top:12px}
+.xs-amt{margin-left:auto;display:flex;align-items:center;gap:8px}.xs-amt .rin{width:5.5em;flex:none;text-align:right}.xs-amt i{font-style:normal;color:var(--ink-3)}
+.xs-clr{display:block;margin:10px auto 0;color:var(--blue);font-size:15px;padding:6px 10px}
+.xs-n{margin:2px 20px 0;font-size:13px;color:var(--ink-2)}
+.xs-top{margin-top:4px}.xs-sug .row{width:100%;text-align:left}.xs-si{width:34px;height:34px;border-radius:10px;background:var(--sunken);color:var(--ink-2);display:grid;place-items:center;flex:none}.xs-si svg{width:16px;height:16px}
 .recdue .rdbtn{display:flex;gap:6px}
 .recdue .rdbtn button{font-size:13.5px;font-weight:600;padding:6px 12px;border-radius:9999px;background:var(--sunken);color:var(--ink-2)}
 .recdue .rdbtn button.ok{background:var(--blue);color:#fff}
@@ -1261,7 +1266,7 @@ html[data-theme=dark] .bk-hero .pg-big.off{color:#ff9f0a}
 .liq{padding:16px 18px 12px}
 .liq .hd{display:flex;justify-content:space-between;align-items:center}.liq .k{font-size:13px;color:var(--ink-2)}
 .liq .big{font:600 26px/1.15 var(--font-disp);letter-spacing:-.6px;margin-top:4px}
-.bcs,.bdc{font-size:.6em;letter-spacing:0}.bcs{margin-right:.06em}.bdc{color:var(--ink-2)}.down .bdc,.big.down .bdc{color:inherit}
+.bcs,.bdc{font-size:.6em;letter-spacing:0}.bcs{margin-right:.06em}.bdc{color:var(--ink-2)}.down .bdc,.big.down .bdc,.pg-big.up .bdc,.pg-big.off .bdc{color:inherit}
 .asum .albl{font-size:13px;color:var(--ink-2);margin-bottom:2px}
 .okchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--up);background:var(--up-bg);padding:3px 9px;border-radius:999px;cursor:pointer}
 .okchip[hidden]{display:none}.okchip i{width:6px;height:6px;border-radius:50%;background:var(--up)}
@@ -1976,7 +1981,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01r';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2609,7 +2614,14 @@ function wireSearch(box, list, get, set){
   box.classList.toggle('has', !!get());
   applySearch(list(), get());
 }
-let assetQuery = '', capTab = 'All', capOpen = false;   // the details list starts collapsed
+let assetQuery = '', capTab = 'All', capOpen = false;
+// switching tabs starts every search box empty again (Holdings, Trades, Activity)
+function clearSearches(){
+  assetQuery = ''; xQuery = '';
+  [['#assetSearch','#assetList'],['#xSearch','#xList']].forEach(([b,l])=>{ const box = $(b), inp = box && box.querySelector('input');
+    if (inp && inp.value){ inp.value = ''; box.classList.remove('has'); if ($(l)) applySearch($(l), ''); } });
+  const q = $('#q'); if (q && q.value){ q.value = ''; if (D) renderTxns(D.data.transactions); }
+}   // the details list starts collapsed
 // a tap on a short figure (data-full) shows the exact amount above it for a moment
 document.addEventListener('click', e=>{
   document.querySelectorAll('.tipb').forEach(t=>t.remove());
@@ -3738,7 +3750,7 @@ function show(v, sec){
   if (v==='acc'){ v = 'spend'; sec = 'accounts'; }                // the Accounts tab is Spend's accounts section, on its own
   if (v==='spend' && sec!=='accounts' && activeView==='spend' && spSec==='accounts') activeView = 'acc';   // Accounts → Spend counts as a fresh open
   { const pad = $('#homePad'); if (pad) pad.style.height = '0px'; }
-  const prevView = activeView; activeView=v;
+  const prevView = activeView; if (prevView!==v || (v==='spend' && (sec||'list')!==spSec)) clearSearches(); activeView=v;
   const isAcc = v==='spend' && sec==='accounts';
   const tabV = v==='trend' ? 'home' : v==='txn' ? 'break' : isAcc ? 'acc' : v;                 // Trends opens from Overview, so Overview stays lit
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===tabV));
@@ -3959,7 +3971,7 @@ function stepper(p){
       <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
-function pageTitle(p){ return p.kind==='platlist' ? 'Platforms' : p.kind==='bklist' ? 'Buckets' : p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
+function pageTitle(p){ return p.kind==='xsearch' ? 'Search' : p.kind==='platlist' ? 'Platforms' : p.kind==='bklist' ? 'Buckets' : p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
   : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='nps' ? 'NPS' : p.kind==='tax' ? 'Tax' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recdetail' ? 'Details' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
@@ -3998,13 +4010,13 @@ function dividendsBody(ticker, platform){
 }
 
 function renderPage(){
-  const p = pageStack[pageStack.length-1]; if(!p || (!D && !/^(profile|recurring|recform)$/.test(p.kind))) return;
+  const p = pageStack[pageStack.length-1]; if(!p || (!D && !/^(profile|recurring|recform|xsearch)$/.test(p.kind))) return;
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
   const body = p.kind==='platlist' ? '<div class="card tight" id="pgPlatList"></div>' : p.kind==='bklist' ? '<div class="card tight" id="pgBkList"></div>' : p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='tax' ? taxBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
-    : p.kind==='recform' ? recFormBody(p) : p.kind==='recdetail' ? recDetailBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
+    : p.kind==='recform' ? recFormBody(p) : p.kind==='xsearch' ? xSearchBody(p) : p.kind==='recdetail' ? recDetailBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
   const asSheet = p.kind==='profile' && pageStack.length===1;
   $('#page').innerHTML = asSheet ? `<div class="pg-head sheethd"><div class="pg-title">Profile</div><button class="pg-done" id="pgBack">Done</button></div>` + body : `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
@@ -4031,6 +4043,7 @@ function renderPage(){
   if (p.kind==='recurring'){ wireRecurring(); return; }
   if (p.kind==='defaults'){ wireDefaults(); return; }
   if (p.kind==='recform'){ wireRecForm(p); return; }
+  if (p.kind==='xsearch'){ wireXSearch(p); return; }
   if (p.kind==='recdetail'){ const e = $('#pgEdit'); if (e) e.onclick = ()=>pushPage({ kind:'recform', id:p.id }); return; }
   $$('#page [data-t]').forEach(r=>r.onclick=()=>openHolding(r.dataset.t, $$('#page [data-t]').map(x=>x.dataset.t)));
   // prev / next swap the ticker in place, so Back still returns to the list
@@ -4668,11 +4681,7 @@ function renderSpend(){
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#spBody [data-txf]').forEach(b=>b.onclick=()=>{ txFilter = b.dataset.txf; renderSpend(); });
   $$('#spBody [data-fmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openTxMenu(b); });
-  $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>{
-    const [k,row] = r.dataset.tx.split(':'), d = xd();
-    const inc = k==='in' || k==='adj', pool = k==='tr' ? d.transfers : inc ? d.incomes : d.entries;
-    openXSheet((pool||[]).find(e=>String(e.row)===row), k==='tr' ? 'transfer' : inc ? 'income' : 'expense');
-  });
+  $$('#spBody [data-tx]').forEach(r=>r.onclick=()=>openTx(r.dataset.tx));
   $$('#spBody [data-ym]').forEach(b=>b.onclick=()=>{ spMonth = ymAdd(spMonth, Number(b.dataset.ym)); renderSpend(); });
   $$('#spBody [data-mpick]').forEach(b=>b.onclick=()=>monthPicker(spMonth, m=>{ spMonth = m; renderSpend(); }));
   $$('#spBody [data-xcat]').forEach(r=>r.onclick=()=>pushPage({ kind:'expcat', cat:r.dataset.xcat, ym:r.dataset.ymc||spMonth }));
@@ -4692,8 +4701,8 @@ function renderSpend(){
         if (Date.now()-st < 400 && Math.abs(dx) > 50 && Math.abs(dy) < 40) setV(dx < 0 ? 'monthly' : 'daily'); }, {passive:true}); }
   }
   if (spSec==='list'){ wireRecDue();
-    const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner(xQuery, 'Search activity');
-    wireSearch(sb, ()=>$('#xList'), ()=>xQuery, v=>xQuery=v);
+    const sb = $('#xSearch'); if (sb && !sb.firstChild) sb.innerHTML = searchInner('', 'Search all activity');
+    if (sb){ const i = sb.querySelector('input'); i.readOnly = true; sb.onclick = e=>{ e.preventDefault(); i.blur(); pushPage({ kind:'xsearch' }); }; }
   }
 }
 let xQuery = '';
@@ -5008,6 +5017,160 @@ async function discardDraft(id){
 $('#dfab').onclick = openDrafts;
 const TX_ARW = { adj:'M5 9h14M5 15h14', iv:'M3 17l6-6 4 4 8-8M15 7h6v6', ex:'M12 5v14M6 13l6 6 6-6', in:'M12 19V5M6 11l6-6 6 6', rf:'M12 19V5M6 11l6-6 6 6', lq:'M12 19V5M6 11l6-6 6 6', tr:'M4 9h14l-3.5-3.5M20 15H6l3.5 3.5' };
 const TX_NAME = { adj:'Adjustment', iv:'Investment', ex:'Expense', tr:'Transfer', in:'Income', rf:'Refund', lq:'Liquidation' };
+function openTx(tx){
+  const [k,row] = tx.split(':'), d = xd();
+  if (row && row[0]==='o') return toast('Older entries are edited in the sheet');   // from Search's older history
+  const inc = k==='in' || k==='adj', pool = k==='tr' ? d.transfers : inc ? d.incomes : d.entries;
+  const e = (pool||[]).find(e=>String(e.row)===row); if (!e) return;
+  openXSheet(e, k==='tr' ? 'transfer' : inc ? 'income' : 'expense');
+}
+/* ---------- Search's older expenses ----------
+   The normal load carries the last 13 months of expenses one by one (older months as totals).
+   Search fetches the older rows on its own — only when Search opens, never on the app's load —
+   and keeps them on the phone (IndexedDB). Each later open sends the copy's signature; the script
+   reads just its date column and answers "same" unless an old row changed. */
+const IDB = { db:null,
+  open(){ return this.db || (this.db = new Promise((ok, no)=>{ try{ const r = indexedDB.open('centric', 1); r.onupgradeneeded = ()=>r.result.createObjectStore('kv'); r.onsuccess = ()=>ok(r.result); r.onerror = ()=>no(r.error); }catch(e){ no(e); } })); },
+  async get(k){ try{ const db = await this.open(); return await new Promise(ok=>{ const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = ()=>ok(q.result); q.onerror = ()=>ok(null); }); }catch(e){ return null; } },
+  async set(k, v){ try{ const db = await this.open(); db.transaction('kv','readwrite').objectStore('kv').put(v, k); }catch(e){} }
+};
+let xOld = null, xOldBusy = false;
+async function loadOldExpenses(onDone){
+  if (!xOld) xOld = await IDB.get('xold');
+  if (xOld) onDone();                                   // what's on the phone shows at once
+  if (xOldBusy || !cfg || Date.now() - ((xOld && xOld.at) || 0) < 6*3600e3) return;   // old rows rarely change: check at most every 6 hours
+  xOldBusy = true; onDone();
+  try{
+    const j = await api(xOld && xOld.sig ? { action:'oldExpenses', have:xOld.sig } : { action:'oldExpenses' });
+    const r = j.data || {};
+    if (!r.same && r.rows){ xOld = { sig:r.sig, from:r.from, rows:r.rows, at:Date.now() }; xsMemo = null; }
+    else if (xOld) xOld.at = Date.now();
+    if (xOld) IDB.set('xold', xOld);
+  }catch(e){}
+  finally{ xOldBusy = false; onDone(); }
+}
+/* ---------- Search: every entry, with filters (its own page, opened from Activity's search box) ---------- */
+const XS_PER = [['all','All time'],['week','This week'],['month','This month'],['year','This year'],['custom','Custom']];
+const XS_TYPE = [['all','All'],['ex','Expenses'],['in','Income'],['tr','Transfers']];
+function xsRange(f){
+  const t = new Date(), ymd = d => d.toLocaleDateString('en-CA'), today = ymd(t);
+  if (f.per==='week'){ const d = new Date(t); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return [ymd(d), today]; }   // Monday to today
+  if (f.per==='month') return [today.slice(0,8)+'01', today];
+  if (f.per==='year') return [today.slice(0,5)+'01-01', today];
+  if (f.per==='custom') return [f.from||'0000', f.to||'9999'];
+  return ['0000','9999'];
+}
+// every entry as {k, e}, newest first
+let xsMemo = null;
+function xsAll(){
+  const d = xd() || {}, key = [d.entries && d.entries.length, d.incomes && d.incomes.length, d.transfers && d.transfers.length, xOld && xOld.sig, X && X.at].join('|');
+  if (xsMemo && xsMemo.d===d && xsMemo.key===key) return xsMemo.all;
+  const all = [];
+  if (xOld && xOld.rows){ const cut = d.entriesFrom || xOld.from || '';
+    xOld.rows.forEach((r,i)=>{ if (r[0].slice(0,7) >= cut) return;
+      const e = { row:'o'+i, date:r[0], account:r[1], category:r[2], sub:r[3], note:r[4], desc:r[5], amount:r[6] };
+      all.push({ k: e.amount<0 ? (isInvest(e.category) ? 'lq' : 'rf') : isInvest(e.category) ? 'iv' : 'ex', e }); }); }
+  (d.entries||[]).forEach(e=>all.push({ k: e.amount<0 ? (isInvest(e.category) ? 'lq' : 'rf') : isInvest(e.category) ? 'iv' : 'ex', e }));
+  (d.transfers||[]).forEach(e=>all.push({ k:'tr', e }));
+  (d.incomes||[]).forEach(e=>all.push({ k: e.type==='Adjustment' ? 'adj' : 'in', e }));
+  all.sort((x,y)=>x.e.date<y.e.date?1:x.e.date>y.e.date?-1:0);
+  xsMemo = { d, key, all }; return all;
+}
+// what a suggestion can be: a name (note / payee / source), a category or income type, a subcategory, an account
+const XS_FIELDS = [['name','Name', e=>[e.note || e.desc || e.payee || e.source]], ['cat','Category', e=>[e.category || e.type]],
+  ['sub','Subcategory', e=>[e.sub]], ['acc','Account', e=>[e.account, e.from, e.to]]];
+const xsFilterOn = f => f.per!=='all' || f.type!=='all' || f.acc || f.cat || f.min || f.max;
+function xsMatch(p){
+  const f = p.f, [a,b] = xsRange(f), pk = p.pick;
+  const lo = f.min!=='' && f.min!=null ? Number(String(f.min).replace(/,/g,'')) : null, hi = f.max!=='' && f.max!=null ? Number(String(f.max).replace(/,/g,'')) : null;
+  const terms = pk && pk.f==='*' ? String(pk.v).toLowerCase().split(/\s+/).filter(Boolean) : [];
+  const fld = pk && pk.f!=='*' ? XS_FIELDS.find(x=>x[0]===pk.f) : null;
+  return xsAll().filter(x=>{ const e = x.e;
+    if (e.date < a || e.date > b) return false;
+    if (f.type!=='all' && !(TXF[f.type]||TXF.all)(x)) return false;
+    if (f.acc && e.account!==f.acc && e.from!==f.acc && e.to!==f.acc) return false;
+    if (f.cat && (x.k==='tr' || (x.k==='in' || x.k==='adj' ? e.type : e.category)!==f.cat)) return false;
+    const v = Math.abs(e.amount||0); if (lo!=null && v < lo) return false; if (hi!=null && v > hi) return false;
+    if (fld && !fld[2](e).includes(pk.v)) return false;
+    if (terms.length){ const q = qWords(e.note, e.desc, e.category, e.sub, e.account, e.source, e.type, e.from, e.to, e.remark, e.payee); if (!terms.every(t=>q.includes(t))) return false; }
+    return true;
+  });
+}
+// suggestions for what's typed: names first, then categories, subcategories, accounts; each with how many entries
+function xsSuggest(q){
+  q = q.toLowerCase().trim(); if (!q) return [];
+  const seen = new Map();
+  xsAll().forEach(({e})=>XS_FIELDS.forEach(([f,,get])=>get(e).forEach(v=>{ if (!v) return; const lv = String(v).toLowerCase(); if (!lv.includes(q)) return;
+    const k = f+'|'+v, o = seen.get(k) || { f, v, n:0, pre: lv.startsWith(q) }; o.n++; seen.set(k, o); })));
+  const ord = { name:0, cat:1, sub:2, acc:3 };
+  return [...seen.values()].sort((a,b)=>(b.pre-a.pre) || (ord[a.f]-ord[b.f]) || (b.n-a.n)).slice(0, 8);
+}
+const XS_SUG_IC = { name: SRCH_ICON, cat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5V5a1.5 1.5 0 0 1 1.5-1.5h7.5L20.5 11.5l-9 9z"/><circle cx="8" cy="8" r="1.4"/></svg>',
+  sub:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a3 3 0 0 0 3 3h9"/><path d="M15 12.5l3.5 3.5-3.5 3.5"/></svg>',
+  acc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>' };
+function xsResultsHtml(p){
+  const f = p.f;
+  if (!p.pick && p.q) {   // typing: suggestions
+    const S = xsSuggest(p.q), lbl = Object.fromEntries(XS_FIELDS.map(x=>[x[0],x[1]]));
+    return `<div class="card tight xs-sug">${S.map((x,i)=>`<button class="row" data-sug="${i}"><span class="xs-si">${XS_SUG_IC[x.f]}</span>
+        <div class="l"><div class="n">${esc(x.v)}</div><div class="m">${lbl[x.f]} · ${x.n} ${x.n===1?'entry':'entries'}</div></div></button>`).join('')}
+      <button class="row" data-sug="*"><span class="xs-si">${SRCH_ICON}</span><div class="l"><div class="n">Search “${esc(p.q)}” everywhere</div></div></button></div>`;
+  }
+  if (!p.pick && !xsFilterOn(f)) return '<div class="empty">Search a name, category or account</div>';
+  const L = xsMatch(p);
+  const sum = k => L.filter(k).reduce((t,x)=>t+(x.e.amount||0),0);
+  const inc = sum(x=>x.k==='in'), exp = sum(TXF.ex), tr = sum(x=>x.k==='tr');
+  const head = `<div class="tline num money"><div><span>Income</span><b class="up">${fINR2(inc)}</b></div><div><span>Expense</span><b>${fINR2(exp)}</b></div><div><span>Transfer</span><b>${fINR2(tr)}</b></div></div>`;
+  const note = xOldBusy && !xOld ? '<div class="xs-n">Loading older entries…</div>' : '';
+  if (!L.length) return head + note + (xOldBusy && !xOld ? '' : '<div class="empty">Nothing matches</div>');
+  const MAX = 300, by = {}; L.slice(0, MAX).forEach(x=>(by[x.e.date]=by[x.e.date]||[]).push(x));
+  return head + `<div class="xs-n">${L.length} ${L.length===1?'entry':'entries'}${xOldBusy && !xOld ? ' · loading older entries…' : ''}</div>` + Object.keys(by).sort().reverse().map(dt=>`<div class="daygroup tday"><span>${esc(fDate(dt))}</span></div>
+      <div class="card tight">${by[dt].map(txRow).join('')}</div>`).join('') + (L.length > MAX ? `<div class="empty">Showing the newest ${MAX} — narrow the search to see more</div>` : '');
+}
+function xSearchBody(p){
+  p.f = p.f || { per:'all', type:'all', acc:'', cat:'', min:'', max:'', from:'', to:'' }; const f = p.f, on = xsFilterOn(f);
+  const chv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+  const opt = (v, l, cur) => `<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l)}</option>`;
+  const sel = (k, cur, opts, ph) => `<span class="vl">${esc((opts.find(o=>String(o[0])===String(cur))||[0, ph])[1])}${chv}</span>
+      <select data-xf="${k}">${ph ? opt('', ph, cur) : ''}${opts.map(o=>opt(o[0], o[1], cur)).join('')}</select>`;
+  const row = (l, right) => `<div class="r"><div class="lb">${l}</div>${right}</div>`;
+  const accs = xAccounts().map(a=>a.name); if (!accs.includes('Cash')) accs.unshift('Cash');
+  const cats = f.type==='in' ? inTypesList().map(t=>[t,t]) : f.type==='tr' ? [] : xCats().map(c=>[c,c]).concat(f.type==='ex' ? [] : inTypesList().map(t=>[t,t+' (income)']));
+  const dt = (k, l) => row(l, `<span class="vl">${f[k] ? esc(fDate(f[k])) : 'Any'}${chv}</span><input class="ovl" type="date" data-xd="${k}" value="${esc(f[k]||'')}">`);
+  const panel = p.fo ? `<div class="prof recf xsf"><div class="segw">${XS_TYPE.map(([k,l])=>`<button data-xt="${k}" class="${f.type===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="grp">
+      ${row('Period', sel('per', f.per, XS_PER))}
+      ${f.per==='custom' ? dt('from','From') + dt('to','To') : ''}
+      ${row('Account', sel('acc', f.acc, accs.map(a=>[a,a]), 'Any'))}
+      ${f.type==='tr' ? '' : row('Category', sel('cat', f.cat, cats, 'Any'))}
+      ${row('Amount', `<span class="xs-amt"><input class="rin" data-xa="min" inputmode="decimal" placeholder="Min" value="${esc(f.min)}"><i>–</i><input class="rin" data-xa="max" inputmode="decimal" placeholder="Max" value="${esc(f.max)}"></span>`)}
+    </div>${on ? '<button class="xs-clr" data-xclr>Clear filters</button>' : ''}</div>` : '';
+  return `<div class="srow xs-top"><div class="search" id="xsBox">${searchInner(p.pick ? p.pick.v : (p.q||''), 'Name, category or account')}</div>
+      <button class="fbtn ${on||p.fo?'on':''}" data-xfo aria-label="Filters" aria-expanded="${p.fo?'true':'false'}">${FILTER_IC}${on?'<span class="dot"></span>':''}</button></div>
+    ${panel}<div id="xsRes">${xsResultsHtml(p)}</div>`;
+}
+function wireXSearch(p){
+  const pg = $('#page');
+  const wireRes = () => { $$('#xsRes [data-tx]').forEach(r=>r.onclick=()=>openTx(r.dataset.tx));
+    $$('#xsRes [data-sug]').forEach(b=>b.onclick=()=>{ const k = b.dataset.sug; p.pick = k==='*' ? { f:'*', v:p.q } : (()=>{ const x = xsSuggest(p.q)[Number(k)]; return { f:x.f, v:x.v }; })(); inp.value = p.pick.v; inp.blur(); res(); pg.scrollTop = 0; }); };
+  const res = () => { const r = $('#xsRes'); if (r){ r.innerHTML = xsResultsHtml(p); wireRes(); } };
+  const redraw = () => { const y = pg.scrollTop; renderPage(); pg.scrollTop = y; };
+  const box = $('#xsBox'), inp = box.querySelector('input'), x = box.querySelector('.sx');
+  inp.setAttribute('autocapitalize', 'off');
+  box.classList.toggle('has', !!(p.q || p.pick));
+  inp.oninput = () => { p.q = inp.value; p.pick = null; box.classList.toggle('has', !!p.q); res(); };
+  inp.onkeydown = e => { if (e.key==='Enter' && p.q && p.q.trim()){ p.pick = { f:'*', v:p.q.trim() }; inp.blur(); res(); } };
+  x.onclick = () => { inp.value = ''; p.q = ''; p.pick = null; box.classList.remove('has'); res(); inp.focus(); };
+  $('#page [data-xfo]').onclick = () => { p.fo = !p.fo; redraw(); };
+  $$('#page [data-xt]').forEach(b=>b.onclick=()=>{ p.f.type = b.dataset.xt; if (p.f.type==='tr') p.f.cat = ''; redraw(); });
+  $$('#page [data-xf]').forEach(s=>s.onchange=()=>{ p.f[s.dataset.xf] = s.value; redraw(); });
+  $$('#page [data-xd]').forEach(s=>s.onchange=()=>{ p.f[s.dataset.xd] = s.value; redraw(); });
+  $$('#page [data-xa]').forEach(s=>{ s.oninput = ()=>{ p.f[s.dataset.xa] = s.value; res(); }; s.onblur = ()=>redraw(); });
+  const c = $('#page [data-xclr]'); if (c) c.onclick = ()=>{ p.f = null; redraw(); };
+  wireRes();
+  if (!p.opened){ p.opened = true; setTimeout(()=>inp.focus(), 320);
+    loadOldExpenses(()=>{ if (pageStack[pageStack.length-1]===p) res(); }); }
+}
 function txItems(ym){
   const d = xd() || {}, out = [];
   (d.entries||[]).forEach(e=>{ if (e.date.slice(0,7)===ym) out.push({ k: e.amount<0 ? (isInvest(e.category) ? 'lq' : 'rf') : isInvest(e.category) ? 'iv' : 'ex', e }); });
@@ -5088,7 +5251,7 @@ function expcatBody(p){
       <button data-pym="1" aria-label="Next month" ${ym>=ymNow()?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   return sw + `<div class="card pg-card pg-hero">
       <div class="pg-id">${xTile(cat)}<div class="grow"><div class="t">${esc(cat)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} expense${list.length===1?'':'s'}</div></div></div>
-      <div class="pg-big num money">${fINR2(spent)}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(spent))}</div>
       <button class="xbud num money" data-bedit>${bud ? `of ${fINR2(bud)} budget${hasOverride?' (this month)':''}` : 'Set a budget'}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       ${ed}
@@ -5148,7 +5311,7 @@ function inccatBody(p){
       <div class="r"><div class="v num money up">${fINR2(e.amount)}</div>${e.tax?`<div class="s num money">tax ${fINR2(e.tax)}</div>`:''}</div></button>`).join('');
   return sw + `<div class="card pg-card pg-hero">
       <div class="pg-id">${moveTile('income')}<div class="grow"><div class="t">${esc(t)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} entr${list.length===1?'y':'ies'}</div></div></div>
-      <div class="pg-big num money">${fINR2(total)}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(total))}</div>
       <div class="xbud num money" style="pointer-events:none">Last 12 months ${fINR2(yearTot)}</div>
       ${chart}
     </div>
@@ -5169,7 +5332,7 @@ function budgetsBody(p){
       + (open ? `<div class="ed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${def[c]||0}" aria-label="${esc(c)} monthly budget"></div>
           <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : '');
   }).join('');
-  return `<div class="card pg-card"><div class="k">Monthly budget</div><div class="pg-big num money">${fINR2(total)}</div>
+  return `<div class="card pg-card"><div class="k">Monthly budget</div><div class="pg-big num money">${bigAmt(fINR2(total))}</div>
       <div class="pg-sub">The same every month unless you set a month on its own from a category's page.</div></div>
     <div class="card tight">${rows}<div class="rowtotal num money"><span>Total</span><span>${fINR2(total)}</span></div></div>`;
 }
@@ -5190,6 +5353,18 @@ async function saveBudget(cat, month, raw, after){
   }
 }
 
+// an open budget editor: once the keyboard is up, scroll the page so the field and its
+// Save button sit just above the keyboard (the page keeps its scroll through a re-render,
+// which would otherwise undo the browser's own scroll-to-focus)
+function revealEd(ed){
+  const pg = $('#page'), vv = window.visualViewport;
+  const fit = () => { if (!ed.isConnected) return;
+    const r = ed.getBoundingClientRect(), bottom = vv ? vv.offsetTop + vv.height : window.innerHeight, top = 70;
+    if (r.bottom > bottom - 16) pg.scrollBy({ top: r.bottom - bottom + 16, behavior:'smooth' });
+    else if (r.top < top) pg.scrollBy({ top: r.top - top, behavior:'smooth' }); };
+  requestAnimationFrame(fit); setTimeout(fit, 350);
+  if (vv){ const on = () => { fit(); vv.removeEventListener('resize', on); }; vv.addEventListener('resize', on); setTimeout(()=>vv.removeEventListener('resize', on), 1500); }
+}
 function wireXPage(p){
   const rerender = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).entries||[]).find(e=>String(e.row)===r.dataset.xrow)));
@@ -5212,7 +5387,7 @@ function wireXPage(p){
     $$('#page [data-mpick]').forEach(x=>x.onclick=()=>monthPicker(p.ym, toMonth));
     const ed = $('#page .xbed');
     if (ed){
-      const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus(); inp.select();
+      const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus({ preventScroll:true }); inp.select(); revealEd(ed);
       ed.querySelectorAll('[data-scope]').forEach(s=>s.onclick=()=>{ p.scope = s.dataset.scope; ed.querySelectorAll('[data-scope]').forEach(x=>x.classList.toggle('on', x===s)); });
       ed.querySelector('.cancel').onclick = ()=>{ p.bEdit=false; rerender(); };
       const go = ()=>saveBudget(p.cat, p.scope==='month' ? p.ym : '', inp.value, ()=>{ p.bEdit=false; rerender(); });
@@ -5223,7 +5398,7 @@ function wireXPage(p){
     $$('#page [data-bcat]').forEach(r=>r.onclick=e=>{ if (e.target.closest('.ed')) return; p.open = p.open===r.dataset.bcat ? null : r.dataset.bcat; rerender(); });
     const ed = $('#page .ed');
     if (ed){
-      const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus(); inp.select();
+      const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus({ preventScroll:true }); inp.select(); revealEd(ed);
       ed.querySelector('.cancel').onclick = ()=>{ p.open=null; rerender(); };
       const go = ()=>saveBudget(p.open, '', inp.value, ()=>{ p.open=null; rerender(); });
       ed.querySelector('.save').onclick = go; inp.onkeydown = e=>{ if (e.key==='Enter') go(); };
@@ -5356,7 +5531,7 @@ function epfBody(p){
   const closed = c.bal < 1 && c.lastW;
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id">${mark('EPF')}<div class="grow"><div class="t">EPF</div>${uan ? `<div class="s">${esc(uan)}</div>` : ''}</div></div>
-      <div class="pg-big num money">${fINR2(c.bal)}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(c.bal))}</div>
       ${closed ? `<div class="pg-sub"><span class="k">${fINR(c.lastW.amount)} withdrawn on ${esc(fDateY(c.lastW.date))}</span></div>` : ''}
       <div class="spstats lcr"><div><span>Your share</span><b class="num money">${fINR(c.emp)}</b></div>
         <div><span>Employer</span><b class="num money">${fINR(c.er)}</b></div>
@@ -5403,7 +5578,7 @@ function npsBody(p){
   const pc = c.invested ? c.pnl / c.invested : null, N = c.N;
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id">${mark('NPS')}<div class="grow"><div class="t">NPS</div><div class="s">${esc(N.manager || 'SBI Pension Fund')} · Tier I</div></div></div>
-      <div class="pg-big num money">${fINR2(c.value)}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(c.value))}</div>
       ${N.dayChange!=null ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(N.dayChange, fINR)}${N.dayChangePct!=null ? ` <span class="${cls(N.dayChangePct)}">(${fPct(Math.abs(N.dayChangePct),false)})</span>` : ''} <span class="k">today</span></span></div>` : ''}
       ${c.months.length > 1 ? monthLineChart(c.months, c.vals, c.months[c.months.length-1], null, 0, true) : ''}
       <div class="spstats lcr npstats"><div><span>Invested</span><b class="num money">${fINR(c.invested)}</b></div>
@@ -5552,7 +5727,7 @@ function taxBody(p){
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id"><div class="tile cr">${S(TAX_ICON)}</div><div class="grow"><div class="t">${refund ? 'Refund due' : 'Balance to pay'}</div><div class="s">${esc(taxUpdated(T))}</div></div>
         <button class="taxre" data-taxrebuild aria-label="Recompute tax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg></button></div>
-      <div class="pg-big num money ${refund ? 'up' : ''}">${fINR2(Math.abs(R.balance))}</div>
+      <div class="pg-big num money ${refund ? 'up' : ''}">${bigAmt(fINR2(Math.abs(R.balance)))}</div>
       <div class="pg-sub num money"><span class="grp"><span class="k">Tax ${fINR(R.tax)} · paid ${fINR(R.credits)}${live ? ' so far' : ''}</span></span></div>
       <div class="spstats lcr"><div><span>Income</span><b class="num money">${fKL(R.normal)}</b></div>
         <div><span>Gains</span><b class="num money ${cls(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}">${fKL(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}</b></div>
@@ -5752,7 +5927,7 @@ function constrBody(p){
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id">${xTile('Construction')}<div class="grow"><div class="t">Construction</div>
         ${has.length ? `<div class="s">Since ${esc(ymShort(first))} '${first.slice(2,4)}</div>` : ''}</div></div>
-      <div class="pg-big num money">${fINR2(accTot)}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(accTot))}</div>
       <div class="pg-sub"><span class="k">In accounts</span></div>
       ${has.length ? monthLineChart(months, vals, sel) : ''}
       <div class="spstats lcr"><div><span>This month</span>${kq(spentM)}</div>
@@ -7114,7 +7289,7 @@ async function selDelete(){
   }
 }
 
-$$('#spSeg button').forEach(b=>b.onclick=()=>{ spSec = b.dataset.s; renderSpend(); window.scrollTo(0,0); });
+$$('#spSeg button').forEach(b=>b.onclick=()=>{ if (spSec!==b.dataset.s) clearSearches(); spSec = b.dataset.s; renderSpend(); window.scrollTo(0,0); });
 
 /* ==========================================================================
    FACE ID LOCK
