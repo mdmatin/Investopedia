@@ -1402,6 +1402,7 @@ body.paged{overflow:hidden}
 .pg-step button{width:34px;height:30px;display:grid;place-items:center;border-radius:999px;color:var(--blue)}
 .pg-step button svg{width:18px;height:18px}
 .pg-step button:disabled{color:var(--ink-3);opacity:.45}
+.pg-id .cstep{align-self:flex-start;flex:none}
 .pg-card{margin-top:6px}
 .pg-id{display:flex;align-items:center;gap:12px}
 .pg-id .tile{flex-basis:46px;width:46px;height:46px}
@@ -1982,7 +1983,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01t';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -3964,6 +3965,20 @@ window.addEventListener('popstate', e=>{
 try{ if (!history.state) history.replaceState({ pg: 0 }, ''); }catch(e){}
 
 
+// a category's page steps through that month's categories in the Monthly order (biggest first),
+// with the same ‹ › pair a holding's page uses
+function catList(p){
+  const src = p.kind==='inccat' ? monthIncome(p.ym) : personal(xMonth(p.ym));
+  const L = Object.keys(src).filter(k=>src[k]>0).sort((a,b)=>src[b]-src[a]);
+  if (!L.includes(p.cat)) L.push(p.cat);
+  return L;
+}
+function catStep(p){
+  const L = catList(p), i = L.indexOf(p.cat); if (L.length < 2) return '';
+  const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<div class="pg-step cstep"><button data-cstep="-1" aria-label="Previous category" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
+      <button data-cstep="1" aria-label="Next category" ${i>=L.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
+}
 function stepper(p){
   if ((p.kind!=='holding' && p.kind!=='platform' && p.kind!=='bucket') || !p.list) return '';
   const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.platform); if (i<0) return '';
@@ -5254,7 +5269,7 @@ function expcatBody(p){
       <b data-mpick role="button">${esc(ymLabel(ym))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
       <button data-pym="1" aria-label="Next month" ${ym>=ymNow()?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   return sw + `<div class="card pg-card pg-hero">
-      <div class="pg-id">${xTile(cat)}<div class="grow"><div class="t">${esc(cat)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} expense${list.length===1?'':'s'}</div></div></div>
+      <div class="pg-id">${xTile(cat)}<div class="grow"><div class="t">${esc(cat)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} expense${list.length===1?'':'s'}</div></div>${catStep(p)}</div>
       <div class="pg-big num money">${bigAmt(fINR2(spent))}</div>
       <button class="xbud num money" data-bedit>${bud ? `of ${fINR2(bud)} budget${hasOverride?' (this month)':''}` : 'Set a budget'}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
@@ -5314,7 +5329,7 @@ function inccatBody(p){
       <div class="l"><div class="n">${esc(e.source || e.type || 'Income')}</div><div class="m">${[e.account, e.remark, fDate(e.date)].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="r"><div class="v num money up">${fINR2(e.amount)}</div>${e.tax?`<div class="s num money">tax ${fINR2(e.tax)}</div>`:''}</div></button>`).join('');
   return sw + `<div class="card pg-card pg-hero">
-      <div class="pg-id">${moveTile('income')}<div class="grow"><div class="t">${esc(t)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} entr${list.length===1?'y':'ies'}</div></div></div>
+      <div class="pg-id">${moveTile('income')}<div class="grow"><div class="t">${esc(t)}</div><div class="s">${esc(ymLabel(ym))} · ${list.length} entr${list.length===1?'y':'ies'}</div></div>${catStep(p)}</div>
       <div class="pg-big num money">${bigAmt(fINR2(total))}</div>
       <div class="xbud num money" style="pointer-events:none">Last 12 months ${fINR2(yearTot)}</div>
       ${chart}
@@ -5376,6 +5391,7 @@ function wireXPage(p){
   $$('#page [data-mvi]').forEach(r=>r.onclick=()=>openXSheet(((xd()||{}).incomes||[]).find(e=>String(e.row)===r.dataset.mvi), 'income'));
   const kp = $('#page [data-kitepay]'); if (kp) kp.onclick = ()=>openLiquidation(p.cat);
   if (p.kind==='expcat' || p.kind==='inccat'){
+    $$('#page [data-cstep]').forEach(s=>s.onclick=()=>{ const L = catList(p), n = L[L.indexOf(p.cat) + Number(s.dataset.cstep)]; if (!n) return; p.cat = n; p.bEdit = false; rerender(); });
     const b = $('#page [data-bedit]'); if (b) b.onclick = ()=>{ p.bEdit = !p.bEdit; rerender(); };
     const gs = $('#page .mbscroll');
     if (gs){
