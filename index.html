@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#f5f5f7">
 <script>
 // UI theme (OG or a concept), before first paint
-try{ document.documentElement.setAttribute('data-ui', (JSON.parse(localStorage.getItem('inv.prefs')||'{}').uiTheme) || 'og'); }catch(e){}
+try{ var u = JSON.parse(localStorage.getItem('inv.prefs')||'{}').uiTheme; document.documentElement.setAttribute('data-ui', u==='river' ? 'river' : 'og'); }catch(e){}
 // Appearance, before first paint: 'light' | 'dark' | 'auto' (follows the phone)
 (function(){
   var pick = 'auto'; try{ pick = JSON.parse(localStorage.getItem('inv.theme')) || 'auto'; }catch(e){}
@@ -1566,73 +1566,75 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 .rdt .rs{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:var(--r-pill);background:var(--sunken);color:var(--ink-2)}
 .rdt .rs.ok{background:var(--up-bg);color:var(--up)}
 .rdt .rs.warn{background:var(--down-bg);color:var(--down)}
-/* ============================ GREENHOUSE (concept 2) ============================
-   html[data-ui=greenhouse]: assets are plants, cash is water, budget is the rain barrel.
-   Same data and pages as OG; new palette, serif headlines, a garden on Overview and a
-   rain barrel on Spend. Night garden = dark mode. */
-html:not([data-ui=greenhouse]) .gh-only{display:none!important}
-html[data-ui=greenhouse]{
-  --parchment:#f3efe4; --canvas:#fffaf0; --sunken:#efe7d4; --hairline:#ece2cc; --card-edge:#e6dcc4;
-  --ink:#253323; --ink-2:#5f6b58; --ink-3:#9a9a84;
-  --blue:#3f7a4c; --blue-focus:#3f7a4c; --up:#3f7a4c; --up-bg:#e3eedb; --down:#b5562f; --over:#b5562f; --down-bg:#f6e4d8;
-  --font-disp: Fraunces, Georgia, "Times New Roman", serif;
-  --gh-nav:#2f4a3a; --gh-navink:#cfe0c8; --gh-sky:#cfe7e4; --gh-soil:#6b4a33; --gh-soil2:#7d5a3f; --gh-pot:#c8693f; --gh-rim:#d97b4f;
-  --gh-sun:#ffd56b; --gh-sunink:#3d2a00; --gh-water:#3b8cc0; --gh-water2:#7cc4e8; --gh-glass:#eef6f8; --gh-jar:#2f4a3a;
-}
-html[data-ui=greenhouse][data-theme=dark]{
-  --parchment:#0f1611; --canvas:#19221b; --sunken:#233025; --hairline:#2b392d; --card-edge:rgba(255,255,255,.06);
-  --ink:#ecf1e6; --ink-2:#a9b6a2; --ink-3:#6f7d6a;
-  --blue:#8fcf8a; --blue-focus:#8fcf8a; --up:#8fcf8a; --up-bg:rgba(143,207,138,.15); --down:#e79a6c; --over:#e79a6c; --down-bg:rgba(231,154,108,.15);
-  --gh-nav:#22352a; --gh-navink:#9fb59a; --gh-sky:#14261f; --gh-soil:#3a2a1e; --gh-soil2:#4a3626; --gh-pot:#9c4f2d; --gh-rim:#b0603a;
-  --gh-sun:#e9e3c4; --gh-sunink:#2a2a20; --gh-water:#2f6f99; --gh-water2:#4f9cc4; --gh-glass:#16232a; --gh-jar:#8fb59a;
-}
-html[data-ui=greenhouse] .nav{background:rgba(243,239,228,.86)}
-html[data-ui=greenhouse][data-theme=dark] .nav{background:rgba(15,22,17,.82)}
-html[data-ui=greenhouse] .pg-head{background:rgba(243,239,228,.9)}
-html[data-ui=greenhouse][data-theme=dark] .pg-head{background:rgba(15,22,17,.86)}
-html[data-ui=greenhouse] .nav h1{font-weight:600;letter-spacing:-.6px}
-html[data-ui=greenhouse] .card{border:0;box-shadow:0 2px 0 var(--card-edge)}
-html[data-ui=greenhouse] .sechead h2{font-weight:600}
-html[data-ui=greenhouse] .tabs,html[data-ui=greenhouse][data-theme=dark] .tabs{background:var(--gh-nav)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
-  box-shadow:0 10px 26px rgba(30,45,34,.28),0 2px 6px rgba(30,45,34,.18)!important}
-html[data-ui=greenhouse] .tabs::before,html[data-ui=greenhouse] .tabs::after{display:none!important}
-html[data-ui=greenhouse] .tabs button,html[data-ui=greenhouse][data-theme=dark] .tabs button{color:var(--gh-navink)!important}
-html[data-ui=greenhouse] .tabs button.on,html[data-ui=greenhouse][data-theme=dark] .tabs button.on{color:#fff!important}
-html[data-ui=greenhouse] .tabblob,html[data-ui=greenhouse] .tabblob.moving{background:rgba(255,255,255,.14)!important;box-shadow:none!important}
-html[data-ui=greenhouse] .fab{background:var(--gh-nav);color:#fff}
-html[data-ui=greenhouse] #v-home .hero{display:none}
-/* garden */
-.gh-garden{margin:0 16px 16px;border-radius:24px;overflow:hidden;position:relative;background:linear-gradient(var(--gh-sky),var(--parchment) 78%)}
-.gh-top{padding:18px 18px 0;position:relative;z-index:1;max-width:72%}
-.gh-k{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--up)}
-.gh-t{font-family:var(--font-disp);font-weight:600;font-size:30px;line-height:1.04;letter-spacing:-.8px;margin-top:6px}
-.gh-s{font-size:13.5px;line-height:1.4;color:var(--ink-2);margin-top:8px;letter-spacing:-.1px}
-.gh-s b{color:var(--ink);font-weight:600}
-.gh-sun{position:absolute;top:16px;right:14px;width:92px;height:92px;border-radius:50%;background:var(--gh-sun);color:var(--gh-sunink);border:0;
-  box-shadow:0 0 0 12px color-mix(in srgb,var(--gh-sun) 35%,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:0}
-.gh-sun span{font-size:7.5px;font-weight:700;letter-spacing:1px}
-.gh-sun b{font-family:var(--font-disp);font-size:19px;font-weight:600;letter-spacing:-.4px;line-height:1.1}
-.gh-sun i{font-style:normal;font-size:9.5px;font-weight:600;opacity:.75}
-.gh-bed{display:block;width:100%;height:auto;margin-top:2px}
-.gh-bed .pt{font:600 10.5px var(--font);fill:#f5ead7}.gh-bed .pv{font:500 10px var(--font);fill:#e6d3b8}
-.gh-bed g[data-gi]{cursor:pointer}
-.gh-can{display:flex;gap:10px;margin:0 16px 14px}
-.gh-can>div{flex:1;background:var(--canvas);border-radius:18px;padding:12px 14px;box-shadow:0 2px 0 var(--card-edge)}
-.gh-can span{display:block;font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3)}
-.gh-can b{display:block;font-family:var(--font-disp);font-size:20px;font-weight:600;margin-top:3px;letter-spacing:-.3px}
-.gh-can small{font-size:11.5px;color:var(--ink-3)}
-/* rain barrel */
-.gh-barrel{margin:0 16px 14px;border-radius:24px;overflow:hidden;background:linear-gradient(color-mix(in srgb,var(--gh-sky) 60%,var(--parchment)),var(--parchment));padding:16px 18px 14px;cursor:pointer}
-.gh-barrel .gh-t{font-size:28px}
-.gh-bw{display:flex;align-items:center;gap:14px;margin-top:10px}
-.gh-bw svg{flex:0 0 132px;height:auto}
-.gh-big{font-family:var(--font-disp);font-weight:600;font-size:26px;letter-spacing:-.5px;color:var(--ink)}
-.gh-bs{font-size:12.5px;color:var(--ink-2)}
-.gh-drips{flex:1;min-width:0}
-.gh-drip{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12px}
-.gh-drip b{width:72px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gh-drip i{height:6px;border-radius:3px;display:block;min-width:3px}
-.gh-drip em{margin-left:auto;font-style:normal;color:var(--ink-2);white-space:nowrap}
+/* ============================ RIVER (theme) ============================
+   html[data-ui=river]: the whole app becomes one river of time. Scroll up for what's
+   coming (recurring, advance-tax weirs), down for the past. Spending on the left bank,
+   money in on the right, trades/transfers/investing in the water. The OG views stay
+   reachable from the Banks drawer (they open over the river with a "River" pill back). */
+#river,#rvPeek{display:none}
+html[data-ui=river]:not(.rpeek) #river{display:block}
+html[data-ui=river].rpeek #rvPeek{display:flex}
+html[data-ui=river]:not(.rpeek) main,html[data-ui=river]:not(.rpeek) .nav,html[data-ui=river]:not(.rpeek) .tabs,
+html[data-ui=river]:not(.rpeek) .fab,html[data-ui=river]:not(.rpeek) .dfab,html[data-ui=river]:not(.rpeek) #ptr{display:none!important}
+html[data-ui=river]:not(.rpeek),html[data-ui=river]:not(.rpeek) body{background:#0d2a2f}
+#river{position:fixed;inset:0;z-index:8;background:#0d2a2f;color:#f4ebe1;font-family:"Bricolage Grotesque",var(--font);letter-spacing:0;overflow:hidden;
+  --rv-bg:#0d2a2f;--rv-ink:#f4ebe1;--rv-mute:#9fc5c4;--rv-now:#ff9e6b;--rv-gold:#ffd678}
+.rv-s{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rv-s::-webkit-scrollbar{display:none}
+.rv-c{position:relative;width:100%}
+.rv-svg{position:absolute;left:0;top:0;width:100%;pointer-events:none}
+.rv-hd{position:absolute;left:0;right:0;top:0;z-index:5;padding:calc(14px + env(safe-area-inset-top)) 76px 34px 20px;background:linear-gradient(var(--rv-bg) 62%,rgba(13,42,47,0));pointer-events:none}
+.rv-when{font:italic 400 17px "Instrument Serif",Georgia,serif;color:var(--rv-mute)}
+.rv-nw{font:400 46px/1.02 "Instrument Serif",Georgia,serif;letter-spacing:-.4px;margin-top:2px;white-space:nowrap}
+.rv-sub{font-size:13px;line-height:1.35;color:var(--rv-mute);margin-top:6px}
+.rv-sub b{color:#ffc29a;font-weight:600}
+.rv-me{position:absolute;z-index:6;top:calc(16px + env(safe-area-inset-top));right:16px;width:40px;height:40px;border-radius:50%;padding:0;border:1.5px solid rgba(244,235,225,.35);overflow:hidden;background:#173b41;cursor:pointer}
+.rv-me img{width:100%;height:100%;object-fit:cover;display:block}
+.rv-now{position:absolute;left:0;right:0;z-index:6;height:0;pointer-events:none}
+.rv-now:before{content:"";position:absolute;left:14px;right:72px;border-top:1.5px solid var(--rv-now);box-shadow:0 0 12px var(--rv-now)}
+.rv-now span{position:absolute;left:16px;top:-21px;font-size:10.5px;font-weight:600;letter-spacing:2px;color:var(--rv-now)}
+.rv-add{position:absolute;right:16px;top:-26px;width:52px;height:52px;border-radius:50%;border:0;background:var(--rv-now);color:var(--rv-bg);cursor:pointer;pointer-events:auto;
+  box-shadow:0 0 0 6px rgba(255,158,107,.18);display:grid;place-items:center}
+.rv-add svg{width:24px;height:24px}
+.rv-pill{position:absolute;z-index:7;bottom:calc(18px + env(safe-area-inset-bottom));border:1px solid rgba(244,235,225,.22);background:rgba(13,42,47,.88);color:var(--rv-ink);
+  border-radius:999px;padding:9px 15px;font:600 13px "Bricolage Grotesque",var(--font);cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.rv-menu{left:16px}.rv-back{right:16px}
+.rv-day{position:absolute;left:16px;font:italic 400 13.5px "Instrument Serif",Georgia,serif;color:rgba(159,197,196,.55);pointer-events:none}
+.rv-ev{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;border-radius:50%;padding:0}
+.rv-ev.fut{background:none!important;border:1.5px dashed currentColor}
+.rv-ev.draft{animation:rvPulse 1.6s ease-in-out infinite}
+@keyframes rvPulse{50%{box-shadow:0 0 0 8px rgba(255,214,120,.22)}}
+.rv-lbl{position:absolute;transform:translateY(-50%);font-size:12px;line-height:1.2;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-lbl b{display:block;font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.rv-lbl i{display:block;font-style:normal;color:var(--rv-mute);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.rv-veil{position:absolute;inset:0;z-index:19;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .3s}
+.rv-veil.open{opacity:1;pointer-events:auto}
+.rv-sheet{position:absolute;left:0;right:0;bottom:0;z-index:20;max-height:86%;overflow-y:auto;background:#f4ebe1;color:#0d2a2f;border-radius:26px 26px 0 0;
+  padding:18px 20px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.4);transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.4,1)}
+.rv-sheet.open{transform:none}
+.rv-verbs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.rv-verbs button{border:1.5px solid rgba(13,42,47,.35);background:none;color:#0d2a2f;border-radius:999px;padding:6px 12px;font:600 13px "Bricolage Grotesque",var(--font);cursor:pointer}
+.rv-verbs button.on{background:#0d2a2f;color:#f4ebe1;border-color:#0d2a2f}
+.rv-sent{font:400 26px/1.55 "Instrument Serif",Georgia,serif;letter-spacing:-.1px}
+.rv-slot{position:relative;display:inline-block;border-bottom:2px solid #0d2a2f;color:#b4502a;padding:0 2px;cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.rv-slot select,.rv-slot input[type=date]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;font-size:16px;border:0}
+.rv-sent input.rv-in{font:inherit;color:#b4502a;background:none;border:0;border-bottom:2px solid #0d2a2f;border-radius:0;width:5ch;padding:0 2px;outline:none}
+.rv-sent input.rv-in.w{width:6.5ch}.rv-sent input.rv-in.t{width:10ch;font-size:.78em}
+.rv-sent input.rv-in:focus{background:rgba(255,158,107,.16)}
+.rv-row{display:flex;gap:10px;margin-top:16px;align-items:center}
+.rv-why{font-size:12.5px;color:#46605f;flex:1;min-width:0}
+.rv-why.err{color:#b4302a;font-weight:600}
+.rv-row button{border:0;border-radius:14px;padding:12px 18px;font:600 15px "Bricolage Grotesque",var(--font);cursor:pointer;background:#0d2a2f;color:#f4ebe1}
+.rv-row button.ghost{background:none;color:#0d2a2f;border:1.5px solid rgba(13,42,47,.35)}
+.rv-dr h4{font:400 30px "Instrument Serif",Georgia,serif;margin:0 0 4px}
+.rv-dr h5{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#46605f;margin:16px 0 4px;font-weight:600}
+.rv-dr .r{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;background:none;padding:11px 0;border-bottom:1px solid rgba(13,42,47,.12);font:500 15px "Bricolage Grotesque",var(--font);color:#0d2a2f;cursor:pointer;text-align:left}
+.rv-dr .r b{font-weight:600;font-variant-numeric:tabular-nums}
+.rv-dr .tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rv-dr .tools button{border:1.5px solid rgba(13,42,47,.2);background:none;border-radius:14px;padding:12px;font:600 14px "Bricolage Grotesque",var(--font);color:#0d2a2f;cursor:pointer;text-align:left}
+#rvPeek{position:fixed;z-index:14;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));align-items:center;gap:6px;border:0;border-radius:999px;padding:8px 16px;
+  background:#0d2a2f;color:#f4ebe1;font:600 13px "Bricolage Grotesque",var(--font);box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer}
+@media (prefers-reduced-motion: reduce){ .rv-ev.draft{animation:none} .rv-sheet{transition:none} }
 </style>
 </head>
 <body>
@@ -1823,7 +1825,7 @@ html[data-ui=greenhouse] #v-home .hero{display:none}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01f';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01g';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2092,7 +2094,6 @@ function renderHome(d){
   cons.items.forEach(it=>{ if (/^(indwallet|indmoney · c)$/i.test(it.name) && W.construction && !W.construction.formula) {
     it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; it.src = W.construction; it.fx = fx; } });
   $('#consHead').hidden = $('#construction').hidden = true;      // shown under Accounts › Construction now
-  ghHome(d, nwVal, rows, tot, cash ? cash.total : h.runningBalance);
 }
 // rows of the For Construction table: accounts live, the rest as the sheet has them
 function constrRows(nw){
@@ -4453,7 +4454,7 @@ function renderSpend(){
       <button data-ym="-1" aria-label="Previous month">${chev('M15 5l-7 7 7 7')}</button>
       <b data-mpick role="button">${esc(ymLabel(spMonth))}<svg class="mcaret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></b>
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
-  el.innerHTML = (spSec==='accounts' ? '' : sw) + (spSec==='list' ? recErrHtml() + ghBarrel() : '') + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
+  el.innerHTML = (spSec==='accounts' ? '' : sw) + (spSec==='list' ? recErrHtml() : '') + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   paintBooks();      // the Books pill lives on Accounts now; this also sets the orange dots
   $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
@@ -7071,7 +7072,7 @@ const PI = {
 };
 const LOCK_OPTS = [[0,'Immediately'],[60000,'After 1 minute'],[300000,'After 5 minutes'],[900000,'After 15 minutes']];
 // The app's look. OG is build 2026-11-01d as it stands; concepts join this list once built
-const UI_THEMES = [['og','OG'],['greenhouse','Greenhouse']];
+const UI_THEMES = [['og','OG'],['river','River']];
 function profileBody(){
   const pic = (k,c)=>`<span class="ic" style="background:${c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${PI[k]}</svg></span>`;
   const chv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
@@ -7484,98 +7485,287 @@ function start(){
   refresh(); schedule();
   if (load('inv.start')==='spend') show('spend');     // "Open on" in the profile menu
 }
-/* ============================ GREENHOUSE (concept 2) ============================ */
-const isGH = () => document.documentElement.getAttribute('data-ui')==='greenhouse';
-const GH_TABS = { home:'Garden', break:'Seeds', txn:'Trades', spend:'Water' };
-const OG_TITLES = Object.assign({}, TITLES);
-const GH_ICO = {
-  home:'<path d="M12 21v-8" stroke-linecap="round"/><path d="M12 13C12 8.5 9 5.5 3.8 5.5c0 4.5 3.2 7.5 8.2 7.5z"/><path d="M12 11c0-3.6 2.6-6.5 8.2-6.5 0 4-3 6.5-8.2 6.5z"/>',
-  break:'<rect x="5.5" y="3" width="13" height="18" rx="2"/><path d="M12 17.5v-4.5" stroke-linecap="round"/><path d="M12 13c-2.3 0-3.8-1.5-3.8-3.8 2.3 0 3.8 1.5 3.8 3.8zm0 0c2.3 0 3.8-1.5 3.8-3.8-2.3 0-3.8 1.5-3.8 3.8z"/>',
-  spend:'<path d="M12 3.2s6.2 6.6 6.2 11.2a6.2 6.2 0 0 1-12.4 0C5.8 9.8 12 3.2 12 3.2z"/><path d="M9 15a3 3 0 0 0 3 3" stroke-linecap="round"/>'
-};
-let ghFontIn = false;
+/* ============================ RIVER (theme) ============================ */
+const isRiver = () => document.documentElement.getAttribute('data-ui')==='river';
+let rvFontIn = false, rvBuilt = false, rvRaf = 0, rvL = null, rvOff = 0, rvFirst = true;
+const RV_FUT = 62, RV_PAST = 45;
+const rvR = v => v==null ? '—' : (v<0?'−':'') + '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
+const rvPlus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 function applyUi(){
-  const gh = isGH();
-  if (gh && !ghFontIn){ ghFontIn = true;
-    const l = document.createElement('link'); l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap'; document.head.appendChild(l); }
-  Object.assign(TITLES, OG_TITLES, gh ? { home:'Garden', break:'Seed tin', spend:'Water' } : {});
-  $$('.tabs button').forEach(b=>{ const t = b.querySelector('.tl'); if (!t) return;
-    if (!b.dataset.og) b.dataset.og = t.textContent;
-    t.textContent = gh && GH_TABS[b.dataset.v] ? GH_TABS[b.dataset.v] : b.dataset.og;
-    const sv = b.querySelector('svg'); if (!sv) return;
-    if (b.dataset.ogi==null) b.dataset.ogi = sv.innerHTML;
-    sv.innerHTML = gh && GH_ICO[b.dataset.v] ? GH_ICO[b.dataset.v] : b.dataset.ogi; });
-  if (typeof activeView!=='undefined' && TITLES[activeView]) $('#title').textContent = TITLES[activeView];
+  const on = isRiver();
+  if (on && !rvFontIn){ rvFontIn = true; const l = document.createElement('link'); l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=Instrument+Serif:ital@0;1&display=swap'; document.head.appendChild(l); }
+  if (!on) document.documentElement.classList.remove('rpeek');
+  if (on) rvBuild();
   const m = document.querySelector('meta[name=theme-color]');
-  if (m && gh) m.setAttribute('content', document.documentElement.getAttribute('data-theme')==='dark' ? '#0f1611' : '#f3efe4');
-  try{ moveBlob(false); }catch(e){}
+  if (on && m) m.setAttribute('content', '#0d2a2f'); else if (window.applyTheme) applyTheme();
+  riverPaint();
 }
-const GH_COL = [[/gold/i,'#c9a227'],[/crypto|bitcoin/i,'#8a6bb8'],[/^nps/i,'#6b8fa3'],[/^epf|pf$/i,'#a0663f'],[/fd|deposit|bond|debt/i,'#5d8aa8'],[/us|nasdaq|s&p/i,'#4f7d5c'],[/fund|mf|elss/i,'#7aa35a']];
-const ghCol = (n, i) => (GH_COL.find(([r])=>r.test(n))||[])[1] || ['#3f8f5f','#5a9a62','#6b9b4a','#2f7a5a'][i%4];
-function ghPlants(rows){
-  const P = rows.slice(0, 7), n = P.length; if (!n) return '';
-  const W = 390, base = 236, w = W/n;
-  const lg = v => Math.log10(Math.max(1000, v||0));
-  const lo = Math.min(...P.map(a=>lg(a.value))), hi = Math.max(...P.map(a=>lg(a.value)));
-  let s = '';
-  P.forEach((a,i)=>{
-    const x = w*i + w/2, h = 46 + (hi>lo ? (lg(a.value)-lo)/(hi-lo) : 1)*134, top = base - h;
-    const wilt = (a.dayChange||0) < 0, c = ghCol(a.name, i), lean = wilt ? 14 : 0;
-    s += `<g data-gi="${i}"><rect x="${x-w/2}" y="${top-20}" width="${w}" height="${h+70}" fill="transparent"/>`;
-    s += `<path d="M${x} ${base} C ${x-7} ${base-h*.4}, ${x+(wilt?12:7)} ${base-h*.7}, ${x+lean} ${top}" stroke="${c}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
-    const nl = Math.max(2, Math.floor(h/32));
-    for (let k=0;k<nl;k++){ const yy = base - h*(k+1)/(nl+1), sd = k%2 ? 1 : -1, z = Math.min(w/5, 9 + h/24);
-      s += `<path d="M${x} ${yy} q ${sd*z} ${-z*.9} ${sd*z*1.9} ${-z*.2} q ${-sd*z*.9} ${z*.8} ${-sd*z*1.9} ${z*.2}z" fill="${c}" opacity=".92"/>`; }
-    s += `<circle cx="${x+lean}" cy="${top}" r="${(6.5+h/40).toFixed(1)}" fill="${wilt?'#b9a58a':'#f2b134'}"/><circle cx="${x+lean}" cy="${top}" r="${(2.8+h/90).toFixed(1)}" fill="#7a4b1d"/>`;
-    const pw = Math.min(46, w*.78);
-    s += `<path d="M${x-pw/2} ${base} h${pw} l-${pw*.12} 40 h-${pw*.76}z" fill="var(--gh-pot)"/><rect x="${x-pw/2-3}" y="${base-6}" width="${pw+6}" height="10" rx="3" fill="var(--gh-rim)"/>`;
-    const nm = a.name.length > 9 ? a.name.slice(0,8)+'…' : a.name;
-    s += `<text x="${x}" y="${base+60}" text-anchor="middle" class="pt">${esc(nm)}</text><text x="${x}" y="${base+74}" text-anchor="middle" class="pv">${esc(fCompact(a.value).replace('₹',''))}</text></g>`;
+function rvBuild(){
+  if (rvBuilt) return; rvBuilt = true;
+  const R = document.createElement('div'); R.id = 'river';
+  const img = $('#btnMore img');
+  R.innerHTML = `<div class="rv-s" id="rvS"><div class="rv-c" id="rvC"><svg class="rv-svg" id="rvSvg"></svg></div></div>
+    <div class="rv-hd"><div class="rv-when" id="rvWhen"></div><div class="rv-nw" id="rvNw">—</div><div class="rv-sub" id="rvSub"></div></div>
+    <button class="rv-me" id="rvMe" aria-label="Profile">${img ? `<img src="${img.src}" alt="">` : ''}</button>
+    <div class="rv-now" id="rvNow"><span>NOW</span><button class="rv-add" id="rvAdd" aria-label="Add an entry">${rvPlus}</button></div>
+    <button class="rv-pill rv-menu" id="rvMenu">Banks</button><button class="rv-pill rv-back" id="rvBack" hidden>Back to now</button>
+    <div class="rv-veil" id="rvVeil"></div><div class="rv-sheet" id="rvSheet" role="dialog" aria-label="River"></div>`;
+  document.body.appendChild(R);
+  const P = document.createElement('button'); P.id = 'rvPeek'; P.textContent = '← River'; document.body.appendChild(P);
+  P.onclick = () => { document.documentElement.classList.remove('rpeek'); riverPaint(); };
+  $('#rvS').addEventListener('scroll', rvHead, { passive:true });
+  $('#rvBack').onclick = () => rvTo(0, true);
+  $('#rvMe').onclick = () => pushPage({ kind:'profile' });
+  $('#rvAdd').onclick = () => rvCompose({});
+  $('#rvMenu').onclick = rvDrawer;
+  $('#rvVeil').onclick = rvClose;
+  addEventListener('resize', ()=>riverPaint());
+}
+function riverPaint(){ if (!isRiver() || !rvBuilt) return; cancelAnimationFrame(rvRaf); rvRaf = requestAnimationFrame(rvDraw); }
+// keep the river in step with every OG redraw (data loads, saves, deletes)
+{ const wrap = name => { const f = window[name]; if (typeof f !== 'function') return; window[name] = function(){ const r = f.apply(this, arguments); riverPaint(); return r; }; };
+  ['render','renderHome','rerenderSpendViews','renderSpend','paintDfab'].forEach(wrap); }
+
+const rvISO = off => { const t = new Date(todayISO()+'T00:00:00'); t.setDate(t.getDate()+off); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); };
+const rvOffOf = iso => Math.round((new Date(iso+'T00:00:00') - new Date(todayISO()+'T00:00:00'))/864e5);
+const rvDay = off => { const t = new Date(todayISO()+'T00:00:00'); t.setDate(t.getDate()+off); return t.toLocaleDateString('en-IN',{ day:'numeric', month:'short' }); };
+function rvNwNow(){
+  const d = D && D.data; if (!d || !d.netWorth) return null;
+  const h = d.netWorth.head || {}, cash = liveCash();
+  return cash && h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance + cash.total : h.netWorth;
+}
+function rvBudget(){
+  if (!xd()) return null; const ym = ymNow(), o = xMonth(ym);
+  const b = xCats().filter(c=>!isConstr(c) && !isInvest(c)).map(c=>({ s:Math.max(0,o[c]||0), b:xBudget(c,ym) })).filter(x=>x.b);
+  return b.length ? { left: b.reduce((a,x)=>a+x.b-x.s,0), bud: b.reduce((a,x)=>a+x.b,0) } : null;
+}
+// everything on the river, as one list of stones
+function rvEvents(){
+  const x = xd(), d = D && D.data, h = (d && d.netWorth && d.netWorth.head) || {}, today = todayISO(), ev = [];
+  const lo = rvISO(-RV_PAST), hi = rvISO(RV_FUT), inR = iso => iso && iso >= lo && iso <= hi;
+  if (x){
+    (x.entries||[]).forEach(e=>{ if (!inR(e.date)) return; const inv = isInvest(e.category), back = e.amount < 0;
+      ev.push({ date:e.date, lane: back ? 'R' : inv ? 'M' : 'L', amt:Math.abs(e.amount), col: back ? 'in' : inv ? 'inv' : 'out',
+        title: e.note || e.sub || e.category, meta: back ? (inv ? 'Liquidation' : 'Refund') + ' · ' + (e.sub || e.category) : (e.sub ? e.category + ' › ' + e.sub : e.category),
+        open: () => openXSheet(e, 'expense') }); });
+    (x.incomes||[]).forEach(e=>{ if (!inR(e.date) || e.type==='Adjustment') return;
+      ev.push({ date:e.date, lane:'R', amt:Math.abs(e.amount), col:'in', title: e.source || e.note || e.type, meta: e.type + ' · ' + e.account, sign:'+', open: () => openXSheet(e, 'income') }); });
+    (x.transfers||[]).forEach(e=>{ if (!inR(e.date)) return;
+      ev.push({ date:e.date, lane:'M', amt:Math.abs(e.amount), col:'tr', title:`${e.from} → ${e.to}`, meta: e.note || 'Transfer', open: () => openXSheet(e, 'transfer') }); });
+  }
+  ((d && d.transactions) || []).forEach(t=>{ if (!inR(t.date)) return; const us = /^us/i.test(t.category||''), fx = us ? (h.usdInr || 85) : 1, a = Math.abs(+t.amount || 0);
+    ev.push({ date:t.date, lane:'M', amt:a*fx, col:'trade', title:`${t.order} ${t.ticker}`, meta:`${t.platform} · ${us ? '$'+a.toLocaleString('en-US',{maximumFractionDigits:2}) : t.category}`, open: () => openSheet(t) }); });
+  // what's coming: recurring entries (next few months) and the advance-tax weirs
+  recList().filter(r=>r.active).forEach(r=>{ let m = recNextYm(r);
+    for (let i=0; i<3 && m; i++){ if (r.end && m > r.end) break; const dt = recDateC(r, m);
+      if (dt > today && dt <= hi){ const inv = isInvest(r.cat);
+        ev.push({ date:dt, fut:true, lane: r.kind==='income' ? 'R' : r.kind==='transfer' || inv ? 'M' : 'L', amt:r.amount, sign: r.kind==='income' ? '+' : '',
+          col: r.kind==='income' ? 'in' : r.kind==='transfer' ? 'tr' : inv ? 'inv' : 'out', title: r.name || r.note || r.cat, meta: r.auto ? 'Recurring · posts itself' : 'Recurring · you confirm',
+          flow: r.kind==='income' ? r.amount : r.kind==='expense' && !inv ? -r.amount : 0, open: () => pushPage({ kind:'recdetail', id:r.id }) }); }
+      m = ymAddC(m, 1); } });
+  const Y = typeof taxYear==='function' ? taxYear() : null, A = Y && Y.advance;
+  ((A && A.inst) || []).filter(i=>!i.past && i.date > today && i.date <= hi && i.short > 0).forEach(i=>
+    ev.push({ date:i.date, fut:true, lane:'R', amt:i.short, col:'tax', weir:true, title:`Advance tax · ${i.pct}%`, meta:'more due by then', flow:-i.short, open: () => pushPage({ kind:'tax' }) }));
+  // waiting at the now line: SMS drafts and recurring entries due for a confirm
+  xDrafts().forEach(dr=>{ const l = draftLine(dr); ev.push({ date:today, lane:'D', amt:Math.abs(dr.amount||0), col:'draft', title:l.title, meta:'From SMS · tap to keep', open: () => rvCompose(rvFromDraft(dr)) }); });
+  (typeof recDue==='function' ? recDue() : []).forEach(q=>ev.push({ date:today, lane:'D', amt:q.r.amount, col:'draft', title:q.r.name || q.r.note || q.r.cat, meta:'Recurring due · tap to confirm', open: () => rvCompose(rvFromRec(q)) }));
+  return ev;
+}
+const RV_COL = { out:'#ff9e6b', in:'#9fe3b8', inv:'#cfe8ff', trade:'#cfe8ff', tr:'#e9d7ff', tax:'#ffd678', draft:'#ffd678' };
+function rvDraw(){
+  if (!isRiver() || !rvBuilt || document.documentElement.classList.contains('rpeek')) return;
+  const S = $('#rvS'), C = $('#rvC'), svg = $('#rvSvg'); if (!S.clientHeight) return;
+  if (rvL) rvOff = rvOffAt(S.scrollTop + rvL.nowY);       // keep the same day under the now line
+  const W = S.clientWidth, H = S.clientHeight, nowY = Math.round(H*0.58), ev = rvEvents();
+  // day blocks, future at the top; a busy day gets taller instead of overlapping
+  const by = {}; ev.forEach(e=>{ const o = rvOffOf(e.date); (by[o] = by[o] || { L:[], R:[], M:[], D:[] })[e.lane].push(e); });
+  const nDr = (by[0] && by[0].D.length) || 0;
+  let top = 0; const blocks = [];
+  for (let o = RV_FUT; o >= -RV_PAST; o--){ const g = by[o] || { L:[], R:[], M:[], D:[] };
+    const n = Math.max(g.L.length, g.R.length + g.M.length); const pre = o===0 ? nDr*42 + (nDr?10:0) : 0;
+    const hgt = Math.max(30, n*40 + (n?8:0)) + pre; blocks.push({ o, top, hgt, pre, g }); top += hgt; }
+  const b0 = blocks.find(b=>b.o===0);
+  blocks.forEach(b=>b.top += nowY);                        // the furthest day can still reach the now line
+  const total = blocks[blocks.length-1].top + blocks[blocks.length-1].hgt + H - nowY;
+  rvL = { blocks, nowY, W, H };
+  C.style.height = total + 'px'; svg.setAttribute('height', total); svg.setAttribute('viewBox', `0 0 ${W} ${total}`);
+  // river width follows net worth: the daily log behind, a projection ahead
+  const nwN = rvNwNow(), daily = ((D && D.data && D.data.daily) || []).slice().sort((a,b)=>a.date<b.date?-1:1);
+  const bud = rvBudget(), o0 = xd() ? xMonth(ymNow()) : {}, dom = new Date().getDate();
+  const perDay = xd() ? xCats().filter(c=>!isConstr(c) && !isInvest(c)).reduce((a,c)=>a+Math.max(0,o0[c]||0),0) / Math.max(1, dom) : 0;
+  const flows = ev.filter(e=>e.fut && e.flow).map(e=>({ o:rvOffOf(e.date), f:e.flow }));
+  const nwAt = o => { if (nwN==null) return 0; if (o >= 0) return nwN + flows.filter(f=>f.o<=o).reduce((a,f)=>a+f.f,0) - perDay*o;
+    const iso = rvISO(o); let v = null; for (const p of daily){ if (p.date <= iso) v = p.netWorth; else break; } return v ?? (daily[0] ? daily[0].netWorth : nwN); };
+  rvL.nwAt = nwAt;
+  const vals = blocks.map(b=>nwAt(b.o)), lo = Math.min(...vals), hi = Math.max(...vals);
+  const hw = o => 24 + (hi > lo ? (nwAt(o)-lo)/(hi-lo) : .5) * Math.min(40, W*.1);
+  const cx = yy => W*0.5 + Math.min(18, W*.045)*Math.sin(yy/190);
+  rvL.cx = cx; rvL.hw = hw;
+  let Lp = '', Rp = '';
+  blocks.forEach(b=>{ const yy = b.top + b.hgt/2; Lp += `${Lp?'L':'M'}${(cx(yy)-hw(b.o)).toFixed(1)} ${yy.toFixed(1)} `; });
+  [...blocks].reverse().forEach(b=>{ const yy = b.top + b.hgt/2; Rp += `L${(cx(yy)+hw(b.o)).toFixed(1)} ${yy.toFixed(1)} `; });
+  const ny = b0.top + b0.pre;
+  let s = `<defs><linearGradient id="rvW" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${total}"><stop offset="0" stop-color="#2d6a73" stop-opacity=".3"/><stop offset="${(ny/total).toFixed(4)}" stop-color="#3d8f97" stop-opacity=".5"/>
+    <stop offset="${(ny/total+.0005).toFixed(4)}" stop-color="#46a3a6"/><stop offset="1" stop-color="#1f5b62"/></linearGradient>
+    <pattern id="rvRip" width="40" height="18" patternUnits="userSpaceOnUse"><path d="M0 9 q10 -5 20 0 t20 0" stroke="#bfe6e2" stroke-opacity=".16" fill="none"/></pattern></defs>
+    <path d="${Lp}${Rp}Z" fill="url(#rvW)"/><path d="${Lp}${Rp}Z" fill="url(#rvRip)"/>`;
+  blocks.forEach(b=>{ const iso = rvISO(b.o);
+    if (iso.slice(8)==='01'){ const yy = b.top + b.hgt/2; s += `<text x="${cx(yy)}" y="${yy+9}" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-style="italic" font-size="28" fill="#f4ebe1" opacity=".5">${new Date(iso+'T00:00:00').toLocaleDateString('en-IN',{month:'long'})}</text>`; }
+    b.g.R.concat(b.g.L).filter(e=>e.weir).forEach(e=>{ const yy = b.top + b.hgt/2; s += `<line x1="${cx(yy)-hw(b.o)-8}" x2="${cx(yy)+hw(b.o)+8}" y1="${yy}" y2="${yy}" stroke="#ffd678" stroke-width="5" stroke-dasharray="3 5"/>`; }); });
+  svg.innerHTML = s;
+  // stones and labels
+  let html = '';
+  const stone = (e, x, yy, r, lbl) => {
+    const col = RV_COL[e.col] || '#ccc', cls = 'rv-ev' + (e.fut ? ' fut' : '') + (e.col==='draft' ? ' draft' : '');
+    html += `<button class="${cls}" data-rv="${rvStones.length}" style="left:${x.toFixed(1)}px;top:${yy.toFixed(1)}px;width:${r*2}px;height:${r*2}px;background:${col};color:${col}" aria-label="${esc(e.title)} ${rvR(e.amt)}"></button>`;
+    html += `<div class="rv-lbl" style="${lbl}top:${yy.toFixed(1)}px"><b>${e.sign||''}${rvR(e.amt)}</b><i>${esc(e.title)}${e.meta ? ' · ' + esc(e.meta) : ''}</i></div>`;
+    rvStones.push(e);
+  };
+  rvStones = [];
+  const rad = a => Math.max(7, Math.min(16, Math.sqrt(a)/10));
+  blocks.forEach(b=>{
+    if (b.o % 7 === 0 && b.o !== 0) html += `<div class="rv-day" style="top:${b.top + b.hgt/2 - 9}px">${rvDay(b.o)}</div>`;
+    const base = b.top + b.pre + 24;
+    b.g.D.forEach((e,i)=>{ const yy = b.top + 22 + i*42, c = cx(yy), w = hw(b.o), r = rad(e.amt), x = c - w - r - 10;
+      stone(e, x, yy, r, `right:${(W - (x - r - 8)).toFixed(1)}px;text-align:right;max-width:${Math.max(60, x - r - 12).toFixed(0)}px;`); });
+    b.g.L.forEach((e,i)=>{ const yy = base + i*40, c = cx(yy), w = hw(b.o), r = rad(e.amt), x = c - w - r - 10;
+      stone(e, x, yy, r, `right:${(W - (x - r - 8)).toFixed(1)}px;text-align:right;max-width:${Math.max(60, x - r - 12).toFixed(0)}px;`); });
+    b.g.R.concat(b.g.M).forEach((e,i)=>{ const yy = base + i*40, c = cx(yy), w = hw(b.o), r = rad(e.amt);
+      const x = e.lane==='M' ? c + (i%2 ? -1 : 1) * Math.max(0, Math.min(w - r - 4, 12)) : c + w + r + 10;
+      const lx = e.lane==='M' ? c + w + 10 : x + r + 8;
+      stone(e, x, yy, Math.min(r, e.lane==='M' ? Math.max(7, w - 6) : r), `left:${lx.toFixed(1)}px;max-width:${Math.max(60, W - lx - 10).toFixed(0)}px;`); });
   });
-  return `<svg class="gh-bed" viewBox="0 0 ${W} 330" preserveAspectRatio="xMidYMax meet">
-    <rect x="0" y="${base+30}" width="${W}" height="120" fill="var(--gh-soil)"/><rect x="0" y="${base+26}" width="${W}" height="8" fill="var(--gh-soil2)"/>${s}</svg>`;
+  C.querySelectorAll('.rv-ev,.rv-lbl,.rv-day').forEach(n=>n.remove());
+  C.insertAdjacentHTML('beforeend', html);
+  C.querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{ const e = rvStones[+b.dataset.rv]; if (e && e.open) e.open(); });
+  $('#rvNow').style.top = nowY + 'px';
+  if (rvFirst){ rvFirst = false; rvOff = 0; }
+  rvTo(rvOff, false); rvHead();
 }
-function ghHome(d, nwVal, rows, tot, cashTot){
-  let el = $('#ghGarden');
-  if (!isGH()){ if (el) el.remove(); return; }
-  if (!el){ el = document.createElement('div'); el.id = 'ghGarden'; el.className = 'gh-only'; $('#v-home').prepend(el); }
-  const h = d.netWorth.head || {}, day = h.netWorthDay || 0;
-  const thirsty = rows.filter(a=>(a.dayChangePct||0) < 0).sort((a,b)=>(a.dayChangePct||0)-(b.dayChangePct||0))[0];
-  const t = day > 0 ? 'A good day to be a plant.' : day < 0 ? 'A little dry today.' : 'A quiet day in the garden.';
-  const s = (day > 0 ? `Your garden grew <b>${fINR(day)}</b> today.` : day < 0 ? `The garden gave back <b>${fINR(-day)}</b> today.` : 'Nothing moved today.')
-    + (thirsty ? ` ${esc(thirsty.name)} is a little thirsty.` : ' Everything is green.');
-  const dt = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short' });
-  el.innerHTML = `<div class="gh-garden"><div class="gh-top"><div class="gh-k">The greenhouse · ${dt}</div><div class="gh-t">${t}</div><div class="gh-s">${s}</div></div>
-    <button class="gh-sun" data-ghtrend aria-label="Net worth"><span>NET WORTH</span><b>${esc(fCompact(nwVal).replace('₹',''))}</b><i>${fPct(h.netWorthDayPct||0)}</i></button>
-    ${ghPlants(rows)}</div>
-    <div class="gh-can"><div><span>Watering can</span><b class="num money">${fINR(cashTot)}</b><small>cash ready to plant</small></div>
-    <div><span>Harvest so far</span><b class="num money ${cls(tot.currReturns)}">${fINRs(tot.currReturns)}</b><small>on ${esc(fCompact(tot.invested))} sown</small></div></div>`;
-  el.querySelector('[data-ghtrend]').onclick = ()=>show('trend');
-  el.querySelectorAll('[data-gi]').forEach(g=>g.onclick=()=>{ const r = $$('#assets .row')[Number(g.dataset.gi)]; if (r && r.onclick) r.onclick(); else show('break'); });
+let rvStones = [];
+function rvYOf(off){ if (!rvL) return 0; const b = rvL.blocks.find(b=>b.o===Math.round(off)) || rvL.blocks[0]; return off===0 ? b.top + b.pre : b.top + b.hgt/2; }
+function rvOffAt(y){ if (!rvL) return 0; const B = rvL.blocks; const b = B.find(b=>y >= b.top && y < b.top + b.hgt);
+  if (!b) return y < B[0].top ? RV_FUT : -RV_PAST;
+  if (b.o===0){ return y < b.top + b.pre ? 0.4 : -(y - b.top - b.pre)/(b.hgt - b.pre) * .9; }
+  return b.o + .5 - (y - b.top)/b.hgt; }
+function rvTo(off, smooth){ const S = $('#rvS'); if (!rvL) return; S.scrollTo({ top: rvYOf(off) - rvL.nowY, behavior: smooth ? 'smooth' : 'auto' }); }
+function rvHead(){
+  if (!rvL) return; const S = $('#rvS'), off = rvOffAt(S.scrollTop + rvL.nowY), r = Math.round(off), nwN = rvNwNow();
+  $('#rvWhen').textContent = r===0 ? 'Today, ' + rvDay(0) : r > 0 ? `In ${r} day${r>1?'s':''} · ${rvDay(r)}` : `${-r} day${r<-1?'s':''} ago · ${rvDay(r)}`;
+  $('#rvNw').textContent = nwN==null ? '—' : rvR(rvL.nwAt(r));
+  const bud = rvBudget(), next = rvStones.filter(e=>e.fut).sort((a,b)=>a.date<b.date?-1:1)[0];
+  $('#rvSub').innerHTML = r===0
+    ? [bud ? `<b>${rvR(Math.abs(bud.left))}</b> ${bud.left>=0?'left in':'over'} this month's budget` : '', next ? `next: ${esc(next.title)} in ${rvOffOf(next.date)} day${rvOffOf(next.date)>1?'s':''}` : ''].filter(Boolean).join(' · ')
+    : r > 0 ? 'Projected from recurring entries and your usual spending' : 'Net worth on that day, from the daily log';
+  $('#rvBack').hidden = Math.abs(off) < 1.2;
 }
-function ghBarrel(){
-  if (!isGH() || !xd()) return '';
-  const ym = spMonth, o = xMonth(ym);
-  const cats = xCats().filter(c=>!isConstr(c) && !isInvest(c)).map(c=>({ c, s:Math.max(0, o[c]||0), b:xBudget(c,ym) }));
-  const bud = cats.reduce((a,x)=>a+(x.b||0),0), spent = cats.filter(x=>x.b).reduce((a,x)=>a+x.s,0);
-  const all = cats.reduce((a,x)=>a+x.s,0);
-  const top = cats.filter(x=>x.s).sort((a,b)=>b.s-a.s).slice(0,5), mx = top.length ? top[0].s : 1;
-  const left = bud - spent, lv = bud ? Math.max(0, Math.min(1, left/bud)) : 0;
-  const t = !bud ? 'No barrel set up.' : lv > .5 ? 'Plenty in the barrel.' : lv > .15 ? 'Getting low.' : left >= 0 ? 'Running low.' : 'The barrel is dry.';
-  const y = 132 - 112*lv;
-  const jar = 'M22 14 h88 q8 0 8 8 v104 q0 18 -18 18 h-68 q-18 0 -18 -18 v-104 q0 -8 8 -8z';
-  const svg = `<svg viewBox="0 0 132 150"><defs><clipPath id="ghj"><path d="${jar}"/></clipPath>
-    <linearGradient id="ghw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--gh-water2)"/><stop offset="1" stop-color="var(--gh-water)"/></linearGradient></defs>
-    <g clip-path="url(#ghj)"><rect x="0" y="0" width="132" height="150" fill="var(--gh-glass)"/>
-    ${bud ? `<path d="M0 ${y.toFixed(1)} q 16 -5 33 0 t 33 0 t 33 0 t 33 0 V150 H0z" fill="url(#ghw)"/>` : ''}</g>
-    <path d="${jar}" fill="none" stroke="var(--gh-jar)" stroke-width="2.4"/><rect x="44" y="6" width="44" height="10" rx="3" fill="var(--gh-jar)"/></svg>`;
-  return `<div class="gh-barrel gh-only" data-budgets><div class="gh-k">Rain barrel · ${esc(ymLabel(ym))}</div><div class="gh-t">${t}</div>
-    <div class="gh-bw">${svg}<div class="gh-drips">
-      ${bud ? `<div class="gh-big num money">${fINR(left)}</div><div class="gh-bs">left of ${esc(fCompact(bud))} · ${Math.round(lv*100)}%</div>` : `<div class="gh-big num money">${fINR(all)}</div><div class="gh-bs">dripped out this month</div>`}
-      <div style="height:8px"></div>
-      ${top.map(x=>`<div class="gh-drip"><b>${esc(x.c)}</b><i style="width:${Math.max(4, x.s/mx*48).toFixed(0)}px;background:${catCol(x.c)}"></i><em class="num money">${esc(fCompact(x.s))}</em></div>`).join('')}
-    </div></div></div>`;
+function rvOpen(html){ const sh = $('#rvSheet'); sh.innerHTML = html; sh.classList.add('open'); $('#rvVeil').classList.add('open'); return sh; }
+function rvClose(){ $('#rvSheet').classList.remove('open'); $('#rvVeil').classList.remove('open'); }
+
+/* the sentence composer: every input the OG sheets take, as one sentence with blanks */
+const RV_VERBS = [['expense','Spent'],['transfer','Moved'],['income','Earned'],['Buy','Bought'],['Sell','Sold'],['tax','Paid tax']];
+function rvFromDraft(dr){ return { kind: dr.kind==='transfer' ? 'transfer' : dr.kind==='income' ? 'income' : 'expense', amt: Math.abs(dr.amount||0), date: dr.date || todayISO(),
+  acc: dr.account || '', cat: dr.category || '', sub: dr.sub || '', note: dr.note || '', type: dr.type || '', src: dr.source || '', from: dr.from || '', to: dr.to || '', draft: dr.id }; }
+function rvFromRec(q){ const r = q.r; return { kind: r.kind==='transfer' ? 'transfer' : r.kind==='income' ? 'income' : 'expense', amt: r.amount, date: q.date, acc: r.account || '', from: r.account || '', to: r.to || '',
+  cat: r.cat || '', sub: r.sub || '', type: r.cat || '', note: r.note || r.name || '', rec: { id:r.id, ym:q.ym } }; }
+function rvCompose(p){
+  const accs = xAccounts().map(a=>a.name), cats = xCats(), types = inTypesList();
+  const opt = id => [...(($('#'+id)||{}).options||[])].map(o=>o.value).filter(Boolean);
+  const s = Object.assign({ kind:'expense', amt:'', date:todayISO(), acc:'', from:'', to:'', cat:'', sub:'', note:'', type:'', src:'', tds:'',
+    tk:'', qty:'', px:'', fees:'', tcat:'', plat:'', bucket:'', draft:null, rec:null }, p);
+  if (!s.acc) s.acc = (s.kind==='income' ? xIncomeAcc() : xExpenseAcc()) || accs[0] || '';
+  if (!s.from) s.from = xExpenseAcc() || accs[0] || ''; if (!s.to) s.to = accs.find(a=>a!==s.from) || '';
+  if (!s.cat){ const sc = DEF('exp.startCategory'); s.cat = (sc==='__last' ? xLastCat() : sc) || xLastCat() || cats[0] || ''; }
+  if (!s.type) s.type = xIncomeType() || types[0] || '';
+  if (s.kind==='income' && !s.src && s.type!==XREFUND && s.type!==XLIQ) s.src = lastSource(s.type);
+  if (!s.tcat) s.tcat = opt('fCategory')[0] || 'US Stocks'; if (!s.plat) s.plat = opt('fPlatform')[0] || ''; 
+  const sel = (k, list, label) => `<span class="rv-slot">${esc(label ?? (s[k] || 'pick'))}<select data-k="${k}" aria-label="${k}">${(list.includes(s[k]) ? list : [s[k], ...list]).map(o=>`<option value="${esc(o)}" ${o===s[k]?'selected':''}>${esc(o || '—')}</option>`).join('')}</select></span>`;
+  const num = (k, cls, ph) => `<input class="rv-in ${cls||''}" data-k="${k}" inputmode="decimal" placeholder="${ph||'0'}" value="${esc(String(s[k]??''))}" aria-label="${k}">`;
+  const txt = (k, ph, list) => `<input class="rv-in t" style="width:${Math.max(6, Math.min(16, String(s[k]||ph).length + 1))}ch" data-k="${k}" placeholder="${ph}" value="${esc(s[k]||'')}" aria-label="${k}" ${list?`list="${list}"`:''} autocomplete="off">`;
+  const dt = () => `<span class="rv-slot">${s.date===todayISO() ? 'today' : s.date===rvISO(-1) ? 'yesterday' : 'on ' + esc(dayLbl(s.date))}<input type="date" data-k="date" value="${s.date}" aria-label="date"></span>`;
+  function sentence(){
+    const subs = xSubs(s.cat);
+    switch (s.kind){
+      case 'expense': return `Spent ₹${num('amt','w')} on ${sel('cat',cats)}${subs.length ? ` › ${sel('sub',['',...subs], s.sub || 'any')}` : ''} from ${sel('acc',accs)} ${dt()}. ${txt('note','note')}`;
+      case 'transfer': return `Moved ₹${num('amt','w')} from ${sel('from',accs)} to ${sel('to',accs.filter(a=>a!==s.from))} ${dt()}. ${txt('note','note')}`;
+      case 'income':
+        if (s.type===XREFUND) return `Got ₹${num('amt','w')} back as a ${sel('type',types)} for ${sel('cat',cats.filter(c=>!isInvest(c)))}${subs.length ? ` › ${sel('sub',['',...subs], s.sub||'any')}` : ''} into ${sel('acc',accs)} ${dt()}. ${txt('note','note')}`;
+        if (s.type===XLIQ) return `Got ₹${num('amt','w')} from a ${sel('type',types)} of ${sel('sub',['',...xSubs(invCat())], s.sub||'which one')} into ${sel('acc',accs)} ${dt()}. ${txt('note','note')}`;
+        return `Earned ₹${num('amt','w')} as ${sel('type',types)} from ${txt('src','who paid')} into ${sel('acc',accs)} ${dt()}, TDS ₹${num('tds','','0')}. ${txt('note','note')}`;
+      case 'Buy': case 'Sell': { const cur = /^us/i.test(s.tcat) ? '$' : '₹';
+        return `${s.kind==='Buy'?'Bought':'Sold'} ${num('qty','','qty')} ${txt('tk','ticker','tickers')} (${sel('tcat',opt('fCategory'))}) at ${cur}${num('px','w','price')} on ${sel('plat',opt('fPlatform'))} ${dt()}${s.kind==='Buy' ? `, into ${sel('bucket',['',...opt('fBucket')], s.bucket||'no bucket')}` : ''}. Fees ${cur}${num('fees','','0')}`; }
+      case 'tax': return `Paid ₹${num('amt','w')} advance tax from ${sel('acc',accs)} ${dt()}.`;
+    }
+  }
+  function why(){
+    if (s.kind==='expense'){ const b = xBudget(s.cat, s.date.slice(0,7)); if (!(b > 0)) return ''; const left = b - (xMonth(s.date.slice(0,7))[s.cat]||0) - (+s.amt||0); return `${s.cat}: ${left>=0 ? fINR(left)+' left' : fINR(-left)+' over'} this month`; }
+    if (s.kind==='Buy'||s.kind==='Sell'){ const t = (+s.qty||0)*(+s.px||0); return t ? `Total ${/^us/i.test(s.tcat)?'$':'₹'}${t.toLocaleString('en-IN',{maximumFractionDigits:2})}` : 'Quantity × price'; }
+    if (s.kind==='tax'){ const Y = taxYear && taxYear(), n = Y && Y.advance && Y.advance.next; return n ? `${fINR(n.amount)} keeps the ${dayLbl(n.date)} instalment covered` : ''; }
+    if (s.kind==='income' && s.tds) return `${fINR((+s.amt||0)-(+s.tds||0))} lands in ${s.acc}`;
+    return '';
+  }
+  function paint(){
+    const sh = rvOpen(`<div class="rv-verbs">${(s.draft||s.rec ? RV_VERBS.slice(0,3) : RV_VERBS).map(([k,l])=>`<button data-v="${k}" class="${s.kind===k?'on':''}">${l}</button>`).join('')}</div>
+      <div class="rv-sent">${sentence()}</div>
+      <div class="rv-row"><span class="rv-why" id="rvWhy">${esc(why())}</span><button class="ghost" data-x>Cancel</button><button data-ok>Keep it</button></div>`);
+    sh.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ s.kind = b.dataset.v; if (s.kind==='tax' && !s.amt){ const Y = taxYear && taxYear(), n = Y && Y.advance && Y.advance.next; if (n) s.amt = Math.round(n.amount); } if (s.kind==='income' && !s.draft && !s.rec) s.acc = xIncomeAcc() || s.acc; paint(); });
+    sh.querySelectorAll('select,input[type=date]').forEach(x=>x.onchange=()=>{ const k = x.dataset.k; s[k] = x.value;
+      if (k==='cat') s.sub = ''; if (k==='type'){ s.sub = ''; if (s.type!==XREFUND && s.type!==XLIQ && !s.src) s.src = lastSource(s.type); } if (k==='from' && s.to===s.from) s.to = accs.find(a=>a!==s.from) || ''; paint(); });
+    sh.querySelectorAll('input.rv-in').forEach(x=>x.oninput=()=>{ s[x.dataset.k] = x.value; const w = $('#rvWhy'); w.className = 'rv-why'; w.textContent = why(); });
+    const tk = sh.querySelector('input[data-k="tk"]'); if (tk) tk.onchange = ()=>{ s.tk = tk.value.trim().toUpperCase(); const t = ((D&&D.data&&D.data.transactions)||[]).find(x=>x.ticker===s.tk); if (t){ s.tcat = t.category; s.plat = t.platform; } paint(); };
+    sh.querySelector('[data-x]').onclick = rvClose;
+    sh.querySelector('[data-ok]').onclick = rvKeep;
+    const f = sh.querySelector('input[data-k="amt"],input[data-k="qty"]'); if (f && !f.value) setTimeout(()=>f.focus({ preventScroll:true }), 330);
+  }
+  const bad = (m, k) => { const w = $('#rvWhy'); w.className = 'rv-why err'; w.textContent = m; const i = k && $('#rvSheet').querySelector(`[data-k="${k}"]`); if (i && i.focus) i.focus(); };
+  function rvKeep(){
+    const amount = Number(numPlain(String(s.amt||''))), date = s.date, note = (s.note||'').trim();
+    xRecPend = s.rec || null; xKitePay = false; xDraftPend = s.draft || null; xEditing = null;
+    if (s.kind==='Buy' || s.kind==='Sell'){
+      const q = +s.qty, px = +s.px; if (!s.tk) return bad('Type a ticker.', 'tk'); if (!(q>0)) return bad('Enter a quantity.', 'qty'); if (!(px>0)) return bad('Enter a price.', 'px');
+      rvClose(); openSheet(null); const f = id => $('#'+id);
+      setOrder(s.kind); f('fTicker').value = s.tk.toUpperCase(); f('fCategory').value = s.tcat; f('fPlatform').value = s.plat; f('fDate').value = date;
+      f('fBucket').value = s.kind==='Buy' ? s.bucket : ''; f('fVolume').value = q; f('fPrice').value = px; f('fAmount').value = +(q*px).toFixed(4); f('fFees').value = s.fees || ''; f('fRemark').value = '';
+      onCategory(); setTimeout(()=>$('#btnSave').click(), 250); return;
+    }
+    if (!(amount > 0)) return bad('Enter an amount.', 'amt');
+    if (!date) return bad('Pick a date.');
+    if (s.kind==='expense'){ if (!s.cat) return bad('Pick a category.'); if (!s.acc) return bad('Pick what paid for it.');
+      rvClose(); return saveMove('expense', { date, account:s.acc, category:s.cat, sub:s.sub, note, desc:'', amount }, null); }
+    if (s.kind==='tax'){ if (!s.acc) return bad('Pick the account it came from.');
+      const cat = xCats().find(c=>/bills/i.test(c)) || 'Bills/Utility';
+      rvClose(); return saveMove('expense', { date, account:s.acc, category:cat, sub:'Taxes', note:'Advance tax', desc:'', amount }, null); }
+    if (s.kind==='transfer'){ if (!s.from || !s.to) return bad('Pick both accounts.'); if (s.from===s.to) return bad('From and To must differ.');
+      rvClose(); return saveMove('transfer', { date, from:s.from, to:s.to, note, desc:'', amount }, null); }
+    if (!s.type) return bad('Pick what kind of money this is.'); if (!s.acc) return bad('Pick the account it went into.');
+    if (s.type===XLIQ){ if (!s.sub) return bad('Pick which investment it came from.'); rvClose(); return saveMove('expense', { date, account:s.acc, category:invCat(), sub:s.sub, note: note || 'Liquidation', desc:'', amount:-amount }, null); }
+    if (s.type===XREFUND){ if (!s.cat) return bad('Pick the category this refund is for.'); rvClose(); return saveMove('expense', { date, account:s.acc, category:s.cat, sub:s.sub, note: note || 'Refund', desc:'', amount:-amount }, null); }
+    rvClose(); return saveMove('income', { date, account:s.acc, type:s.type, source:(s.src||'').trim(), tax: Number(numPlain(String(s.tds||''))) || 0, remark:note, note, desc:'', amount }, null);
+  }
+  paint();
+}
+/* Banks: what's in the water, the accounts, and every OG page */
+function rvPeek(fn){ rvClose(); document.documentElement.classList.add('rpeek'); window.scrollTo(0,0); if (fn) fn(); }
+function rvDrawer(){
+  const d = D && D.data, nw = d && d.netWorth, cash = liveCash();
+  const assets = ((nw && nw.assets) || []).filter(a=>!a.isTotal && a.value && !/^Less:|^Charges/i.test(a.name)).sort((a,b)=>b.value-a.value);
+  const accs = cash ? cash.rows.filter(r=>r.kind!=='construction' && Math.abs(r.amount) > 0.004) : [];
+  const sh = rvOpen(`<div class="rv-dr"><h4>Banks of the river</h4>
+    <h5>In the water</h5>${assets.map((a,i)=>`<button class="r" data-as="${i}"><span>${esc(a.name)}</span><b>${fINR(a.value)}</b></button>`).join('') || '<div class="r">Loading…</div>'}
+    <h5>Accounts</h5>${accs.map((a,i)=>`<button class="r" data-ac="${i}"><span>${esc(a.name)}</span><b>${fINR(a.amount)}</b></button>`).join('') || '<div class="r">Loading…</div>'}
+    <h5>Everything else</h5><div class="tools">
+      <button data-t="budgets">Budgets</button><button data-t="recurring">Recurring</button><button data-t="tax">Tax</button><button data-t="trend">Net worth trend</button>
+      <button data-t="txn">Trades</button><button data-t="spend">Activity & months</button><button data-t="break">Holdings</button><button data-t="refresh">Refresh</button></div></div>`);
+  sh.querySelectorAll('[data-as]').forEach(b=>b.onclick=()=>{ const a = assets[+b.dataset.as];
+    if (/^EPF$/i.test(a.name) && typeof epfD==='function' && epfD()){ rvClose(); return pushPage({ kind:'epf' }); }
+    if (/^NPS$/i.test(a.name) && typeof npsD==='function' && npsD()){ rvClose(); return pushPage({ kind:'nps' }); }
+    const c = assetCatFor(a.name, d.holdings); rvPeek(()=> c ? openAssetCat(c) : show('break')); });
+  sh.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{ rvClose(); pushPage({ kind:'acct', acc: accs[+b.dataset.ac].name }); });
+  sh.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ const t = b.dataset.t;
+    if (t==='budgets'||t==='recurring'||t==='tax'){ rvClose(); return pushPage(t==='budgets' ? { kind:'budgets', ym:ymNow() } : { kind:t }); }
+    if (t==='refresh'){ rvClose(); refresh(true); loadExpenses(true); return toast('Refreshing…'); }
+    rvPeek(()=>show(t)); });
 }
 applyUi();
 if(cfg) start(); else $('#setup').hidden=false;
