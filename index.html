@@ -1754,7 +1754,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2182,7 +2182,7 @@ const ICONS = {
   crypto:  S(`<path d="M12 2.9 20.1 7.5v9L12 21.1 3.9 16.5v-9z"/><path d="M12 8.2 15.4 12 12 15.8 8.6 12z"/>`),
   charges: S(`<path d="M6 3.4h12v17.2l-2.4-1.6-2.4 1.6-2.4-1.6L8.4 20.6 6 19z"/><path d="M9.2 8.2h5.6M9.2 12.2h5.6"/>`),
   liquid:  S(`<path d="M12 3.2c3.4 3.7 5.6 6.4 5.6 9.2A5.6 5.6 0 0 1 6.4 12.4c0-2.8 2.2-5.5 5.6-9.2z"/>`),
-  epf:     S(`<circle cx="14" cy="7.5" r="3.5"/><path d="M3 14h3.5l3.2-1.1a2 2 0 0 1 1.6.1l2.4 1.2a1.2 1.2 0 0 1-.6 2.3H10"/><path d="M6.5 19.5H12l7.2-3.6a1.6 1.6 0 0 0-1.4-2.8L14 15"/><path d="M3 14v6"/>`),
+  epf:     S(`<rect x="3.4" y="7.4" width="17.2" height="12.2" rx="2"/><path d="M9 7.4V5.6a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 5.6v1.8"/><path d="M10 11h4M10 13h4M11.6 11c1.3 0 2 .6 2 1.5s-.7 1.6-2 1.6h-1.4l3 2.6"/>`),   // a briefcase with ₹: savings from your job
   retire:  S(`<path d="M12 3.2 19 6v5.6c0 4.2-2.9 7.4-7 9.2-4.1-1.8-7-5-7-9.2V6z"/><path d="M9.4 12.1l1.9 1.9 3.5-3.6"/>`),
   bank:    S(`<rect x="3.2" y="6.6" width="17.6" height="12.4" rx="2.6"/><path d="M3.2 10.4h17.6"/><path d="M16.4 15.2h1.6"/>`),
   bucket:  S(`<path d="M4.4 6.6h15.2l-1.5 12.1a2 2 0 0 1-2 1.7H7.9a2 2 0 0 1-2-1.7z"/><path d="M3.2 6.6a8.8 3.2 0 0 1 17.6 0"/>`),
