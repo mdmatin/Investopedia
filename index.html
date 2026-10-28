@@ -1977,7 +1977,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2175,7 +2175,7 @@ function renderHome(d){
   const nw = d.netWorth, h = nw.head||{}, cash = liveCash();
   if (!cash && cfg && !xLoading) loadExpenses();
   const nwVal = cash && h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance + cash.total : h.netWorth;
-  $('#nw').innerHTML = bigAmt(fINR(nwVal));
+  $('#nw').innerHTML = bigAmt(fINR2(nwVal));
   paintBooks();
   $('#nwSub').innerHTML = `<span class="pill ${cls(h.netWorthDay)} num money">${fINRs(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>`;
 
@@ -2700,7 +2700,7 @@ function renderAssets(holdings, usdInr){
         histCache[ck] = { pts: last.date < today ? [...base.pts, live] : [...base.pts.slice(0,-1), live], at: base.at };
       } else histCache[ck] = base || {};
       el.innerHTML = `${chartToggle(assetChart)}${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
-        <div class="albl">Current value</div><div class="big num money">${bigAmt(mo(total))}</div>
+        <div class="albl">Current value</div><div class="big num money">${bigAmt(usdOut ? mo(total) : fINR2(total))}</div>
         ${(()=>{ const rate = native && haveFx ? `<span class="k">${day!=null?' · ':''}₹${fx.toFixed(2)}/$</span>` : '';   // the dollar rate, only on US Stocks
           return day!=null || rate ? `<div class="dd num money">${day!=null ? `${arrowAmt(day, mo)}${dp!=null?` <span class="${cls(dp)}">(${fPct(Math.abs(dp),false)})</span>`:''} <span class="k">today</span>` : ''}${rate}</div>` : ''; })()}
         ${histInner(ck, assetChart, 'assetChart')}
@@ -5286,7 +5286,7 @@ function spAccountsHtml(){
     I ? `<button data-zi="interest"><span class="zico iq">${PCT_IC}</span>Int. <b class="num money">${fKL(Math.max(0, I.left))}</b></button>` : '',
     n ? `<button data-zi="zakat"><span class="zico">${MOON_IC}</span>Zakat <b class="num money">${fKL(n.owing ? n.cur.left : n.cur.due)}</b></button>` : ''].filter(Boolean).join('');   // Construction · Interest · Zakat
   const head = `<div class="card liq"><div class="hd"><div class="k">Liquid</div><button class="okchip" id="books" hidden aria-label="Books"></button></div>
-      <div class="big num money">${bigAmt(fINR(liquid))}</div>
+      <div class="big num money">${bigAmt(fINR2(liquid))}</div>
       <div class="g3"><div><span>Bank</span><b class="num money">${fLakh(sum.bank)}</b></div><div><span>Wallet</span><b class="num money">${fLakh(sum.wallet)}</b></div>
         <div><span>Cards</span><b class="num money">${cards.owed > 0 ? '−' + fLakh(cards.owed) : fINR(0)}</b></div></div>
 </div>${ter ? `<div class="lpills">${ter}</div>` : ''}`;
