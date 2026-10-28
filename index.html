@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#f5f5f7">
 <script>
 // UI theme (OG or a concept), before first paint
-try{ var u = JSON.parse(localStorage.getItem('inv.prefs')||'{}').uiTheme; document.documentElement.setAttribute('data-ui', u==='river' ? 'river' : 'og'); }catch(e){}
+try{ var u = JSON.parse(localStorage.getItem('inv.prefs')||'{}').uiTheme; document.documentElement.setAttribute('data-ui', u==='river' || u==='zoom' ? u : 'og'); }catch(e){}
 // Appearance, before first paint: 'light' | 'dark' | 'auto' (follows the phone)
 (function(){
   var pick = 'auto'; try{ pick = JSON.parse(localStorage.getItem('inv.theme')) || 'auto'; }catch(e){}
@@ -1635,6 +1635,51 @@ html[data-ui=river]:not(.rpeek),html[data-ui=river]:not(.rpeek) body{background:
 #rvPeek{position:fixed;z-index:14;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));align-items:center;gap:6px;border:0;border-radius:999px;padding:8px 16px;
   background:#0d2a2f;color:#f4ebe1;font:600 13px "Bricolage Grotesque",var(--font);box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer}
 @media (prefers-reduced-motion: reduce){ .rv-ev.draft{animation:none} .rv-sheet{transition:none} }
+/* ============================ ZOOM (theme) ============================
+   html[data-ui=zoom]: one printed map of nested circles. You → Invested / Cash / this month's
+   Spend / Tax → assets, accounts, categories → holdings and single entries. Tap to dive, drag
+   the pink + into a circle to add something there. Same sentence composer as River. */
+#zoom{display:none}
+html[data-ui=zoom]:not(.rpeek) #zoom{display:block}
+html[data-ui=zoom].rpeek #rvPeek{display:flex}
+html[data-ui=zoom]:not(.rpeek) main,html[data-ui=zoom]:not(.rpeek) .nav,html[data-ui=zoom]:not(.rpeek) .tabs,
+html[data-ui=zoom]:not(.rpeek) .fab,html[data-ui=zoom]:not(.rpeek) .dfab,html[data-ui=zoom]:not(.rpeek) #ptr{display:none!important}
+html[data-ui=zoom]:not(.rpeek),html[data-ui=zoom]:not(.rpeek) body{background:#eef0f3}
+#zoom{position:fixed;inset:0;z-index:8;background:#eef0f3;color:#1d1b3a;font-family:Archivo,var(--font);letter-spacing:0;overflow:hidden}
+#zoom .zm-map{position:absolute;inset:0;width:100%;height:100%;touch-action:manipulation}
+#zoom .zm-map text{font-family:Archivo,var(--font);pointer-events:none}
+#zoom .zm-map circle{cursor:pointer;transition:stroke-width .2s}
+#zoom .zm-map circle.hot{stroke:#1d1b3a;stroke-width:4}
+.zm-grain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.32;mix-blend-mode:multiply;z-index:2}
+.zm-hd{position:absolute;left:18px;right:76px;top:calc(14px + env(safe-area-inset-top));z-index:4;pointer-events:none}
+.zm-crumb{display:flex;gap:4px;flex-wrap:wrap;pointer-events:auto}
+.zm-crumb button{border:0;background:none;font:600 12px Archivo,var(--font);letter-spacing:.8px;text-transform:uppercase;color:#5b5a7a;padding:2px 0;cursor:pointer}
+.zm-crumb button:after{content:" /";color:#aaa}
+.zm-crumb button:last-child{color:#1d1b3a}.zm-crumb button:last-child:after{content:""}
+.zm-title{font:800 32px/1.02 Syne,var(--font);letter-spacing:-1px;margin-top:6px;overflow-wrap:anywhere}
+.zm-val{font:600 14.5px Archivo,var(--font);margin-top:4px;color:#3a3860;font-variant-numeric:tabular-nums}
+.zm-open{pointer-events:auto;margin-top:10px;border:2px solid #1d1b3a;background:#fff;color:#1d1b3a;border-radius:999px;padding:6px 13px;font:700 12.5px Archivo,var(--font);cursor:pointer;box-shadow:3px 3px 0 #1d1b3a}
+.zm-me{position:absolute;z-index:6;top:calc(14px + env(safe-area-inset-top));right:16px;width:40px;height:40px;border-radius:50%;padding:0;border:2px solid #1d1b3a;overflow:hidden;background:#fff;cursor:pointer}
+.zm-me img{width:100%;height:100%;object-fit:cover;display:block}
+.zm-drafts{position:absolute;z-index:6;right:16px;bottom:calc(126px + env(safe-area-inset-bottom));border:0;background:#ffe800;color:#1d1b3a;border-radius:999px;padding:7px 12px;font:700 12px Archivo,var(--font);cursor:pointer;box-shadow:3px 3px 0 #1d1b3a}
+.zm-plus{position:absolute;z-index:6;right:20px;bottom:calc(24px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;border:0;background:#ff48b0;color:#fff;cursor:grab;touch-action:none;
+  box-shadow:4px 4px 0 #1d1b3a;display:grid;place-items:center}
+.zm-plus svg{width:28px;height:28px}
+.zm-plus.drag{cursor:grabbing;box-shadow:8px 8px 0 #1d1b3a}
+.zm-more{position:absolute;z-index:6;left:16px;bottom:calc(30px + env(safe-area-inset-bottom));border:2px solid #1d1b3a;background:#fff;color:#1d1b3a;border-radius:999px;padding:8px 15px;font:700 13px Archivo,var(--font);cursor:pointer;box-shadow:3px 3px 0 #1d1b3a}
+.zm-hint{position:absolute;z-index:5;left:16px;right:100px;bottom:calc(78px + env(safe-area-inset-bottom));font:600 12px Archivo,var(--font);color:#5b5a7a;line-height:1.35;pointer-events:none}
+.zm-msg{position:absolute;inset:0;display:grid;place-items:center;font:600 14px Archivo,var(--font);color:#5b5a7a;padding:40px;text-align:center}
+#zoom .rv-veil{position:absolute}
+#zoom .rv-sheet{background:#fff;color:#1d1b3a;border-top:3px solid #1d1b3a;border-radius:24px 24px 0 0}
+#zoom .rv-sent{font:600 23px/1.55 Syne,var(--font);letter-spacing:-.4px}
+#zoom .rv-slot{border-bottom-color:#1d1b3a;color:#e0218a}
+#zoom .rv-sent input.rv-in{color:#e0218a;border-bottom-color:#1d1b3a}
+#zoom .rv-verbs button{color:#1d1b3a;border-color:rgba(29,27,58,.3);font-family:Archivo,var(--font)}
+#zoom .rv-verbs button.on{background:#1d1b3a;color:#fff;border-color:#1d1b3a}
+#zoom .rv-row button{background:#1d1b3a;font-family:Archivo,var(--font);box-shadow:3px 3px 0 #ff48b0}
+#zoom .rv-row button.ghost{background:none;color:#1d1b3a;box-shadow:none;border-color:rgba(29,27,58,.3)}
+#zoom .rv-dr h4{font:800 28px Syne,var(--font);letter-spacing:-.8px}
+#zoom .rv-dr .r,#zoom .rv-dr .tools button{font-family:Archivo,var(--font);color:#1d1b3a}
 </style>
 </head>
 <body>
@@ -1825,7 +1870,7 @@ html[data-ui=river]:not(.rpeek),html[data-ui=river]:not(.rpeek) body{background:
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7072,7 +7117,7 @@ const PI = {
 };
 const LOCK_OPTS = [[0,'Immediately'],[60000,'After 1 minute'],[300000,'After 5 minutes'],[900000,'After 15 minutes']];
 // The app's look. OG is build 2026-11-01d as it stands; concepts join this list once built
-const UI_THEMES = [['og','OG'],['river','River']];
+const UI_THEMES = [['og','OG'],['river','River'],['zoom','Zoom']];
 function profileBody(){
   const pic = (k,c)=>`<span class="ic" style="background:${c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${PI[k]}</svg></span>`;
   const chv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
@@ -7492,13 +7537,17 @@ const RV_FUT = 62, RV_PAST = 45;
 const rvR = v => v==null ? '—' : (v<0?'−':'') + '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
 const rvPlus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 function applyUi(){
-  const on = isRiver();
+  const on = isRiver(), zm = isZoom();
   if (on && !rvFontIn){ rvFontIn = true; const l = document.createElement('link'); l.rel = 'stylesheet';
     l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=Instrument+Serif:ital@0;1&display=swap'; document.head.appendChild(l); }
-  if (!on) document.documentElement.classList.remove('rpeek');
-  if (on) rvBuild();
+  if (zm && !window.zmFontIn){ window.zmFontIn = true; const l = document.createElement('link'); l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Archivo:wght@400;600;700&display=swap'; document.head.appendChild(l); zmLoadD3().then(zoomPaint, ()=>{}); }
+  if (!on && !zm) document.documentElement.classList.remove('rpeek');
+  if (on || zm) rvBuild();
+  if (zm) zmBuild();
+  { const P = $('#rvPeek'); if (P) P.textContent = zm ? '← Map' : '← River'; }
   const m = document.querySelector('meta[name=theme-color]');
-  if (on && m) m.setAttribute('content', '#0d2a2f'); else if (window.applyTheme) applyTheme();
+  if (on && m) m.setAttribute('content', '#0d2a2f'); else if (zm && m) m.setAttribute('content', '#eef0f3'); else if (window.applyTheme) applyTheme();
   riverPaint();
 }
 function rvBuild(){
@@ -7514,6 +7563,7 @@ function rvBuild(){
   document.body.appendChild(R);
   const P = document.createElement('button'); P.id = 'rvPeek'; P.textContent = '← River'; document.body.appendChild(P);
   P.onclick = () => { document.documentElement.classList.remove('rpeek'); riverPaint(); };
+  P.textContent = isZoom() ? '← Map' : '← River';
   $('#rvS').addEventListener('scroll', rvHead, { passive:true });
   $('#rvBack').onclick = () => rvTo(0, true);
   $('#rvMe').onclick = () => pushPage({ kind:'profile' });
@@ -7522,7 +7572,7 @@ function rvBuild(){
   $('#rvVeil').onclick = rvClose;
   addEventListener('resize', ()=>riverPaint());
 }
-function riverPaint(){ if (!isRiver() || !rvBuilt) return; cancelAnimationFrame(rvRaf); rvRaf = requestAnimationFrame(rvDraw); }
+function riverPaint(){ if (isZoom()) return zoomPaint(); if (!isRiver() || !rvBuilt) return; cancelAnimationFrame(rvRaf); rvRaf = requestAnimationFrame(rvDraw); }
 // keep the river in step with every OG redraw (data loads, saves, deletes)
 { const wrap = name => { const f = window[name]; if (typeof f !== 'function') return; window[name] = function(){ const r = f.apply(this, arguments); riverPaint(); return r; }; };
   ['render','renderHome','rerenderSpendViews','renderSpend','paintDfab'].forEach(wrap); }
@@ -7660,8 +7710,9 @@ function rvHead(){
     : r > 0 ? 'Projected from recurring entries and your usual spending' : 'Net worth on that day, from the daily log';
   $('#rvBack').hidden = Math.abs(off) < 1.2;
 }
-function rvOpen(html){ const sh = $('#rvSheet'); sh.innerHTML = html; sh.classList.add('open'); $('#rvVeil').classList.add('open'); return sh; }
-function rvClose(){ $('#rvSheet').classList.remove('open'); $('#rvVeil').classList.remove('open'); }
+const rvSh = () => isZoom() ? $('#zmSheet') : $('#rvSheet'), rvVl = () => isZoom() ? $('#zmVeil') : $('#rvVeil');
+function rvOpen(html){ const sh = rvSh(); sh.innerHTML = html; sh.classList.add('open'); rvVl().classList.add('open'); return sh; }
+function rvClose(){ const sh = rvSh(), v = rvVl(); if (sh) sh.classList.remove('open'); if (v) v.classList.remove('open'); }
 
 /* the sentence composer: every input the OG sheets take, as one sentence with blanks */
 const RV_VERBS = [['expense','Spent'],['transfer','Moved'],['income','Earned'],['Buy','Bought'],['Sell','Sold'],['tax','Paid tax']];
@@ -7718,7 +7769,7 @@ function rvCompose(p){
     sh.querySelector('[data-ok]').onclick = rvKeep;
     const f = sh.querySelector('input[data-k="amt"],input[data-k="qty"]'); if (f && !f.value) setTimeout(()=>f.focus({ preventScroll:true }), 330);
   }
-  const bad = (m, k) => { const w = $('#rvWhy'); w.className = 'rv-why err'; w.textContent = m; const i = k && $('#rvSheet').querySelector(`[data-k="${k}"]`); if (i && i.focus) i.focus(); };
+  const bad = (m, k) => { const w = $('#rvWhy'); w.className = 'rv-why err'; w.textContent = m; const i = k && rvSh().querySelector(`[data-k="${k}"]`); if (i && i.focus) i.focus(); };
   function rvKeep(){
     const amount = Number(numPlain(String(s.amt||''))), date = s.date, note = (s.note||'').trim();
     xRecPend = s.rec || null; xKitePay = false; xDraftPend = s.draft || null; xEditing = null;
@@ -7751,7 +7802,7 @@ function rvDrawer(){
   const d = D && D.data, nw = d && d.netWorth, cash = liveCash();
   const assets = ((nw && nw.assets) || []).filter(a=>!a.isTotal && a.value && !/^Less:|^Charges/i.test(a.name)).sort((a,b)=>b.value-a.value);
   const accs = cash ? cash.rows.filter(r=>r.kind!=='construction' && Math.abs(r.amount) > 0.004) : [];
-  const sh = rvOpen(`<div class="rv-dr"><h4>Banks of the river</h4>
+  const sh = rvOpen(`<div class="rv-dr"><h4>${isZoom() ? 'Everything else' : 'Banks of the river'}</h4>
     <h5>In the water</h5>${assets.map((a,i)=>`<button class="r" data-as="${i}"><span>${esc(a.name)}</span><b>${fINR(a.value)}</b></button>`).join('') || '<div class="r">Loading…</div>'}
     <h5>Accounts</h5>${accs.map((a,i)=>`<button class="r" data-ac="${i}"><span>${esc(a.name)}</span><b>${fINR(a.amount)}</b></button>`).join('') || '<div class="r">Loading…</div>'}
     <h5>Everything else</h5><div class="tools">
@@ -7766,6 +7817,148 @@ function rvDrawer(){
     if (t==='budgets'||t==='recurring'||t==='tax'){ rvClose(); return pushPage(t==='budgets' ? { kind:'budgets', ym:ymNow() } : { kind:t }); }
     if (t==='refresh'){ rvClose(); refresh(true); loadExpenses(true); return toast('Refreshing…'); }
     rvPeek(()=>show(t)); });
+}
+/* ============================ ZOOM (theme) ============================ */
+const isZoom = () => document.documentElement.getAttribute('data-ui')==='zoom';
+let zmBuilt = false, zmRaf = 0, zmPath = ['You'], zmD3 = null, zmFocus = null, zmView = null, zmNodes = null, zmLabels = null, zmSvg = null, zmRoot = null;
+const ZM_COL = { Invested:'#0078bf', Cash:'#00a95c', Spend:'#ff48b0', Tax:'#ffb800' };
+function zmLoadD3(){
+  if (window.d3) return Promise.resolve();
+  if (!zmD3) zmD3 = new Promise((ok, no)=>{ const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js'; s.onload = ok; s.onerror = ()=>{ zmD3 = null; no(); }; document.head.appendChild(s); });
+  return zmD3;
+}
+function zmBuild(){
+  if (zmBuilt) return; zmBuilt = true;
+  const Z = document.createElement('div'); Z.id = 'zoom'; const img = $('#btnMore img');
+  Z.innerHTML = `<svg class="zm-map" id="zmMap"></svg>
+    <svg class="zm-grain" aria-hidden="true"><filter id="zmN"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .3  0 0 0 0 .4  0 0 0 .55 0"/></filter><rect width="100%" height="100%" filter="url(#zmN)"/></svg>
+    <div class="zm-hd"><div class="zm-crumb" id="zmCrumb"></div><div class="zm-title" id="zmTitle"></div><div class="zm-val" id="zmVal"></div><button class="zm-open" id="zmOpen" hidden>Open</button></div>
+    <button class="zm-me" id="zmMe" aria-label="Profile">${img ? `<img src="${img.src}" alt="">` : ''}</button>
+    <button class="zm-drafts" id="zmDr" hidden></button>
+    <div class="zm-hint">Tap a circle to go in. Drag + into a circle to add something there.</div>
+    <button class="zm-more" id="zmMore">More</button>
+    <button class="zm-plus" id="zmPlus" aria-label="Add an entry">${rvPlus}</button>
+    <div class="rv-veil" id="zmVeil"></div><div class="rv-sheet" id="zmSheet" role="dialog" aria-label="Map"></div>`;
+  document.body.appendChild(Z);
+  $('#zmMe').onclick = () => pushPage({ kind:'profile' });
+  $('#zmMore').onclick = rvDrawer;
+  $('#zmVeil').onclick = rvClose;
+  $('#zmDr').onclick = () => { const dr = xDrafts()[0]; if (dr) return rvCompose(rvFromDraft(dr)); const q = recDue()[0]; if (q) rvCompose(rvFromRec(q)); };
+  $('#zmOpen').onclick = () => zmOpenNode(zmFocus);
+  // drag + into a circle
+  const plus = $('#zmPlus'); let drag = null;
+  const hit = (x,y) => { plus.style.visibility = 'hidden'; const el = document.elementFromPoint(x,y); plus.style.visibility = ''; return el && el.tagName==='circle' && window.d3 ? d3.select(el).datum() : null; };
+  plus.onpointerdown = e => { drag = { x0:e.clientX, y0:e.clientY, moved:false, hot:null }; plus.setPointerCapture(e.pointerId); };
+  plus.onpointermove = e => { if (!drag) return; const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (Math.hypot(dx,dy) > 6) drag.moved = true; if (!drag.moved) return;
+    plus.classList.add('drag'); plus.style.transform = `translate(${dx}px,${dy}px) scale(1.08)`;
+    const d = hit(e.clientX, e.clientY); if (zmNodes) zmNodes.classed('hot', n => n===d && d.depth>0); drag.hot = d; };
+  const end = () => { if (!drag) return; const d = drag.hot, moved = drag.moved; drag = null; plus.classList.remove('drag'); plus.style.transform = ''; if (zmNodes) zmNodes.classed('hot', false);
+    rvCompose(moved ? zmPreset(d) : {}); };
+  plus.onpointerup = end; plus.onpointercancel = () => { drag = null; plus.classList.remove('drag'); plus.style.transform = ''; };
+}
+function zoomPaint(){ if (!isZoom() || !zmBuilt) return; cancelAnimationFrame(zmRaf); zmRaf = requestAnimationFrame(zmDraw); }
+function zmTree(){
+  const d = D && D.data, nw = d && d.netWorth, h = (nw && nw.head) || {}, fx = h.usdInr || 1, hold = (d && d.holdings) || [];
+  const kids = [];
+  const assets = ((nw && nw.assets) || []).filter(a=>!a.isTotal && a.value > 0 && !/^Less:|^Charges/i.test(a.name));
+  if (assets.length) kids.push({ name:'Invested', t:'grp', children: assets.map(a=>{ const c = assetCatFor(a.name, hold);
+    const hs = c ? hold.filter(x=>x.category===c && (x.value||0) > 0).map(x=>({ name:String(x.ticker), v: isUSD(x) ? x.value*fx : x.value, t:'hold', tk:String(x.ticker), cat:c, plat:x.platform||'' })) : [];
+    return hs.length ? { name:a.name, t:'asset', cat:c, a, children:hs } : { name:a.name, v:a.value, t:'asset', cat:c, a }; }) });
+  const cash = liveCash(), accs = cash ? cash.rows.filter(r=>r.kind!=='construction' && r.amount > 0) : ((nw && nw.banks) || []).filter(b=>b.amount > 0).map(b=>({ name:b.name, amount:b.amount }));
+  if (accs.length) kids.push({ name:'Cash', t:'cash', children: accs.map(a=>({ name:a.name, v:a.amount, t:'acc', live: !!cash })) });
+  if (xd()){ const ym = ymNow(), by = {};
+    (xd().entries||[]).filter(e=>e.date && e.date.slice(0,7)===ym && e.amount > 0 && !isInvest(e.category) && !isConstr(e.category))
+      .forEach(e=>(by[e.category] = by[e.category] || []).push({ name: e.note || e.sub || e.category, v:e.amount, t:'entry', e }));
+    const cs = Object.entries(by).map(([c, es])=>({ name:c, t:'cat', b:xBudget(c, ym), children:es }));
+    if (cs.length) kids.push({ name:'Spend', t:'spend', children:cs }); }
+  const Y = typeof taxYear==='function' ? taxYear() : null, A = Y && Y.advance;
+  if (A && A.due > 0) kids.push({ name:'Tax', t:'tax', A, children:[ { name:'Paid', v:Math.max(1, A.paid||0), t:'taxp' }, { name:'Still to pay', v:Math.max(1, A.due-(A.paid||0)), t:'taxp' } ] });
+  return { name:'You', t:'root', children:kids };
+}
+const zmReal = d => d.data.a ? d.data.a.value : d.data.v != null ? d.data.v : (d.children||[]).reduce((s,c)=>s+zmReal(c), 0);
+const zmGrp = d => { let a = d; while (a.depth > 1) a = a.parent; return a.depth===1 ? a.data.name : null; };
+function zmDraw(){
+  if (!isZoom() || !zmBuilt || document.documentElement.classList.contains('rpeek')) return;
+  const host = $('#zoom'); const W = host.clientWidth, H = host.clientHeight; if (!W) return;
+  if (!window.d3){ $('#zmMap').innerHTML = ''; zmLoadD3().then(zoomPaint, ()=>{ $('#zmTitle').textContent = 'Map needs a connection'; $('#zmVal').textContent = 'Its drawing library loads the first time. Try again online.'; }); return; }
+  const tree = zmTree();
+  const size = Math.min(W - 24, H - 250);
+  zmRoot = d3.pack().size([size, size]).padding(d=>d.depth===0 ? 14 : 6)(d3.hierarchy(tree).sum(d=>d.v ? Math.pow(Math.max(1, d.v), .42) : 0).sort((a,b)=>b.value-a.value));
+  zmSvg = d3.select('#zmMap').attr('viewBox', `${-W/2} ${-H/2 - 30} ${W} ${H}`);
+  zmSvg.selectAll('*').remove();
+  const g = zmSvg.append('g');
+  zmNodes = g.selectAll('circle').data(zmRoot.descendants()).join('circle')
+    .attr('fill', d => d.depth===0 ? '#fff' : ZM_COL[zmGrp(d)] || '#8c8aa8')
+    .attr('fill-opacity', d => d.depth===0 ? .6 : d.depth===1 ? .26 : d.children ? .32 : .55)
+    .style('mix-blend-mode', 'multiply')
+    .attr('stroke', d => d.depth===0 ? '#1d1b3a' : 'none').attr('stroke-width', 2)
+    .on('click', (ev, d) => { ev.stopPropagation(); if (d.children && zmFocus !== d) zmTo(d); else zmOpenNode(d); });
+  zmLabels = g.selectAll('text').data(zmRoot.descendants()).join('text').attr('text-anchor', 'middle').attr('fill', '#1d1b3a');
+  zmFocus = zmRoot; zmPath.slice(1).forEach(n=>{ const c = (zmFocus.children||[]).find(x=>x.data.name===n); if (c) zmFocus = c; });
+  zmPath = zmFocus.ancestors().reverse().map(a=>a.data.name);
+  zmJump([zmFocus.x, zmFocus.y, zmFocus.r*2], size);
+  zmSvg.on('click', () => zmFocus && zmFocus.parent && zmTo(zmFocus.parent));
+  zmHead();
+}
+function zmJump(v, size){
+  zmView = v; const k = (size || zmView.size || 300) / v[2]; zmView.size = size || zmView.size;
+  zmNodes.attr('transform', d => `translate(${(d.x - v[0])*k},${(d.y - v[1])*k})`).attr('r', d => d.r*k);
+  zmLabels.attr('transform', d => `translate(${(d.x - v[0])*k},${(d.y - v[1])*k})`)
+    .style('display', d => (d.parent===zmFocus || (d===zmFocus && !d.children)) && d.r*k > 16 ? null : 'none')
+    .html(d => { const r = d.r*k, fs = Math.max(10, Math.min(18, r/3.6)), nm = d.data.name.length > r/4.2 ? d.data.name.slice(0, Math.max(3, Math.floor(r/4.6))) + '…' : d.data.name;
+      return `<tspan x="0" dy="-.15em" font-size="${fs}" font-weight="700">${esc(nm)}</tspan>${r > 34 ? `<tspan x="0" dy="1.25em" font-size="${fs*.78}">${esc(fCompact(zmReal(d)))}</tspan>` : ''}`; });
+}
+function zmTo(d){
+  const size = zmView.size, i = d3.interpolateZoom(zmView, [d.x, d.y, d.r*2]);
+  zmFocus = d; zmPath = d.ancestors().reverse().map(a=>a.data.name);
+  zmSvg.transition().duration(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650).tween('zoom', () => t => zmJump(i(t), size));
+  zmHead();
+}
+function zmHead(){
+  const a = zmFocus.ancestors().reverse();
+  $('#zmCrumb').innerHTML = a.map((n,i)=>`<button data-i="${i}">${esc(n.data.name)}</button>`).join('');
+  $('#zmCrumb').querySelectorAll('button').forEach(b=>b.onclick = () => zmTo(a[+b.dataset.i]));
+  const d = zmFocus.data, v = zmFocus.depth===0 ? rvNwNow() : zmReal(zmFocus);
+  const bud = rvBudget();
+  $('#zmTitle').textContent = zmFocus.depth===0 ? 'Everything' : d.name;
+  $('#zmVal').textContent = d.t==='cat' ? `${rvR(v)}${d.b > 0 ? ' of ' + rvR(d.b) + ' budget' : ' this month'}`
+    : d.t==='spend' ? `${rvR(v)} this month${bud ? ' · ' + rvR(bud.left) + ' left in budget' : ''}`
+    : d.t==='tax' ? `${rvR(d.A.due)} for ${taxYear().label}${d.A.next ? ' · ' + rvR(d.A.next.amount) + ' more by ' + dayLbl(d.A.next.date) : ''}`
+    : rvR(v);
+  const open = { cat:'Open category', asset:'Open', spend:'Budgets', tax:'Tax page', cash:'Accounts', grp:'Holdings' }[d.t];
+  $('#zmOpen').hidden = !open; $('#zmOpen').textContent = open || '';
+  const n = xDrafts().length + (typeof recDue==='function' ? recDue().length : 0);
+  $('#zmDr').hidden = !n; $('#zmDr').textContent = n ? `${n} waiting · tap to file` : '';
+}
+function zmOpenNode(d){
+  if (!d) return; const t = d.data.t;
+  if (t==='hold') return openHolding(d.data.tk);
+  if (t==='acc') return d.data.live ? pushPage({ kind:'acct', acc:d.data.name }) : null;
+  if (t==='entry') return openXSheet(d.data.e, 'expense');
+  if (t==='cat') return pushPage({ kind:'expcat', cat:d.data.name, ym:ymNow() });
+  if (t==='spend') return pushPage({ kind:'budgets', ym:ymNow() });
+  if (t==='tax' || t==='taxp') return pushPage({ kind:'tax' });
+  if (t==='asset'){ const a = d.data.a;
+    if (/^EPF$/i.test(a.name) && epfD()) return pushPage({ kind:'epf' });
+    if (/^NPS$/i.test(a.name) && npsD()) return pushPage({ kind:'nps' });
+    return rvPeek(()=> d.data.cat ? openAssetCat(d.data.cat) : show('break')); }
+  if (t==='grp') return rvPeek(()=>show('break'));
+  if (t==='cash') return rvPeek(()=>show('spend', 'accounts'));
+}
+function zmPreset(d){
+  if (!d || d.depth===0) return {};
+  const t = d.data.t, Y = taxYear && taxYear(), n = Y && Y.advance && Y.advance.next;
+  if (t==='cat') return { kind:'expense', cat:d.data.name };
+  if (t==='entry') return { kind:'expense', cat:d.data.e.category, sub:d.data.e.sub || '' };
+  if (t==='spend') return { kind:'expense' };
+  if (t==='acc') return { kind:'income', acc:d.data.name };
+  if (t==='cash') return { kind:'transfer' };
+  if (t==='hold') return { kind:'Buy', tk:d.data.tk, tcat:d.data.cat, plat:d.data.plat };
+  if (t==='asset') return { kind:'Buy', tcat:d.data.cat || '' };
+  if (t==='grp') return { kind:'Buy' };
+  if (t==='tax' || t==='taxp') return { kind:'tax', amt: n ? Math.round(n.amount) : '' };
+  return {};
 }
 applyUi();
 if(cfg) start(); else $('#setup').hidden=false;
