@@ -1910,7 +1910,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
     <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>Overview</button>
     <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Holdings</button>
     <button data-v="txn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Trades</button>
-    <button data-v="acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l8.5 4.5H3.5z"/><path d="M6 11v6M10 11v6M14 11v6M18 11v6"/><path d="M4 20h16"/></svg>Accounts</button>
+    <button data-v="acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 9.2 11.1 5.6a2 2 0 0 1 1.8 0l6.9 3.6a.5.5 0 0 1-.2.9H4.4a.5.5 0 0 1-.2-.9z"/><path d="M6.4 12.6v4.6M10.1 12.6v4.6M13.9 12.6v4.6M17.6 12.6v4.6"/><path d="M4.6 20h14.8"/></svg>Accounts</button>
     <button data-v="spend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5"/><path d="M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1z"/><path d="M16 14.25h.01"/></svg>Spend</button>
   </nav>
 </div>
@@ -1976,7 +1976,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01p';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2478,6 +2478,7 @@ const BK_ICONS = {
   target:  S(`<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r=".9"/>`),
   star:    S(`<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>`),
   flag:    S(`<path d="M5.4 20.6V4M5.4 4.6h11.4l-2.2 3.8 2.2 3.8H5.4"/>`),
+  pct:   S(`<rect x="4.6" y="3.6" width="14.8" height="16.8" rx="2.4"/><path d="M9 15.4l6-6.8"/><circle cx="9.4" cy="9.2" r="1.3"/><circle cx="14.6" cy="14.8" r="1.3"/>`),
   pillars: S(`<path d="M3.4 9 12 4.2 20.6 9z"/><path d="M5.6 9.4v7.6M9.8 9.4v7.6M14.2 9.4v7.6M18.4 9.4v7.6M3.4 19.8h17.2"/>`),
   build:   S(`<rect x="5" y="3.6" width="9.4" height="16.8" rx="1"/><path d="M14.4 9.4h4.6v11H3.4M8 7.4h.01M11.4 7.4h.01M8 11h.01M11.4 11h.01M8 14.6h.01M11.4 14.6h.01M16.6 13h.01M16.6 16.4h.01"/>`)
 };
@@ -2485,7 +2486,7 @@ const BK_WORDS = [
   [/construct|renovat|build/i,'build'], [/emergenc|safety|safe\b|reserve/i,'shield'], [/rain|contingen/i,'umbrella'],
   [/travel|trip|holiday|vacation/i,'plane'], [/house|home|flat|property|land|plot/i,'home'], [/educat|study|college|school|kid|child/i,'cap'],
   [/retire|pension|freedom|fire\b/i,'sprout'], [/long/i,'sprout'], [/short|near/i,'clock'], [/growth|aggress|high.?risk|momentum/i,'rocket'],
-  [/debt|bond|fixed|\bfd\b|deposit|gilt/i,'pillars'], [/regular|core|main|general|default/i,'sprout'],
+  [/debt|bond|fixed|\bfd\b|deposit|gilt/i,'pct'], [/regular|core|main|general|default/i,'sprout'],
   [/gift|wedding|marriage/i,'gift'], [/car|bike|vehicle/i,'car'], [/family|parent|mom|dad|health|medical/i,'heart'], [/goal|target/i,'target']
 ];
 const BK_TINTS = ['us','mf','in','cr','pk','lq','gd','rt'], BK_SPARE = ['target','star','flag','sprout','rocket'];
