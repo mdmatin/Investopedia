@@ -55,8 +55,8 @@ try{ var u = JSON.parse(localStorage.getItem('inv.prefs')||'{}').uiTheme; docume
 
   /* ink */
   --ink:        #1d1d1f;
-  --ink-2:      #6e6e73;
-  --ink-3:      #a1a1a6;
+  --ink-2:      #636366;
+  --ink-3:      #8e8e93;
 
   /* accent + state */
   --blue:       #0066cc;
@@ -94,6 +94,7 @@ button:active{transform:scale(.97)}
 .nav .sub{font-size:12px;color:var(--ink-3);letter-spacing:-.12px;display:flex;align-items:center;gap:5px;margin-top:1px}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--up);flex:none}
 .dot.stale{background:var(--ink-3)} .dot.err{background:var(--down)}
+.nav .dot.err{padding:0;margin:0;border-radius:50%;width:6px;height:6px;font-size:0}
 .navbtns{display:flex;gap:18px;color:var(--blue);padding-bottom:4px;align-self:center}
 .nav .eyebrow{font-size:12px;font-weight:600;letter-spacing:.4px;color:var(--ink-3);text-transform:uppercase;line-height:1.3}
 .nav .eyebrow:empty{display:none}
@@ -132,7 +133,8 @@ main{padding:0}
 .card.tight{padding:6px 20px}
 .sechead{display:flex;justify-content:space-between;align-items:baseline;padding:14px 24px 8px}
 .sechead h2{font-family:var(--font-disp);font-size:20px;font-weight:600;letter-spacing:-.45px;margin:0}
-.sechead button{font-size:14px;color:var(--blue);letter-spacing:-.224px}
+.sechead button{font-size:14px;color:var(--blue);letter-spacing:-.224px;padding:12px 0 12px 16px;margin:-12px 0}
+.chips .chip,#holdEntry button{position:relative}.chips .chip::after,#holdEntry button::after{content:'';position:absolute;inset:-6px -3px}
 
 /* ---------- hero ---------- */
 .hero .cap{font-size:13px;color:var(--ink-2);letter-spacing:-.08px}
@@ -214,6 +216,8 @@ main{padding:0}
 /* ---------- asset card (Breakdown ▸ Assets) ---------- */
 .hcard{padding:12px 0;border-top:1px solid var(--hairline)}
 .hcard:first-child{border-top:0}
+.hc-val{text-align:right;white-space:nowrap}.hc-val .v{font-size:15px;font-weight:600;letter-spacing:-.3px}.hc-val .s{font-size:12.5px;margin-top:1px}
+.hc1 .hc-name .sub .arrow{font-size:.8em;margin-right:1px}
 .hc-top{display:flex;align-items:center;gap:12px}
 .hc-name{flex:1;min-width:0}
 .hc-name .n{font-size:14.5px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1013,6 +1017,12 @@ html[data-theme=dark] .tabs svg{opacity:1}
 #spSeg button{font-size:13.5px;padding:8px 4px}
 .row .v.up,.spstats b.up{color:var(--up)}
 .row .v.down{color:var(--down)}
+.ttot{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:-4px 4px 12px;font-size:14px;color:var(--ink-2)}
+.ttot b{font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.3px}.ttot em{font-style:normal;flex-basis:100%;font-size:13px;color:var(--ink-3)}
+.tmore{display:flex;align-items:center;gap:4px;margin:0 4px 12px;font-size:15px;font-weight:600;color:var(--blue);background:none;border:0;padding:4px 0}
+.tmore svg{width:15px;height:15px;transition:transform .2s}.tmore.on svg{transform:rotate(180deg)}
+.mcbars .mcb{height:6px;border-radius:3px;background:var(--sunken);margin-top:6px;overflow:hidden}.mcbars .mcb i{display:block;height:100%;border-radius:3px}
+.mcbars .r .s{font-size:12.5px;color:var(--ink-3);text-align:right}
 .fields{background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);overflow:hidden;margin-bottom:14px}
 .f{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--hairline)}
 .f:first-child{border-top:0}
@@ -1208,7 +1218,8 @@ html[data-theme=dark] .books.off .n{color:#ff9f0a}
 .books .m{font-size:12.5px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .books > svg{flex:none;width:14px;height:14px;color:var(--ink-3)}
 .tabs button[data-v="home"]{position:relative}
-.tabs button[data-v="spend"]{position:relative}
+.tabs button[data-v="spend"],.tabs button[data-v="acc"]{position:relative}
+.tabs button[data-v="acc"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
 .tabs button[data-v="spend"].bkdot::after{content:'';position:absolute;top:4px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#ff9f0a;box-shadow:0 0 0 2px var(--canvas)}
 #spSeg button{position:relative}
 #spSeg button.segdot::after{content:'';position:absolute;top:6px;right:4px;width:8px;height:8px;border-radius:50%;background:#ff9f0a}
@@ -1362,6 +1373,14 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
   overscroll-behavior:contain;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
   padding-bottom:calc(40px + env(safe-area-inset-bottom))}
 .page.show{transform:none}
+.page.modal{top:calc(10px + env(safe-area-inset-top));border-radius:14px 14px 0 0;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1)}
+.page.modal.show{transform:none}
+body.pmodal::before{content:'';position:fixed;inset:0;z-index:14;background:rgba(0,0,0,.32);animation:pmfade .3s}
+@keyframes pmfade{from{opacity:0}}
+.page.modal .pg-head{padding-top:12px;border-radius:14px 14px 0 0}
+.page.modal .pg-head::before{content:'';position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--ink-3);opacity:.5}
+.pg-head.sheethd{justify-content:flex-end;min-height:48px}
+.pg-done{color:var(--blue);font-size:17px;font-weight:600;padding:8px 6px}
 body.paged{overflow:hidden}
 .pg-head{position:sticky;top:0;z-index:2;background:rgba(245,245,247,.86);backdrop-filter:saturate(180%) blur(20px);
   -webkit-backdrop-filter:saturate(180%) blur(20px);padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
@@ -1747,14 +1766,24 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 @media (prefers-reduced-motion: reduce){ .dl-led.on i,.dl-rcpt{animation:none} .dl-knob{transition:none} }
 .hentry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px}
 .hentry:empty{display:none}
-.hentry button{display:flex;align-items:center;gap:10px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink);min-width:0}
-.hentry .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto}
-.hentry .ic svg{width:18px;height:18px}
+.hentry button{display:flex;align-items:center;gap:10px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink);min-width:0}
+.hentry .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}
+.hentry .ic svg{width:16px;height:16px}
 .hentry .tx{min-width:0}
 .hentry .t{font-size:15px;font-weight:600;letter-spacing:-.2px;line-height:1.2}
-.hentry .m{font-size:12.5px;color:var(--ink-2);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hentry .m{font-size:12px;color:var(--ink-2);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hentry .sk{display:inline-block;width:64px;height:9px;border-radius:5px;vertical-align:middle;background:linear-gradient(90deg,var(--sunken) 25%,var(--hairline) 50%,var(--sunken) 75%);background-size:200% 100%;animation:hsk 1.2s linear infinite}
+@keyframes hsk{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion: reduce){.hentry .sk{animation:none}}
 .hentry .cv{margin-left:auto;color:var(--ink-3);width:14px;height:14px;flex:0 0 auto}
 .hentry .ic.pl{background:rgba(0,102,204,.1);color:var(--blue)}
+.hentry .m.down{color:var(--down);font-weight:600}
+.hentry .ic.ov{background:var(--down-bg);color:var(--down)}
+.hentry .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hentry .ic.tx2{background:rgba(175,82,222,.12);color:#af52de}
+#v-break,#v-txn{padding-bottom:84px}
+.hpills{margin:0 16px 12px}.hpills button{justify-content:space-between;padding-right:10px}.hpills .pg{display:flex;align-items:center;gap:5px}.hpills .pcv{width:11px;height:11px;color:var(--ink-3);flex:none}.hpills .zico.trz{background:rgba(255,149,0,.14);color:#c26a00}
+#assets .dpill{margin-top:3px}
 .hentry .ic.bk{background:var(--up-bg);color:var(--up)}
 </style>
 </head>
@@ -1802,6 +1831,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
         <div class="kpirow lcr" id="kpis"></div>
       </div>
 
+      <div class="hentry" id="homeMonth"></div>
       <div class="sechead"><h2>Assets</h2><button id="goPlatforms">Platforms</button></div>
       <div class="card tight" id="assets"></div>
 
@@ -1809,7 +1839,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
       <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
       <div class="card tight" id="wallets" hidden></div>
 
-      <div class="sechead"><h2>Accounts</h2><button data-go="spend" data-sec="accounts">Spend</button></div>
+      <div class="sechead"><h2>Accounts</h2><button data-go="acc">All</button></div>
       <div class="tflt" id="accFlt" hidden></div>
       <div class="card tight" id="banks"></div>
 
@@ -1824,7 +1854,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
         <div class="chips" id="assetChips"></div>
         <div id="capWrap"></div>
         <div class="card asum" id="assetSum" hidden></div>
-        <div class="hentry" id="holdEntry"></div>
+        <div class="lpills hpills" id="holdEntry"></div>
         <div class="search" id="assetSearch"></div>
         <div class="card tight" id="assetList"></div>
       </div>
@@ -1861,7 +1891,6 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
         <button data-s="list" class="on">Activity</button>
         <button data-s="monthly">Monthly</button>
         <button data-s="budget">Budget</button>
-        <button data-s="accounts">Accounts</button>
       </div>
       <div id="spBody"></div>
     </section>
@@ -1878,7 +1907,8 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
   <nav class="tabs">
     <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>Overview</button>
     <button data-v="break"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21.2 15.9A10 10 0 1 1 8.1 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Holdings</button>
-    <button data-v="txn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Trades</button>
+    <button data-v="txn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Trades</button>
+    <button data-v="acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l8.5 4.5H3.5z"/><path d="M6 11v6M10 11v6M14 11v6M18 11v6"/><path d="M4 20h16"/></svg>Accounts</button>
     <button data-v="spend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5"/><path d="M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1z"/><path d="M16 14.25h.01"/></svg>Spend</button>
   </nav>
 </div>
@@ -1898,21 +1928,25 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
   <div class="seg" id="segOrder"><button data-v="Buy" class="on">Buy</button><button data-v="Sell">Sell</button></div>
   <div class="fields">
     <div class="f"><label>Ticker</label><input id="fTicker" list="tickers" placeholder="NVDA" autocapitalize="characters" autocorrect="off"><datalist id="tickers"></datalist></div>
+    <div class="f"><label>Quantity</label><input id="fVolume" type="number" step="any" inputmode="decimal" placeholder="0"></div>
+    <div class="f"><label>Unit price</label><input id="fPrice" type="number" step="any" inputmode="decimal" placeholder="0"></div>
+    <div class="f"><label>Date</label><input id="fDate" type="date"></div>
+  </div>
+  <div class="ttot" id="tTotal"></div>
+  <button type="button" class="tmore" id="tMore" aria-expanded="false">More details<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div id="tMoreBox" hidden>
+  <div class="fields">
     <div class="f"><label>Category</label><select id="fCategory"></select></div>
     <div class="f"><label>Platform</label><select id="fPlatform"></select></div>
-    <div class="f"><label>Date</label><input id="fDate" type="date"></div>
     <div class="f" id="rowBucket"><label id="lblBucket">Bucket</label><select id="fBucket"></select></div>
   </div>
   <div class="fields">
-    <div class="f"><label>Volume</label><input id="fVolume" type="number" step="any" inputmode="decimal" placeholder="0"></div>
-    <div class="f"><label>Unit price</label><input id="fPrice" type="number" step="any" inputmode="decimal" placeholder="0"></div>
     <div class="f"><label id="lblAmount">Amount</label><input id="fAmount" type="number" step="any" inputmode="decimal" placeholder="auto"></div>
     <div class="f"><label>Notional</label><input id="fNotional" type="number" step="any" inputmode="decimal" placeholder="auto"></div>
-  </div>
-  <div class="fields">
     <div class="f"><label>DP charge</label><input id="fDp" type="number" step="any" inputmode="decimal" placeholder="—"></div>
     <div class="f"><label>Fees</label><input id="fFees" type="number" step="any" inputmode="decimal" placeholder="auto"></div>
     <div class="f"><label>Remark</label><input id="fRemark" placeholder="optional"></div>
+  </div>
   </div>
   <button class="btn" id="btnSave">Save</button>
   <button class="btn danger" id="btnDelete" hidden>Delete transaction</button>
@@ -1941,7 +1975,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -1981,10 +2015,11 @@ const usd2 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
 const usd0 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
 const usd  = { format: v => (paiseOn() ? usd2 : usd0).format(v) };
 const DEC  = () => paiseOn() ? {minimumFractionDigits:2,maximumFractionDigits:2} : {maximumFractionDigits:0};
-const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
+// headline and list amounts: whole rupees (paise stay on Spend entries, detail pages and forms)
+const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inr.format(Math.round(Math.abs(v)));
 // Spend tab: rupees with paise, like Money Manager
 const fINR2 = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
-const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inrM().format(Math.abs(v));
+const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inr.format(Math.round(Math.abs(v)));
 const fCompact = v => { if(v==null) return '—'; const a=Math.abs(v), s=v<0?'−':'';
   if(a>=1e7) return s+'₹'+(a/1e7).toFixed(2)+'Cr'; if(a>=1e5) return s+'₹'+(a/1e5).toFixed(1)+'L';
   if(a>=1e3) return s+'₹'+(a/1e3).toFixed(1)+'k'; return s+'₹'+inr.format(a); };
@@ -2038,7 +2073,7 @@ async function refresh(manual, fresh){
     render(manual); setStatus('Updated just now','');
     if (manual && (activeView==='spend' || activeView==='home')) loadExpenses(true);   // Overview shows the books too
   }catch(e){
-    setStatus('Offline · ' + (D ? 'showing '+ago(Date.now()-D.at) : 'no data'), 'err');
+    setStatus('Offline', 'err');
     if(manual) toast(e.message);
   }finally{
     loading=false; ptrSpin(false);
@@ -2162,8 +2197,7 @@ function renderHome(d){
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>${a.dayChange!=null
-        ? `<div class="s num money ${cls(a.dayChange)}">${fINR(Math.abs(a.dayChange))}${a.dayChangePct!=null
-          ? ` (${a.dayChangePct?`<span class="arrow">${a.dayChangePct>0?'▲':'▼'}</span>`:''}${fPct(Math.abs(a.dayChangePct),false)})` : ''}</div>` : ''}</div>
+        ? `<div class="s"><span class="pill sm dpill ${cls(a.dayChange)} num money">${fINRs(a.dayChange)}${a.dayChangePct!=null ? ' · ' + fPct(Math.abs(a.dayChangePct),false) : ''}</span></div>` : ''}</div>
     </div>`).join('') +
     (tot.value!=null ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(tot.value)}</span></div>` : '');
 
@@ -2189,7 +2223,7 @@ function renderHome(d){
   EL.banks.rows = cash ? shown : (nw.banks||[]).filter(b=>b.amount).map(b=>Object.assign({}, b, { formula:true }));
   const rbal = cash ? shown.reduce((a,r)=>a+(r.amount||0),0) : h.runningBalance;
   EL.banks.foot = rbal!=null && accFilt!=='card'          // no total for cards: dues and credit don't add up to anything useful
-    ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Running balance' : accFilt==='construction' ? 'Construction fund' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
+    ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Liquid' : accFilt==='construction' ? 'Construction fund' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
   renderEditList(EL.banks);
   // a live balance opens its account (set the actual balance there)
   $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
@@ -2210,7 +2244,22 @@ function renderHome(d){
   cons.items.forEach(it=>{ if (/^(indwallet|indmoney · c)$/i.test(it.name) && W.construction && !W.construction.formula) {
     it.wkey='construction'; it.wccy='USD'; it.usdVal = W.construction.amount ?? it.usd; it.src = W.construction; it.fx = fx; } });
   $('#consHead').hidden = $('#construction').hidden = true;      // shown under Accounts › Construction now
+  homeMonth();
 }
+// one row under the hero: what's left of this month's budget, and the next advance-tax instalment
+const IC_WALLET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12.5v3.5"/><path d="M3.5 7.5V18a2 2 0 0 0 2 2h14V8.5H6a2.5 2.5 0 0 1-2.5-1z"/><path d="M16 14.25h.01"/></svg>';
+function homeMonth(){
+  const el = $('#homeMonth'); if (!el) return;
+  const b = typeof rvBudget==='function' ? rvBudget() : null, Y = typeof taxYear==='function' ? taxYear() : null, n = Y && Y.advance && Y.advance.next;
+  const cv = '<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  const mon = new Date().toLocaleDateString('en-IN',{ month:'long' }), parts = [];
+  if (b) parts.push(`<button data-hm="budget"><span class="ic ${b.left<0?'ov':'bk'}">${IC_WALLET}</span><span class="tx"><div class="t">Budget</div><div class="m num money ${b.left<0?'down':''}">${fINR(Math.abs(b.left))} ${b.left<0?'over':'left'}</div></span>${cv}</button>`);
+  if (n && n.amount > 0) parts.push(`<button data-hm="tax"><span class="ic tx2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TAX_ICON}</svg></span><span class="tx"><div class="t">Tax due</div><div class="m num money">${fINR(n.amount)} · ${esc(dayLbl(n.date))}</div></span>${cv}</button>`);
+  el.innerHTML = parts.join('');
+  el.style.gridTemplateColumns = parts.length===1 ? '1fr' : '';
+  $$('#homeMonth [data-hm]').forEach(x=>x.onclick=()=> x.dataset.hm==='tax' ? pushPage({ kind:'tax' }) : show('spend','budget'));
+}
+
 // rows of the For Construction table: accounts live, the rest as the sheet has them
 function constrRows(nw){
   const items = (nw && nw.construction && nw.construction.items) || [], accs = xAccounts().filter(a=>accKind(a)==='construction' && !a.other);   // Halim · C is his money, not your earmark
@@ -2634,8 +2683,8 @@ function renderAssets(holdings, usdInr){
       // short side figures: dollars in K / M, rupees in K / L / Cr
       const dp2 = (n, d) => String(+n.toFixed(d));
       const km = v => { const x=Math.abs(v);
-        if (usdOut) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'K' : x.toFixed(0));
-        return '₹' + (x>=1e7 ? dp2(x/1e7,2)+'Cr' : x>=1e5 ? dp2(x/1e5, x>=1e6?1:2)+'L' : x>=1e3 ? dp2(x/1e3, x>=1e4?1:2)+'K' : x.toFixed(0)); };
+        if (usdOut) return '$' + (x>=1e9 ? dp2(x/1e9,2)+'B' : x>=1e6 ? dp2(x/1e6,2)+'M' : x>=1e3 ? dp2(x/1e3, x>=1e5?0:x>=1e4?1:2)+'k' : x.toFixed(0));
+        return '₹' + (x>=1e7 ? dp2(x/1e7,2)+'Cr' : x>=1e5 ? dp2(x/1e5, x>=1e6?1:2)+'L' : x>=1e3 ? dp2(x/1e3, x>=1e4?1:2)+'k' : x.toFixed(0)); };
       const skm = v => `${v<0?'−':v>0?'+':''}${km(v)}`;
       // the logs end at the last morning snapshot: add today's point from the holdings
       // as they stand, so the line ends where the card does (new buys included)
@@ -2712,21 +2761,13 @@ function renderAssets(holdings, usdInr){
     const day = h.day==null ? null
               : isUSD(h) ? (haveFx ? h.day / fx : null)      // to dollars; money() takes it back to ₹ in rupee mode
               : h.day;
-    return `<div class="hcard tap" data-t="${esc(h.ticker)}" data-q="${esc(qWords(h.ticker, h.category, CAT_LABEL[h.category], h.platform))}">
+    const val = (inv||0) + (ret||0);
+    return `<div class="hcard hc1 tap" data-t="${esc(h.ticker)}" data-q="${esc(qWords(h.ticker, h.category, CAT_LABEL[h.category], h.platform))}">
       <div class="hc-top">${tickerTile(h)}
         <div class="hc-name"><div class="n">${esc(h.ticker)}</div>
-          <div class="sub">${m2(h.ltp)}</div></div>
-        <div class="hc-stats">Avg. <b>${m2(h.avg)}</b><br>Qty. <b>${qtyf(h.qty)}</b></div>
-      </div>
-      <div class="hc-bot">
-        <div><div class="k">Invested</div>
-          <div class="vv" data-short="${esc(short(h)(inv))}"><span class="amt">${m(inv)}</span></div></div>
-        ${day==null ? '' : `<div class="mid">
-          <div class="k">Today</div>
-          <div class="vv ${cls(day)}" data-short="${esc(short(h)(Math.abs(day)))}"><span class="arrow">${day>=0?'▲':'▼'}</span><span class="amt">${m(Math.abs(day))}</span></div></div>`}
-        <div class="right">
-          <div class="k">Current P&amp;L ${p==null?'':`<span class="${cls(p)}">(<span class="arrow">${p>=0?'▲':'▼'}</span>${fPct(p,false)})</span>`}</div>
-          <div class="vv ${cls(ret)}" data-short="${esc(short(h)(Math.abs(ret)))}">${ret>=0?'+':'−'}<span class="amt">${m(Math.abs(ret))}</span></div></div>
+          <div class="sub">${day==null ? m2(h.ltp) : `<span class="${cls(day)}"><span class="arrow">${day>=0?'▲':'▼'}</span>${m(Math.abs(day))}</span> today`}</div></div>
+        <div class="hc-val"><div class="v num money">${m(val)}</div>
+          <div class="s num money ${cls(ret)}">${ret>=0?'+':'−'}${m(Math.abs(ret))}${p==null?'':` · ${fPct(Math.abs(p),false)}`}</div></div>
       </div>
     </div>`;
   }).join('') + (list.length
@@ -2841,17 +2882,15 @@ function renderBreakdown(bd, bk){
 }
 // the two cards under the overview card on Holdings: each opens its own page
 const IC_LAYERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>';
+const IC_TRADES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 4l-3 3M7 4l3 3"/><path d="M17 20V4M17 20l-3-3M17 20l3-3"/></svg>';
 const IC_BASKET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16l-1.5 12.5a2 2 0 0 1-2 1.5h-9a2 2 0 0 1-2-1.5z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 function holdEntry(bk){
   const el = $('#holdEntry'); if (!el) return;
-  const hs = ((bk&&bk.holdings)||[]).filter(h=>h.qty>1e-7), buckets = (bk&&bk.buckets)||[];
-  const plats = new Map(); hs.forEach(h=>{ const k = h.platform || '—'; plats.set(k, (plats.get(k)||0) + (h.value||0)); });
-  for (const ca of ((D && D.data && D.data.cryptoApps) || [])) if (![...plats.keys()].some(k=>platKey(k)===platKey(ca.name))) plats.set(ca.name, ca.current||0);
-  const pv = [...plats.values()].reduce((a,v)=>a+v,0), bv = buckets.reduce((a,b)=>a+(b.value||0),0);
-  const cv = '<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
-  el.innerHTML = `<button data-hl="platlist"><span class="ic pl">${IC_LAYERS}</span><span class="tx"><div class="t">Platforms</div><div class="m num money">${plats.size} · ${fCompact(pv)}</div></span>${cv}</button>
-    <button data-hl="bklist"><span class="ic bk">${IC_BASKET}</span><span class="tx"><div class="t">Buckets</div><div class="m num money">${buckets.length} · ${fCompact(bv)}</div></span>${cv}</button>`;
-  $$('#holdEntry [data-hl]').forEach(b=>b.onclick=()=>pushPage({ kind:b.dataset.hl }));
+  const cv = '<svg class="pcv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  const pill = (k, ic, cls, name) => `<button data-hl="${k}"><span class="pg"><span class="zico ${cls}">${ic}</span><b>${name}</b></span>${cv}</button>`;
+  el.className = 'lpills hpills';
+  el.innerHTML = pill('platlist', IC_LAYERS, 'iq', 'Platforms') + pill('bklist', IC_BASKET, '', 'Buckets') + pill('txn', IC_TRADES, 'trz', 'Trades');
+  $$('#holdEntry [data-hl]').forEach(b=>b.onclick=()=> b.dataset.hl==='txn' ? show('txn') : pushPage({ kind:b.dataset.hl }));
 }
 // each bucket opens its own page
 function renderBucketList(bk, sel){
@@ -3096,7 +3135,7 @@ function openSheet(t){
   f('fBucket').value=t?.bucket||''; f('fVolume').value=t?.volume??''; f('fPrice').value=t?.price??'';
   f('fAmount').value=t?.amount??''; f('fNotional').value=t?.notional??''; f('fDp').value=t?.dp??'';
   f('fFees').value=t?.fees??''; f('fRemark').value=t?.remark||'';
-  onCategory();
+  onCategory(); tradeMore(false); tradeTotal();
   $('#backdrop').hidden=false; $('#sheet').hidden=false;
   requestAnimationFrame(()=>{ $('#backdrop').classList.add('show'); $('#sheet').classList.add('show'); });
 }
@@ -3144,8 +3183,24 @@ function setOrder(v){ $$('#segOrder button').forEach(b=>b.classList.toggle('on',
 $$('#segOrder button').forEach(b=>b.onclick=()=>setOrder(b.dataset.v));
 function onCategory(){ $('#lblAmount').textContent = $('#fCategory').value==='US Stocks' ? 'Amount $' : 'Amount ₹'; }
 $('#fCategory').onchange = onCategory;
-$('#fTicker').oninput = ()=>{ const t=(D?.data.lists?.tickers||[]).find(x=>x.ticker===$('#fTicker').value.toUpperCase());
-  if(t&&t.category){ $('#fCategory').value=t.category; onCategory(); } };
+$('#fTicker').oninput = ()=>{ const tk = $('#fTicker').value.toUpperCase(), t=(D?.data.lists?.tickers||[]).find(x=>x.ticker===tk);
+  if(t&&t.category){ $('#fCategory').value=t.category; onCategory(); }
+  // the platform it was last traded on
+  const last = ((D && D.data && D.data.transactions) || []).find(x=>String(x.ticker).toUpperCase()===tk);
+  if (last && last.platform && [...$('#fPlatform').options].some(o=>o.value===last.platform)) $('#fPlatform').value = last.platform;
+  tradeTotal(); };
+// the line under the short form: quantity × price, and where it goes (the details live under More)
+function tradeTotal(){
+  const q = Number($('#fVolume').value)||0, p = Number($('#fPrice').value)||0, us = $('#fCategory').value==='US Stocks', cur = us ? '$' : '₹';
+  const amt = q*p, where = [$('#fPlatform').value, $('#fCategory').value, $('#fBucket').value].filter(Boolean).join(' · ');
+  $('#fAmount').placeholder = amt ? String(+amt.toFixed(4)) : 'auto';
+  $('#tTotal').innerHTML = (amt ? `<b class="num money">${cur}${amt.toLocaleString(us?'en-US':'en-IN',{maximumFractionDigits:2})}</b>` : '<b>Total</b>')
+    + (q && p ? ` <span>${+q} × ${cur}${+p}</span>` : '') + (where ? `<em>${esc(where)}</em>` : '');
+}
+['fVolume','fPrice'].forEach(id=>$('#'+id).addEventListener('input', tradeTotal));
+['fCategory','fPlatform','fBucket'].forEach(id=>$('#'+id).addEventListener('change', tradeTotal));
+function tradeMore(open){ $('#tMoreBox').hidden = !open; $('#tMore').setAttribute('aria-expanded', String(open)); $('#tMore').classList.toggle('on', open); }
+$('#tMore').onclick = ()=>tradeMore($('#tMoreBox').hidden);
 $('#btnClose').onclick = closeSheet;
 $('#backdrop').onclick = ()=>{ if ($('#xsheet').classList.contains('show')) closeXSheet(); else closeSheet(); };
 $('#fab').onclick = ()=> activeView==='spend' ? openXSheet(null, 'expense') : openSheet(null);
@@ -3460,6 +3515,7 @@ $('#btnSave').onclick = async ()=>{
       return;
     }
     // Stay on the form so nothing typed is lost, and say plainly what failed.
+    tradeMore(true);   // the problem may be in a field under More
     $('#formErr').innerHTML = '<b>Not saved.</b><br>' + esc(e.message);
     $('#formErr').hidden = false;
     $('#sheet').scrollTop = 0;
@@ -3518,7 +3574,7 @@ $('#btnDelete').onclick = async ()=>{
 /* ==========================================================================
    NAV
    ========================================================================== */
-const TITLES={home:'Overview',break:'Holdings',trend:'Net worth',spend:'Spend',txn:'Trades'};
+const TITLES={home:'Overview',break:'Holdings',trend:'Net worth',spend:'Spend',txn:'Trades',acc:'Accounts'};
 
 /* ---------- the navigation lens ---------- */
 // Positioned rather than toggled, so moving between tabs animates as one
@@ -3660,7 +3716,7 @@ addEventListener('scroll', ()=>{
 $$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go, b.dataset.sec));
 $('#goPlatforms').onclick = ()=>pushPage({ kind:'platlist' });
-$('#navBack').onclick = ()=>show('home');
+$('#navBack').onclick = ()=>show(activeView==='txn' ? 'break' : 'home');
 // A shorter list after a filter tap would pull the page up and move the filter
 // row; pad the bottom just enough to keep the scroll where it was. The pad goes
 // when you switch tabs.
@@ -3674,15 +3730,19 @@ function holdScroll(y){
 }
 function show(v, sec){
   if (SEL) selExit();
+  if (v==='acc'){ v = 'spend'; sec = 'accounts'; }                // the Accounts tab is Spend's accounts section, on its own
+  if (v==='spend' && sec!=='accounts' && activeView==='spend' && spSec==='accounts') activeView = 'acc';   // Accounts → Spend counts as a fresh open
   { const pad = $('#homePad'); if (pad) pad.style.height = '0px'; }
   const prevView = activeView; activeView=v;
-  const tabV = v==='trend' ? 'home' : v;                 // Trends opens from Overview, so Overview stays lit
+  const isAcc = v==='spend' && sec==='accounts';
+  const tabV = v==='trend' ? 'home' : v==='txn' ? 'break' : isAcc ? 'acc' : v;                 // Trends opens from Overview, so Overview stays lit
   $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===tabV));
   moveBlob(true);
-  $('#navBack').hidden = v!=='trend';
-  $('.nav').classList.toggle('inner', v==='trend');      // Trends looks like an inner page: back, centred title
+  $('#navBack').hidden = v!=='trend' && v!=='txn';
+  { const nb = $('#navBack'); if (nb && nb.lastChild) nb.lastChild.textContent = v==='txn' ? 'Holdings' : 'Overview'; }
+  $('.nav').classList.toggle('inner', v==='trend' || v==='txn');      // Trends looks like an inner page: back, centred title
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
-  $('#title').textContent=TITLES[v]; paintDate(); $('#fab').hidden = v!=='txn' && v!=='spend'; paintDfab();
+  $('#title').textContent=TITLES[isAcc ? 'acc' : v]; $('#spSeg').hidden = isAcc; paintDate(); $('#fab').hidden = (v!=='txn' && v!=='spend' && v!=='break') || isAcc; paintDfab();
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
   if (v==='break' && prevView!=='break') showHoldSec('assets');    // Holdings always opens on Assets
   if (v==='spend'){ spSec = sec || 'list'; if (prevView!=='spend'){ spMonth = ymNow(); setTimeout(pollDrafts, 400); } renderSpend();   // Spend always opens on Activity
@@ -3847,7 +3907,7 @@ function pushPage(p){
   pageStack.push(p);
   try{ history.pushState({ pg: pageStack.length }, ''); }catch(e){}
   const el = $('#page'), opening = el.hidden;
-  if (opening){ el.hidden = false; document.body.classList.add('paged'); }
+  if (opening){ el.hidden = false; document.body.classList.add('paged'); el.classList.toggle('modal', p.kind==='profile'); document.body.classList.toggle('pmodal', p.kind==='profile'); }
   el.style.transition = ''; el.style.transform = '';
   renderPage();
   el.scrollTop = 0;                       // after unhiding — a hidden element ignores it
@@ -3864,7 +3924,7 @@ function popPageNow(instant){
   const el = $('#page');
   el.style.transition = instant ? 'none' : ''; el.style.transform = '';
   if (pageStack.length){ renderPage(); el.scrollTop = 0; return; }
-  el.classList.remove('show'); document.body.classList.remove('paged');
+  el.classList.remove('show'); document.body.classList.remove('paged', 'pmodal');
   setTimeout(()=>{ if(!pageStack.length){ el.hidden = true; el.innerHTML = ''; } }, 300);
 }
 // In Safari the browser has its own back swipe (with its own animation); only the
@@ -3940,7 +4000,8 @@ function renderPage(){
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='tax' ? taxBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='recdetail' ? recDetailBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
-  $('#page').innerHTML = `<div class="pg-head">
+  const asSheet = p.kind==='profile' && pageStack.length===1;
+  $('#page').innerHTML = asSheet ? `<div class="pg-head sheethd"><div class="pg-title">Profile</div><button class="pg-done" id="pgBack">Done</button></div>` + body : `<div class="pg-head">
       <button class="pg-back" id="pgBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>${esc(back)}</span></button>
       <div class="pg-title">${esc(pageTitle(p))}</div>${p.kind==='recurring' ? '<button class="pg-add" id="pgAdd" aria-label="Add recurring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
         : p.kind==='recdetail' ? '<button class="pg-edit" id="pgEdit">Edit</button>'
@@ -4809,20 +4870,20 @@ function spMonthlyHtml(){
       <div class="l"><div class="n">Investment</div><div class="m">Not counted in spends</div></div><div class="r"><div class="v num money">${fINR2(cInv)}</div></div></div>` : '');
   const invRow = spIO==='exp' && cRows ? `<div class="sechead"><h2>Construction</h2>${invested>0 && cInv>0 ? `<span class="cnt num money">${fINR2(invested+cInv)}</span>` : ''}</div><div class="card tight">${cRows}</div>` : '';
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
-  const svg = ringsSvg(items, total, spIO==='exp' ? k=>catCol(k) : null);
+  const top = items[0].v;
   const rows = items.map(it=>{
-    const pct = Math.round(it.v/total*100);
+    const pct = Math.round(it.v/total*100), col = spIO==='exp' ? catCol(it.k) : 'var(--up)';
     const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : `class="row tap prow" data-icat="${esc(it.k)}" data-ymc="${ym}"`;
     // same tile as Activity / Budget: a category's own icon, or the income arrow
     return `<div ${tap}>${spIO==='exp' ? xTile(it.k) : moveTile('income')}
-      <div class="l"><div class="n">${esc(it.k)}</div><div class="m">${pct<1?'<1':pct}%</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
+      <div class="l"><div class="n">${esc(it.k)}</div><div class="tbar" style="--c:${col}"><i style="width:${Math.max(2, it.v/top*100).toFixed(1)}%"></i></div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div><div class="s">${pct<1?'<1':pct}%</div></div></div>`;
   }).join('');
   // a category whose refunds outweigh its spending nets below zero: it can't be
   // a slice, so it is listed under the others
   const negRows = spIO==='exp' ? Object.entries(src).filter(([,v])=>v<0).sort((a,b)=>a[1]-b[1]).map(([k,v])=>
     `<div class="row tap prow" data-xcat="${esc(k)}" data-ymc="${ym}">${xTile(k)}
       <div class="l"><div class="n">${esc(k)}</div><div class="m">Refunds more than spent</div></div><div class="r"><div class="v num money neg">−${fINR2(-v)}</div></div></div>`).join('') : '';
-  return tabs + `<div class="card piecard">${svg}</div><div class="card tight">${rows}${negRows}</div>` + invRow;
+  return tabs + `<div class="card tight mcbars">${rows}${negRows}</div>` + invRow;
 }
 
 function xRow(e, showCat){
@@ -4867,15 +4928,16 @@ const draftGone = new Set();
 const xDrafts = () => (((xd()||{}).drafts) || []).filter(d=>!draftGone.has(d.id));
 function paintDfab(){
   const b = $('#dfab'); if (!b) return;
-  const n = xDrafts().length, on = activeView==='spend' && n > 0;
+  const n = xDrafts().length, on = activeView==='spend' && !$('#spSeg').hidden && n > 0;
   b.hidden = !on; $('#dfabN').textContent = n > 9 ? '9+' : String(n);
   if (!on) closeDrafts();
 }
 function draftLine(d){
   const k = d.kind==='transfer' ? 'tr' : d.kind==='income' ? (d.type===XLIQ ? 'lq' : 'in') : 'ex';
-  const title = d.kind==='transfer' ? `${d.from||'?'} → ${d.to||'?'}` : (d.note || d.desc || d.source || d.payee || (d.kind==='income' ? 'Money in' : 'Payment'));
+  let title = d.kind==='transfer' ? `${d.from||'?'} → ${d.to||'?'}` : (d.note || d.desc || d.source || d.payee || (d.kind==='income' ? 'Money in' : 'Payment'));
   const meta = [d.kind==='transfer' ? (d.note || d.desc || d.payee) : d.account, fDate(d.date)].filter(Boolean).join(' · ');
   const up = d.kind==='income';
+  if (title === title.toUpperCase() && /[A-Z]{3}/.test(title)) title = title.toLowerCase().replace(/(^|[\s\-\/&.])([a-z])/g, (m,a,b)=>a+b.toUpperCase());
   return { k, title, meta, amt: (up?'+':'') + fINR2(d.amount), up };
 }
 const DX_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -4970,7 +5032,7 @@ function txRow(x){
     icon = moveTile('income'); title = e.source || e.desc || e.type || 'Income'; meta = [e.source || e.desc ? e.type : '', e.account, e.remark].filter(Boolean).join(' · ');
     amt = '+' + fINR2(e.amount); cls = 'up'; q = qWords(e.source, e.desc, e.type, e.account, e.remark, 'money in income');
   }
-  return `<button class="row trow" data-tx="${x.k}:${e.row}" data-q="${esc(q)}">${icon}<div class="l"><div class="n">${esc(title)}</div><div class="m">${badge}<span class="mt">${esc(meta)}</span></div></div>
+  return `<button class="row trow" data-tx="${x.k}:${e.row}" data-q="${esc(q)}">${icon}<div class="l"><div class="n">${esc(title)}</div><div class="m">${x.k==='ex' ? '' : badge}<span class="mt">${esc(meta)}</span></div></div>
     <div class="r"><div class="v num money ${cls}">${amt}</div></div></button>`;
 }
 function spListHtml(){
@@ -5177,6 +5239,8 @@ const accKind = a => /construction/i.test(a.type) ? 'construction' : /card|credi
 const xAccounts = () => ((xd()||{}).accounts||[]).filter(a=>a.active!==false);
 const accByName = n => xAccounts().find(a=>a.name===n);
 // every movement touching one account, signed from its point of view
+function agoDay(ds){ const n = Math.round((new Date(new Date().toLocaleDateString('en-CA')+'T00:00:00') - new Date(ds+'T00:00:00'))/864e5);
+  return n<=0 ? 'today' : n===1 ? 'yesterday' : n<7 ? n+'d ago' : esc(fDate(ds)); }
 function accMoves(name){
   const d = xd() || {}, a = accByName(name), from = a && a.openDate || '0000';
   const out = [];
@@ -5757,8 +5821,7 @@ function paintBooks(){
   const el = $('#books'), b = booksNow(), off = booksOff(b);
   const iv0 = b && b.inv, booksBad = off || !!(iv0 && Math.abs(iv0.gap||0) >= 1), bankBad = bankOffs().length > 0;
   const ziq = !!ziDue();      // a quarter's bank interest is waiting
-  const nav = $('.tabs button[data-v="spend"]'); if (nav) nav.classList.toggle('bkdot', booksBad || bankBad || ziq);
-  const segA = $('#spSeg [data-s="accounts"]'); if (segA) segA.classList.toggle('segdot', booksBad || bankBad || ziq);
+  const nav = $('.tabs button[data-v="acc"]'); if (nav) nav.classList.toggle('bkdot', booksBad || bankBad || ziq);
   if (!el) return;
   if (!b){ el.hidden = true; return; }
   el.hidden = false;
@@ -5880,7 +5943,7 @@ function accGroupsHtml(acc, only){
       const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
       const tick = '';   // a match says nothing: only a difference is shown
       return `<div class="row tap" data-acc="${esc(a.name)}">${accMark(a)}
-        <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? 'Last: '+esc(last.title)+' · '+esc(fDate(last.date)) : 'No activity yet'}</div>`}</div>
+        <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? `<span class="${last.amt>0?'up':''}">${last.amt>0?'+':'−'}${fINR(Math.abs(last.amt))}</span> · ${agoDay(last.date)}` : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
       ? `<div class="rowtotal num money"><span>Total</span><span>${fINR2(list.reduce((t,a)=>t+accBalance(a.name),0))}</span></div>`
@@ -6024,7 +6087,7 @@ function qOf(ds){ const y = +ds.slice(0,4), md = ds.slice(5); let q = (y-1) + '-
 const qNext = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===3 ? (y+1)+'-'+ZI_Q[0] : y+'-'+ZI_Q[i+1]; };
 const qPrev = q => { const y = +q.slice(0,4), i = ZI_Q.indexOf(q.slice(5)); return i===0 ? (y-1)+'-'+ZI_Q[3] : y+'-'+ZI_Q[i-1]; };
 const qFY = q => { const y = +q.slice(0,4), m = +q.slice(5,7), s = m<=3 ? y-1 : y; return 'FY ' + String(s).slice(2) + '–' + String(s+1).slice(2); };
-const fKL = v => { const a = Math.abs(v), t = x => x.toFixed(x < 10 ? 2 : 1).replace(/\.?0+$/,''); return (v<0?'−':'') + (a >= 1e5 ? '₹' + t(a/1e5) + 'L' : a >= 1e3 ? '₹' + t(a/1e3) + 'K' : '₹' + Math.round(a)); };
+const fKL = v => { const a = Math.abs(v), t = x => x.toFixed(x < 10 ? 2 : 1).replace(/\.?0+$/,''); return (v<0?'−':'') + (a >= 1e5 ? '₹' + t(a/1e5) + 'L' : a >= 1e3 ? '₹' + t(a/1e3) + 'k' : '₹' + Math.round(a)); };
 const fLakh = v => Math.abs(v) >= 1e5 ? '₹' + (v/1e5).toFixed(1).replace(/\.0$/,'') + 'L' : fINR(v);
 const ziBanks = () => { const z = ziD(); return z && z.interest && z.interest.banks || null; };
 const ziLabel = c => { const b = ziBanks(); return (b && b.label && b.label[c]) || c; };
@@ -6747,8 +6810,8 @@ function paintFlow(){
   const body = XLAYOUT==='a' ? xaBody() : `<div class="xform">${rows}</div>`;
   el.innerHTML = `<div class="grab"></div><div class="xhd"><h3>${esc(xTitle())}</h3><button data-close>Cancel</button></div>
     <div class="xscroll">${xModeSeg()}${xErrHtml()}${body}${xKiteToggle()}
-      <button class="btn" data-save>Save</button>${xEditing?`<button class="btn danger" data-del>Delete</button>`:''}
-      <p class="hint">${esc(xHint())}</p></div>${flowPanel()}`;
+      <button class="btn" data-save ${xField==='amount'?'hidden':''}>Save</button>${xEditing?`<button class="btn danger" data-del>Delete</button>`:''}
+      <p class="hint" ${xField==='amount'?'hidden':''}>${esc(xHint())}</p></div>${flowPanel()}`;
   wireCommon(el);
   $$('.xfr.tap', el).forEach(r=>r.onclick=()=>{ xField = xField===r.dataset.f ? null : r.dataset.f; xOpenCat=''; paintXSheet(); });
   $$('.xfr input', el).forEach(i=>i.addEventListener('focus', ()=>{ if (xField){ xField=null; const p=$('.xpanel', el); if (p) p.remove(); $$('.xfr.on', el).forEach(r=>r.classList.remove('on')); } }));
@@ -7186,6 +7249,8 @@ stampBuild();
 
 /* ---------- Profile — every setting in one place, laid out like iOS Settings ---------- */
 const PI = {
+  calc:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h3.5"/>',
+  half:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/>',
   swatch:'<circle cx="8" cy="9" r="3.2"/><circle cx="16" cy="9" r="3.2"/><circle cx="12" cy="15.5" r="3.2"/>',
   eye:'<path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c7 0 11 7 11 7a18 18 0 0 1-3.2 3.9M6.6 6.6C3.4 8.5 1 12 1 12s4 7 11 7a10.7 10.7 0 0 0 5.4-1.4"/>',
   face:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9v1M15 9v1M12 9v4h-1M9.5 16a3.5 3.5 0 0 0 5 0"/>',
@@ -7235,9 +7300,8 @@ function profileBody(){
     ${lockCfg ? row('timer','#ff9500','Lock', pick('lockAfter', PREF.lockAfter, LOCK_OPTS)) + row('lock','#007aff','Lock now', '', '', 'data-act="locknow"') : ''}
    </div>
 
-   <h3>Appearance</h3><div class="grp"><div class="themes">
-    ${[['light','l','Light'],['dark','d','Dark'],['auto','a','Automatic']].map(([v,k,l])=>`<button class="th" data-thm="${v}"><div class="mini ${k}"><span style="top:14px"></span><span style="top:30px;height:28px"></span><span style="top:64px"></span></div>${l}<span class="rad ${th===v?'on':''}"></span></button>`).join('')}
-   </div>
+   <h3>Appearance</h3><div class="grp">
+    ${row('half','#636366','Mode', `<span class="seg2">${[['light','Light'],['dark','Dark'],['auto','Auto']].map(([v,l])=>`<button data-thm="${v}" class="${th===v?'on':''}">${l}</button>`).join('')}</span>`)}
     ${row('swatch','#5856d6','Theme', pick('uiTheme', PREF.uiTheme || 'og', UI_THEMES), UI_THEMES.length > 1 ? '' : 'New concepts show up here once built')}</div>
 
    <h3>General</h3><div class="grp">
@@ -7254,16 +7318,13 @@ function profileBody(){
    </div>
 
    <h3>Data</h3><div class="grp">
-    ${row('sheet','#0f9d58','Google Sheet', `<span class="vl">${esc(host ? 'Connected' : '—')}</span>`)}
-    ${row('sync','#007aff','Refresh app data', '', 'Re-reads your sheets into the app', 'data-act="refresh"')}
-    ${row('sheet','#34c759','Refresh the sheet', sheetBusy ? '<span class="vl">Running…</span>' : '', '', 'data-act="refreshsheet"')}
-    ${row('dl','#5ac8fa','Export as CSV', `<span class="vl">${chv}</span>`, xd() ? 'Expenses, income and transfers' : 'Available once Spend has synced', 'data-act="export"')}
+    ${row('sheet','#0f9d58','Recalculate the sheet', `<span class="vl">${sheetBusy ? 'Running…' : esc(host ? 'Connected' : '—')}</span>`, 'Runs the nightly rebuild now', 'data-act="refreshsheet"')}
     ${row('trash','#8e8e93','Clear cached data', '', 'Keeps your sheet connection and settings', 'data-act="clear"')}
    </div>
 
    <h3>About</h3><div class="grp">
     ${row('info','#8e8e93','App', `<span class="vl">${esc(BUILD)}</span>`)}
-    ${row('info','#8e8e93','Script', `<span class="vl">${esc(scriptBuild || '—')}</span>`)}
+    ${scriptBuild ? row('info','#8e8e93','Script', `<span class="vl">${esc(scriptBuild)}</span>`) : ''}
    </div>
    <div class="grp danger"><button class="r" data-act="disconnect"><div class="lb">Disconnect sheet</div></button></div>
    <div class="ft ctr">Centric keeps your sheet URL and passcode only on this phone.</div>
