@@ -399,7 +399,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .taxreg .rg span{display:block;font-size:12px;color:var(--ink-2)}.taxreg .rg b{display:block;font:600 19px var(--font-disp);letter-spacing:-.4px;margin-top:3px}
 .taxreg .rg small{display:block;font-size:11.5px;color:var(--pc0);margin-top:2px}
 .taxnext{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline);font-size:13.5px;color:var(--ink-2)}
-.taxnext b{color:var(--ink)}.taxnext .pill{margin-left:auto}
+.taxnext b{color:var(--ink)}.taxnext .pill{margin-left:auto;flex:none;white-space:nowrap}
+.taxnext .tn-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.tot .n{font-weight:600}.row.tot .v{font-weight:700}
 .row.sub .n{color:var(--ink-2);font-weight:400}
 .taxin .row .l{flex:1;min-width:0}.taxin .row .r{max-width:45%;min-width:0}
@@ -1545,6 +1546,11 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* recurring-run banner on Spend: the reason sits under the title */
 .recerr .bk-t{white-space:normal;text-align:left}
 .recerr .recerr-m{display:block;margin-top:2px;font-size:12.5px;font-weight:400;color:var(--ink-3);white-space:normal}
+
+/* tax hero: last-updated line with a small recompute button */
+.taxre{flex:none;width:34px;height:34px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--sunken);color:var(--ink-2);cursor:pointer}
+.taxre svg{width:17px;height:17px}
+.taxre.spin svg{animation:spin .9s linear infinite}
 </style>
 </head>
 <body>
@@ -1735,7 +1741,7 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-10-31zzz';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4543,8 +4549,9 @@ function monthIncome(ym){
 // Tinted fill with a coloured edge, like the icon tiles. Every item gets a colour
 // (it.col) so the list below can match it.
 const tintOf = c => `color-mix(in srgb, ${c} 18%, transparent)`;
-function ringsSvg(items, total){
-  items.forEach((it,i)=>{ it.col = pieCol(i); });
+// colorOf: an expense ring takes its category's own hue, so ring, tile and Activity icon all match
+function ringsSvg(items, total, colorOf){
+  items.forEach((it,i)=>{ it.col = colorOf ? colorOf(it.k, i) : pieCol(i); });
   const top = items.slice(0,6), W = 361, R0 = 114, step = 17, sw = 12, cx = W/2, cy = R0+8, H = cy + R0 + 8, SPAN = 1.5*Math.PI, a0 = -Math.PI/2;
   const P = (r,a) => (cx + r*Math.cos(a)).toFixed(1) + ',' + (cy + r*Math.sin(a)).toFixed(1);
   const arcD = (r,a1) => `M${P(r,a0)}A${r},${r} 0 ${a1-a0>Math.PI?1:0} 1 ${P(r,a1)}`;
@@ -4578,11 +4585,12 @@ function spMonthlyHtml(){
       <div class="l"><div class="n">Investment</div><div class="m">Not counted in spends</div></div><div class="r"><div class="v num money">${fINR2(cInv)}</div></div></div>` : '');
   const invRow = spIO==='exp' && cRows ? `<div class="sechead"><h2>Construction</h2>${invested>0 && cInv>0 ? `<span class="cnt num money">${fINR2(invested+cInv)}</span>` : ''}</div><div class="card tight">${cRows}</div>` : '';
   if (!items.length) return tabs + `<div class="card"><div class="empty">${spIO==='inc'?'No income recorded':'Nothing spent'} in ${esc(ymLabel(ym))}</div></div>` + invRow;
-  const svg = ringsSvg(items, total);
+  const svg = ringsSvg(items, total, spIO==='exp' ? k=>catCol(k) : null);
   const rows = items.map(it=>{
     const pct = Math.round(it.v/total*100);
     const tap = spIO==='exp' ? `class="row tap prow" data-xcat="${esc(it.k)}" data-ymc="${ym}"` : `class="row tap prow" data-icat="${esc(it.k)}" data-ymc="${ym}"`;
-    return `<div ${tap}>${ringTile(it.k, it.col)}
+    // same tile as Activity / Budget: a category's own icon, or the income arrow
+    return `<div ${tap}>${spIO==='exp' ? xTile(it.k) : moveTile('income')}
       <div class="l"><div class="n">${esc(it.k)}</div><div class="m">${pct<1?'<1':pct}%</div></div><div class="r"><div class="v num money">${fINR2(it.v)}</div></div></div>`;
   }).join('');
   // a category whose refunds outweigh its spending nets below zero: it can't be
@@ -5231,6 +5239,16 @@ function wireNps(p){
 const taxD = () => (D && D.data && D.data.tax && D.data.tax.years) ? D.data.tax : null;
 function taxYear(p){ const T = taxD(); if (!T) return null; const fy = (p && p.taxFy) || T.fy; return T.years[fy] || T.years[T.fy]; }
 // (fINRs: signed rupees, defined above)
+// "Updated today, 3:04 pm" — when the tax sheet was last rebuilt (nightly ~3 am, or from here)
+// a receipt with a % sign: the tax page's tile, and its row in Profile
+const TAX_ICON = '<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9.4 14.6l5.2-5.2"/><circle cx="9.7" cy="9.9" r="1.1"/><circle cx="14.3" cy="14.1" r="1.1"/>';
+function taxUpdated(T){
+  if (!T) return '';
+  if (!T.builtAt) return 'Updated ' + (T.built ? fDateY(T.built) : '—');
+  const d = new Date(T.builtAt), now = new Date(), t = d.toLocaleTimeString('en-IN', { hour:'numeric', minute:'2-digit' }).toLowerCase();
+  const day = d.toDateString()===now.toDateString() ? 'today' : d.toDateString()===new Date(now - 864e5).toDateString() ? 'yesterday' : d.getDate() + ' ' + d.toLocaleDateString('en-GB', { month:'short' });
+  return 'Updated ' + day + ', ' + t;
+}
 function taxBody(p){
   const T = taxD(); if (!T) return `<div class="pg-load">${D && D.data && D.data.tax && D.data.tax.error ? esc(D.data.tax.error) : 'Loading…'}</div>`;
   const Y = taxYear(p), R = Y.regimes[Y.chosen], o = Y.regimes[Y.chosen==='new' ? 'old' : 'new'], inc = Y.income, g = Y.gains, A = Y.advance;
@@ -5239,13 +5257,14 @@ function taxBody(p){
   const refund = R.balance < 0, live = String(Y.fy)===String(T.fy);
   const next = A && A.next ? A.next : null, days = next ? Math.ceil((new Date(next.date) - new Date(todayISO())) / 864e5) : null;
   const hero = `<div class="card pg-card pg-hero">
-      <div class="pg-id">${mark('TAX')}<div class="grow"><div class="t">${refund ? 'Refund due' : 'Balance to pay'}</div><div class="s">${esc(Y.label)} · ${Y.chosen==='new' ? 'New' : 'Old'} regime · return by ${esc(fDateY(Y.dueDate))}</div></div></div>
+      <div class="pg-id"><div class="tile cr">${S(TAX_ICON)}</div><div class="grow"><div class="t">${refund ? 'Refund due' : 'Balance to pay'}</div><div class="s">${esc(taxUpdated(T))}</div></div>
+        <button class="taxre" data-taxrebuild aria-label="Recompute tax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg></button></div>
       <div class="pg-big num money ${refund ? 'up' : ''}">${fINR2(Math.abs(R.balance))}</div>
       <div class="pg-sub num money"><span class="grp"><span class="k">Tax ${fINR(R.tax)} · paid ${fINR(R.credits)}${live ? ' so far' : ''}</span></span></div>
       <div class="spstats lcr"><div><span>Income</span><b class="num money">${fKL(R.normal)}</b></div>
         <div><span>Gains</span><b class="num money ${cls(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}">${fKL(g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto)}</b></div>
         <div><span>Tax</span><b class="num money">${fKL(R.tax)}</b></div></div>
-      ${next ? `<div class="taxnext"><span>Next instalment <b class="num money">${fINR(next.amount)}</b> by ${esc(fDateY(next.date))}</span><span class="pill sm ${days < 15 ? 'down' : ''}">${days <= 0 ? 'today' : days + ' days'}</span></div>`
+      ${next ? `<div class="taxnext"><span class="tn-t">Next instalment <b class="num money">${fINR(next.amount)}</b> by ${esc(next.date.slice(0,4)===todayISO().slice(0,4) ? fDateY(next.date).replace(/ \d{4}$/,'') : fDateY(next.date))}</span><span class="pill sm ${days < 15 ? 'down' : ''}">${days <= 0 ? 'today' : days===1 ? '1 day' : days + ' days'}</span></div>`
         : A && A.needed && live ? `<div class="taxnext"><span>Pay the balance with the return</span></div>` : ''}
     </div>`;
   const regime = `<div class="taxreg">${['new','old'].map(k=>{ const r = Y.regimes[k]; return `<div class="rg ${Y.chosen===k?'on':''}"><span>${k==='new' ? 'New regime' : 'Old regime'}</span><b class="num money">${fINR(r.tax)}</b>${Y.chosen===k ? '<small>Lower, used above</small>' : `<small style="color:var(--ink-3)">${fINRs(r.tax - R.tax)} more</small>`}</div>`; }).join('')}</div>`;
@@ -5263,7 +5282,7 @@ function taxTabs(p, Y){
     const presGross = R.presGross != null ? R.presGross : inc.freelance, presRate = R.presRate || 50;
     body = `<div class="cmhead taxsec" style="--sec:#4285f4"><h3><span class="taxdot"></span>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
       ${sal}${inc.epfTaxable ? row('EPF payout', fINR(inc.epfTaxable), 'Taxed as salary, service under 5 years') : ''}
-      ${R.std ? row('Standard deduction', neg(R.std), '', 'sub') : ''}${R.hra + R.pt ? row('HRA / professional tax', neg(R.hra + R.pt), '', 'sub') : ''}
+      ${R.std ? row('Standard deduction', neg(R.std), '', 'sub') : ''}${R.hra + R.pt + (R.ex||0) ? row('Exempt allowances / professional tax', neg(R.hra + R.pt + (R.ex||0)), R.ex ? 'Payslip exemptions (e.g. leave encashment)' : '', 'sub') : ''}
       ${prof}${presGross ? row('Deemed expenses', neg(presGross - R.freelance), '44ADA: ' + (100 - presRate) + '% of ' + fINR(presGross) + ', no other expense or standard deduction', 'sub') : ''}
       ${inc.interest ? row('Bank interest', fINR(inc.interest), 'Interests tab') : ''}
       ${inc.usDiv ? row('US dividends', fINR(inc.usDiv), '$' + inc.usDivUsd + ' gross · ' + fINR(inc.usTax) + ' withheld in the US') : ''}
@@ -5299,7 +5318,7 @@ function taxTabs(p, Y){
       ${inst.length ? inst.map(x=>`<div class="row"><div class="l"><div class="n">${esc(fDateY(x.date))} · ${x.pct}%</div><div class="m">${fINR(x.want)} due · ${fINR(x.paid)} paid by then</div></div><div class="r">${st(x)}</div></div>`).join('') : '<div class="empty">Under ₹10,000 after TDS, so no instalments</div>'}
       ${A && A.presumptiveShare ? row('44ADA share', fINR(A.presumptiveShare), 'On the consultancy income: due in one go by 15 Mar, not by the quarter', 'sub') : ''}
       ${A && A.interest234C ? row('Interest 234C (estimate)', fINR(A.interest234C), '1% a month on each shortfall') : ''}</div>
-      <div class="ft ctr" style="padding:14px 24px 0;color:var(--ink-3);font-size:12px">Computed ${esc(fDateY(taxD().built))} from your sheets · <a data-taxrebuild style="color:var(--pc0)">recompute now</a></div>`;
+`;
   }
   if (t==='s') body = taxInputs(p, Y);
   return seg + `<div class="tabbody">${body}</div>`;
@@ -5327,7 +5346,7 @@ function wireTax(p){
   $$('#page [data-taxt]').forEach(b=>b.onclick=()=>{ p.taxTab = b.dataset.taxt; again(); });
   const pay = $('#page [data-taxpay]'); if (pay) pay.onclick = ()=>{ const Y = taxYear(p), n = Y && Y.advance && Y.advance.next; openXSheet(null, 'expense', { category:'Bills/Utility', sub:'Taxes', note:'Advance tax', amount: n ? Math.round(n.amount) : undefined }); };
   $$('#page [data-taxset]').forEach(b=>b.onclick=async ()=>{ const k = b.dataset.taxset, T = taxD(), s = T && T.settings && T.settings[k]; const v = prompt((s && s.help) || k, s ? String(s.value) : ''); if (v === null) return; toast('Saving…'); try{ const r = await apiPost('taxSet', { key:k, value:v }); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Recomputed'); }catch(e){ toast(e.message || 'Could not save'); } });
-  const rb = $('#page [data-taxrebuild]'); if (rb) rb.onclick = async ()=>{ toast('Recomputing…'); try{ const r = await apiPost('taxBuild', {}); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Tax recomputed'); }catch(e){ toast(e.message || 'Could not recompute'); } };
+  const rb = $('#page [data-taxrebuild]'); if (rb) rb.onclick = async ()=>{ if (rb.classList.contains('spin')) return; rb.classList.add('spin'); toast('Recomputing…'); try{ const r = await apiPost('taxBuild', {}); if (r && r.years && D && D.data){ D.data.tax = r; save(LS.data, D); } again(); toast('Tax recomputed'); }catch(e){ rb.classList.remove('spin'); toast(e.message || 'Could not recompute'); } };
 }
 // Contributions | Interest | Withdrawals under the overview; each tab has its title with + Add beside it
 const EPF_TABS = [['c','Contributions','data-epfc'],['i','Interest','data-epfi'],['w','Withdrawals','data-epfw']];
@@ -6960,7 +6979,7 @@ const PI = {
   dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   repeat:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
-  tax:'<path d="M5 4h14v16H5z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>'
+  tax:'<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9.4 14.6l5.2-5.2"/><circle cx="9.7" cy="9.9" r="1.1"/><circle cx="14.3" cy="14.1" r="1.1"/>'
 };
 const LOCK_OPTS = [[0,'Immediately'],[60000,'After 1 minute'],[300000,'After 5 minutes'],[900000,'After 15 minutes']];
 function profileBody(){
