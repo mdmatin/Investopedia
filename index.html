@@ -192,7 +192,8 @@ main{padding:0}
 .tile.ep{--tile:#fbe9e7;--tileink:#b4361f}   /* EPF                       */
 .tile.bk{--tile:#e9f1ee;--tileink:#2d6b5c}   /* wallets, bank balances    */
 .tile.bu{--tile:#eef0f4;--tileink:#4a5568}   /* anything unknown */
-.tile.pk{--tile:#fdeaf0;--tileink:#b8326a}   /* buckets: one more colour */
+.tile.pk{--tile:#fdeaf0;--tileink:#b8326a}
+.tile.mg{--tile:#fbe8f6;--tileink:#a3297d}.tile.lm{--tile:#eef6dc;--tileink:#527608}.tile.br{--tile:#f6ede5;--tileink:#8a5530}   /* buckets: one more colour */
 /* buy / sell reads as a letter on the meta line instead of a corner dot, so the
    tile is left to the logo and the side is legible rather than colour-coded */
 /* the chip is a flex child so it centres on the text's optical middle rather
@@ -510,8 +511,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .iotabs button.on{color:var(--ink);border-bottom-color:var(--blue)}   /* the app's selection colour */
 .piecard{padding:10px 0}
 .pie{display:block;width:100%;height:auto}
-:root{--pc0:#2e84ea;--pc1:#6967d0;--pc2:#50b0da;--pc3:#50bd6c;--pc4:#f09a28;--pc5:#ec5070;--pc6:#a867d1;--pc7:#ecc62d;--pc8:#30bdb6;--pc9:#e85349;--pc10:#a58a6c;--pc11:#94949a}   /* system hues, softened halfway */
-html[data-theme=dark]{--pc0:#328aea;--pc1:#6c6ad8;--pc2:#6ac2e7;--pc3:#4ec26c;--pc4:#f0a02d;--pc5:#ec5574;--pc6:#b06bdb;--pc7:#ecca32;--pc8:#62c4be;--pc9:#e8584e;--pc10:#aa8f71;--pc11:#94949a}
+:root{--pc0:#2e84ea;--pc1:#6967d0;--pc2:#50b0da;--pc3:#50bd6c;--pc4:#f09a28;--pc5:#ec5070;--pc6:#a867d1;--pc7:#ecc62d;--pc8:#30bdb6;--pc9:#e85349;--pc10:#a58a6c;--pc11:#94949a;--pc12:#d652a8;--pc13:#8cbf3a;--pc14:#b97d4f;--pc15:#7f8ca3}   /* system hues, softened halfway */
+html[data-theme=dark]{--pc0:#328aea;--pc1:#6c6ad8;--pc2:#6ac2e7;--pc3:#4ec26c;--pc4:#f0a02d;--pc5:#ec5574;--pc6:#b06bdb;--pc7:#ecca32;--pc8:#62c4be;--pc9:#e8584e;--pc10:#aa8f71;--pc11:#94949a;--pc12:#e070bd;--pc13:#a2cf55;--pc14:#c99064;--pc15:#9aa6bb}
 .pie .pl{font-size:11.5px;font-weight:500;fill:var(--ink)}
 .pie .pp{font-size:10.5px;fill:var(--ink-3)}
 .pie.rings .rl{font-size:11px;font-weight:600;letter-spacing:-.1px;font-variant-numeric:tabular-nums}
@@ -960,6 +961,7 @@ html[data-theme=dark] .tile.ep{--tile:rgba(255,105,80,.18);--tileink:#ff8a73}
 html[data-theme=dark] .tile.bk{--tile:rgba(48,176,140,.18);--tileink:#63d1b0}
 html[data-theme=dark] .tile.bu{--tile:#2c2c2e;--tileink:#aeb4c2}
 html[data-theme=dark] .tile.pk{--tile:rgba(255,55,95,.18);--tileink:#ff7a9a}
+html[data-theme=dark] .tile.mg{--tile:rgba(225,70,180,.18);--tileink:#f08ad0}html[data-theme=dark] .tile.lm{--tile:rgba(160,210,60,.16);--tileink:#b5dc6a}html[data-theme=dark] .tile.br{--tile:rgba(190,130,80,.18);--tileink:#d9a479}
 html[data-theme=dark] .mb i{opacity:.45}
 html[data-theme=dark] .mb.on i{opacity:1}
 html[data-theme=dark] .mbline{border-top-color:rgba(255,255,255,.3)}
@@ -1983,7 +1985,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-01v';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4618,9 +4620,9 @@ const xEntries = ym => ((xd()||{}).entries||[]).filter(e=>e.date.slice(0,7)===ym
 
 /* ---------- look ---------- */
 const XI = {
-  food:   'M7 3v7a2 2 0 0 0 2 2v9M5 3v5a2 2 0 0 0 2 2M9 3v5a2 2 0 0 1-2 2M17 3c-2.2 1.6-3 4-3 6.5 0 1.7 1.3 2.5 3 2.5v9',
+  food:   'M7 3v18M4.6 3v4.6a2.4 2.4 0 0 0 4.8 0V3M17.5 21V3c-2.4 1.3-3.5 4-3.5 7.3 0 1.2.8 2 2 2h1.5',
   home:   'M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z',
-  car:    'M5 16.5h14M5.5 16.5l1.7-5a2 2 0 0 1 1.9-1.4h5.8a2 2 0 0 1 1.9 1.4l1.7 5M5 16.5V19M19 16.5V19M8 13.5h.01M16 13.5h.01',
+  car:    'M5.6 16.5H3.8a.8.8 0 0 1-.8-.8v-2.6a1.6 1.6 0 0 1 1.1-1.5l2.4-.8 2-2.9a2 2 0 0 1 1.6-.9h4.2a2 2 0 0 1 1.5.7l2.5 3 2.4.6a1.6 1.6 0 0 1 1.3 1.6v2.2a.8.8 0 0 1-.8.8h-1.8M9.4 16.5h5.2M7.5 18.4a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM16.5 18.4a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM6.5 11.4h12',
   bag:    'M5.5 8h13l-1 12.5h-11zM9 8V6.5a3 3 0 0 1 6 0V8',
   invest: 'M3 17l6-6 4 4 8-8M14 7h7v7',
   health: 'M12 20.5s-7.5-4.5-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.7-7.5 10.2-7.5 10.2zM12 10.5v5M9.5 13h5',
@@ -4629,18 +4631,19 @@ const XI = {
   tag:    'M3.6 12.2V4.4h7.8l9 9-7.8 7.8zM8 7.5a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z',
   bolt:   'M13 2.5 4.5 14h7l-1 7.5 8.5-11.5h-7z',
   tv:     'M3 6h18v11.5H3zM8 21h8M12 17.5V21',
-  trip:   'M4 8h16v12H4zM9 8V5h6v3M4 13h16',
+  trip:   'M3 19.5 9 10l4 6 2.5-3.5 5.5 7zM16.5 4.5a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z',
   rent:   'M5 21V5.5L12 3l7 2.5V21M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4',
   leaf:   'M12 21v-8.5M12 12.5c0-4.4 3-7.5 8-7.5 0 5-3 7.5-8 7.5zM12 15c0-3-2.2-5-6.5-5 0 3.8 2.2 5 6.5 5z',
   build:  'M5 5h14a1.6 1.6 0 0 1 1.6 1.6v10.8A1.6 1.6 0 0 1 19 19H5a1.6 1.6 0 0 1-1.6-1.6V6.6A1.6 1.6 0 0 1 5 5zM3.4 9.7h17.2M3.4 14.3h17.2M9 5v4.7M15 5v4.7M12 9.7v4.6M6.6 14.3V19M17.4 14.3V19',
   more:   'M6 12h.01M12 12h.01M18 12h.01'
 };
+// every category its own colour (no two share one)
 const XMAP = [[/^others?$|misc/i,'tag','bk'],[/gift/i,'gift','pk'],[/food|eat|grocer/i,'food','mf'],[/house|home/i,'home','in'],[/transport|fuel|petrol|cab/i,'car','us'],
-  [/shop/i,'bag','cr'],[/invest/i,'invest','rt'],[/health|medic/i,'health','lq'],[/donat|zakat|charity/i,'hand','gd'],
-  [/bill|util/i,'bolt','gd'],[/ott|subscri|stream/i,'tv','cr'],[/travel|trip/i,'trip','us'],[/rent/i,'rent','bu'],
-  [/sip|mom/i,'leaf','in'],[/construct/i,'build','mf']];
+  [/shop/i,'bag','cr'],[/invest/i,'invest','rt'],[/health|medic/i,'health','ep'],[/donat|zakat|charity/i,'hand','bk'],
+  [/bill|util/i,'bolt','gd'],[/ott|subscri|stream/i,'tv','mg'],[/travel|trip/i,'trip','lq'],[/rent/i,'rent','bu'],
+  [/sip|mom/i,'leaf','lm'],[/construct/i,'build','br']];
 // the system hue that goes with a category's icon tile, so its bar matches its icon
-const TILE_PC = { us:0, rt:1, lq:2, in:3, mf:4, pk:5, cr:6, gd:7, bk:8, ep:9, bu:10, ch:11 };
+const TILE_PC = { us:0, rt:1, lq:2, in:3, mf:4, pk:5, cr:6, gd:7, bk:8, ep:9, bu:15, ch:11, mg:12, lm:13, br:14 };
 const catCol = cat => { const m = XMAP.find(([re])=>re.test(cat||'')) || [0,'more','ch']; return `var(--pc${TILE_PC[m[2]]})`; };
 function xTile(cat){
   const m = XMAP.find(([re])=>re.test(cat||'')) || [0,'more','ch'];
