@@ -1985,7 +1985,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-01z';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-02a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4399,7 +4399,7 @@ function platformBody(name){
       <div class="pg-id">${logoMark(name, null, iconFor(cats[0]||''))}
         <div class="grow"><div class="t">${esc(name)}</div><div class="s">${cats.map(c=>esc(CAT_LABEL[c]||c)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div>
         ${chartToggle(top0.showChart)}</div>
-      ${canEdit ? `<button class="pg-big pg-edit num money" data-vedit aria-label="Edit current value">${bigAmt(fINR(val))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>` : `<div class="pg-big num money">${bigAmt(fINR(val))}</div>`}
+      ${canEdit ? `<button class="pg-big pg-edit num money" data-vedit aria-label="Edit current value">${bigAmt(fINR2(val))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>` : `<div class="pg-big num money">${bigAmt(fINR2(val))}</div>`}
       ${canEdit && top0.editVal ? `<div class="ed pg-ed">
         <div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${ca.current ?? 0}" aria-label="${esc(name)} current value"></div>
         <div class="hint">Saved to the Crypto tab · ${esc(ca.name)} current value</div>
@@ -4504,7 +4504,7 @@ function bucketBody(name){
       <div class="pg-id">${bucketMark(name, bi)}
         <div class="grow"><div class="t">${esc(name)}</div><div class="s">${cats.map(x=>esc(CAT_LABEL[x]||x)).join(', ')||'—'} · ${rows.length} holding${rows.length===1?'':'s'}</div></div>
         ${chartToggle(top.showChart)}</div>
-      <div class="pg-big num money">${bigAmt(fINR(val))}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(val))}</div>
       ${anyDay ? `<div class="pg-sub num money"><span class="grp">${arrowAmt(day, fINR)}${dayPct!=null?` <span class="${cls(dayPct)}">(${fPct(Math.abs(dayPct),false)})</span>`:''} <span class="k">today</span></span></div>` : ''}
       ${histInner('B:'+name, top.showChart)}
     </div>`;
@@ -6394,7 +6394,7 @@ function ziPageBody(p){
     const Z = n.Z, c = n.cur, frozen = Z.years.filter(y=>!y.live).slice().reverse(), start = fDate(Z.start);
     h += `<div class="card pg-card pg-hero">
       <div class="pg-id"><span class="zico">${MOON_IC}</span><div class="grow"><div class="t">Zakat</div><div class="s">${(Z.rate*100).toFixed(1).replace(/\.0$/,'')}% of net worth · every 1 Jan</div></div></div>
-      <div class="pg-big num money">${bigAmt(fINR(n.owing ? c.left : c.due))}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(n.owing ? c.left : c.due))}</div>
       <div class="pg-sub"><span class="k">${n.owing ? `left of ${fINR(c.due)} for 1 Jan ${n.yr}` : `estimated for 1 Jan ${n.yr} · in ${n.days} day${n.days===1?'':'s'}`}</span></div>
       <div class="spstats lcr"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span><b class="num money">${fINR(n.owing ? c.base : Z.nw)}</b></div>
         <div><span>Paid</span><b class="num money ${c.paid>0?'up':''}">${fINR(c.paid)}</b></div><div><span>To pay</span><b class="num money">${fINR(Math.max(0, c.left))}</b></div></div></div>
@@ -6413,7 +6413,7 @@ function ziPageBody(p){
     const b = I.banks || { cols:[], rows:[] }, per = b.cols.map(c=>[c, b.rows.reduce((s,r)=>s+(r.v[c]||0),0)]);
     h += `<div class="card pg-card pg-hero">
       <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">${I.left < 0 ? esc(fINR(-I.left)) + ' given ahead' : 'To purify'}</div></div></div>
-      <div class="pg-big num money">${bigAmt(fINR(Math.max(0, I.left)))}</div>
+      <div class="pg-big num money">${bigAmt(fINR2(Math.max(0, I.left)))}</div>
       <div class="spstats lcr"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
     <div class="card tight zsrc">${row('Banks', b.cols.length + ' accounts · from the quarterly entries', fINR(I.sources.banks))}
       <div class="zbk">${per.map(([c,v])=>`<div class="hrow"><span>${esc(ziLabel(c))}</span><b class="num money">${fINR(v)}</b></div>`).join('')}</div>
