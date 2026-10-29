@@ -96,13 +96,14 @@ button:active{transform:scale(.97)}
 .dot.stale{background:var(--ink-3)} .dot.err{background:var(--down)}
 .nav .dot.err{padding:0;margin:0;border-radius:50%;width:6px;height:6px;font-size:0}
 .navbtns{display:flex;gap:18px;color:var(--blue);padding-bottom:4px;align-self:center}
-.nav[data-v=home]:not(.mini) .navl:has(.wbub:not([hidden])){display:grid;grid-template-columns:auto 1fr;column-gap:11px;align-items:center}
-.nav[data-v=home]:not(.mini) .navl:has(.wbub:not([hidden])) h1{align-self:end}
-.nav[data-v=home]:not(.mini) .navl:has(.wbub:not([hidden])) .sub{align-self:start}
-.nav[data-v=home]:not(.mini):has(.wbub:not([hidden])){align-items:center}
-.wbub{display:none;grid-row:1/span 2;width:46px;height:46px;border-radius:50%;padding:2.5px;border:0;cursor:pointer;background:var(--hairline);position:relative;align-self:center}
-.nav[data-v=home]:not(.mini) .wbub:not([hidden]){display:block}
-.wbub .wbl{width:100%;height:100%;border-radius:50%;display:block;border:2.5px solid var(--parchment,#f5f5f7);box-sizing:border-box}
+.nav[data-v=home] .navl:has(.wbub:not([hidden])){display:grid;grid-template-columns:auto 1fr;column-gap:calc(11px * (1 - var(--p,0)));align-items:center}
+.nav[data-v=home] .navl:has(.wbub:not([hidden])) h1{align-self:end}
+.nav[data-v=home] .navl:has(.wbub:not([hidden])) .sub{align-self:start}
+.nav[data-v=home]:has(.wbub:not([hidden])){align-items:center}
+.wbub{display:none;grid-row:1/span 2;width:calc(46px * (1 - var(--p,0)));height:calc(46px * (1 - var(--p,0)));opacity:calc(1 - var(--p,0));border-radius:50%;padding:calc(2.5px * (1 - var(--p,0)));border:0;cursor:pointer;background:var(--hairline);position:relative;align-self:center}
+.nav[data-v=home] .wbub:not([hidden]){display:block}
+.nav.mini .wbub{visibility:hidden}
+.wbub .wbl{width:100%;height:100%;border-radius:50%;display:block;border:calc(2.5px * (1 - var(--p,0))) solid var(--parchment,#f5f5f7);box-sizing:border-box}
 .wbub .wbbg{fill:#e3eefc}.wbub .wbc{stroke:#0b1b33}.wbub .wbd{fill:#2f7cf6}
 html[data-theme=dark] .wbub .wbbg{fill:#16294a}html[data-theme=dark] .wbub .wbc{stroke:#cfe0ff}html[data-theme=dark] .wbub .wbd{fill:#60a5fa}
 .wbub.new{background:var(--blue)}
@@ -124,31 +125,22 @@ html[data-theme=dark] .wbub .wbbg{fill:#16294a}html[data-theme=dark] .wbub .wbc{
 .mk i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block}
 .mk i.on{background:var(--up)}
 /* scrolled: the large title folds into a small centred one, like iOS */
-.nav h1,.nav .eyebrow,.nav .sub{transition:font-size .2s,opacity .2s}
-.nav.mini{padding-bottom:9px;box-shadow:0 1px 0 rgba(0,0,0,.06)}
-.nav.mini .navl{flex:1;text-align:center;padding-left:34px}
-.nav.mini h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
-.nav.mini .eyebrow,.nav.mini .sub{display:none}
-.nav.mini .navbtns .avatar{width:30px;height:30px}
-.nav.mini .navbtns .avatar svg{width:18px;height:18px}
+.nav.mini{box-shadow:0 1px 0 rgba(0,0,0,.06)}
+/* scrolling folds the large title into the centre continuously: --p goes 0 → 1 over the first
+   44px of scroll (set from JS), the title slides to the middle and shrinks, the status line
+   and the logo bubble shrink away — no class switch, so nothing jumps */
+.nav:not(.inner) h1{width:fit-content;transform-origin:0 50%;transform:translateX(var(--tx,0px)) scale(calc(1 - .15 * var(--p,0)));will-change:transform}
+.nav:not(.inner) .sub,.nav:not(.inner) .eyebrow{max-height:calc((1 - var(--p,0)) * 20px);opacity:calc(1 - 1.6 * var(--p,0));overflow:hidden}
+.nav:not(.inner) .navbtns .avatar{transform:scale(calc(1 - .12 * var(--p,0)))}
+.nav{padding-bottom:calc(10px - var(--p,0) * 1px)}
 .navbtns button{width:24px;height:24px;display:grid;place-items:center}
 .navbtns svg{width:20px;height:20px}
 .spin svg{animation:spin 1s linear infinite}
-#ptr{position:fixed;left:50%;top:env(safe-area-inset-top);z-index:60;width:120px;height:170px;margin-left:-60px;pointer-events:none;opacity:0;transition:opacity .2s ease}
-#ptr svg,#ptr.spin svg{display:block;overflow:visible;animation:none}
-#ptr .gd{fill:var(--blue)}
-#ptr .gd{opacity:.55;transition:opacity .15s}#ptr.armed .gd{opacity:.9}
-#ptr .gb{position:absolute;left:60px;top:0;width:0;height:0;border-radius:50%;background:var(--blue);display:grid;place-items:center;transform:translate(-50%,-50%)}
-#ptr .gbt{color:#fff;font:800 17px/1 var(--font-disp,system-ui);display:inline-block}
-#ptr .gs1,#ptr .gs2{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--blue);opacity:0}
-#ptr.spin .gb{animation:gBob 1s ease-in-out infinite}
-#ptr.spin .gbt{animation:gSpin 1.2s ease-in-out infinite}
-#ptr.spin .gs1{animation:gDrop 1.1s ease-out infinite}#ptr.spin .gs2{animation:gDrop 1.1s ease-out .45s infinite}
-@keyframes gBob{0%,100%{transform:translate(-50%,-50%) scale(1,1)}50%{transform:translate(-50%,calc(-50% + 5px)) scale(1.07,.93)}}
-@keyframes gSpin{0%,100%{transform:scaleX(1)}25%{transform:scaleX(.08)}50%{transform:scaleX(-1)}75%{transform:scaleX(.08)}}
-@keyframes gDrop{0%{opacity:.7;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
-#ptr.gone .gb{transition:transform .3s ease,opacity .3s ease;transform:translate(-50%,-120%) scale(.4);opacity:0}
-@media (prefers-reduced-motion:reduce){#ptr .gb,#ptr .gbt,#ptr .gs1,#ptr .gs2{animation:none!important}}
+#ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);z-index:60;width:38px;height:38px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;
+  color:var(--ink-3);opacity:0;transform:translate(-50%,-56px);pointer-events:none}
+#ptr svg{width:20px;height:20px}
+#ptr.armed,#ptr.spin{color:var(--blue)}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- structure ---------- */
@@ -983,6 +975,7 @@ html[data-theme=dark]{
 }
 html[data-theme=dark] body{background:var(--parchment);color:var(--ink)}
 html[data-theme=dark] .nav{background:rgba(0,0,0,.72)}
+html[data-theme=dark] #ptr{background:#2c2c2e}
 html[data-theme=dark] .nav.mini{box-shadow:0 1px 0 rgba(255,255,255,.08)}
 html[data-theme=dark] .pg-head{background:rgba(0,0,0,.78)}
 html[data-theme=dark] .navbtns .avatar{background:rgba(58,58,60,.8);box-shadow:0 1px 4px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.1)}
@@ -1844,9 +1837,9 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 .wrapov[data-bg=g4]{background:linear-gradient(160deg,#f7971e,#d4145a)}
 .wrapov[data-bg=g5]{background:linear-gradient(160deg,#11998e,#38ef7d)}
 .wrapov[data-bg=g6]{background:linear-gradient(160deg,#4a00e0,#8e2de2 50%,#ff6a88)}
-.wbars{display:flex;gap:4px;padding:calc(env(safe-area-inset-top) + 12px) 12px 0}
+.wbars{position:relative;z-index:4;display:flex;gap:4px;padding:calc(env(safe-area-inset-top) + 12px) 12px 0}
 .wbars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}.wbars b{display:block;height:100%;width:0;background:#fff}
-.wclose{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 22px);background:none;border:0;color:#fff;font-size:30px;line-height:1;padding:4px 8px;cursor:pointer}
+.wclose{z-index:5;position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 22px);background:none;border:0;color:#fff;font-size:30px;line-height:1;padding:4px 8px;cursor:pointer}
 .wslide{flex:1;display:flex;align-items:center;padding:0 28px 60px}
 .win{animation:wUp .45s cubic-bezier(.2,.8,.2,1)}@keyframes wUp{from{opacity:0;transform:translateY(24px)}}
 .win .wk{font-size:17px;font-weight:600;opacity:.85;margin-bottom:10px}
@@ -1938,6 +1931,48 @@ html[data-theme=dark] .league .lgt.gold{color:#ffd60a}
 @keyframes wdraw{to{stroke-dashoffset:0}}@keyframes wpop{from{opacity:0;transform:scale(0)}to{opacity:1}}
 .wreplay{margin-top:30px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:999px;padding:9px 18px;font:600 14px/1 inherit;cursor:pointer;backdrop-filter:blur(6px)}
 @media (prefers-reduced-motion:reduce){.wblob,.wrain i,.win>*,.wcal i,.wrace i,.wline polyline{animation:none!important}.wrace i{width:var(--w)}.wline polyline{stroke-dashoffset:0}}
+.kxirr{all:unset;cursor:pointer;display:block;width:100%;text-align:right}.kxirr .k{display:flex;align-items:center;justify-content:flex-end;gap:2px}.kxirr .k svg{width:11px;height:11px;color:var(--ink-3)}
+.lgentry{margin:10px 16px 4px}.lgentry:empty{display:none}
+.lgentry button{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:11px 12px;cursor:pointer;font:inherit;color:var(--ink);text-align:left;background:linear-gradient(100deg,rgba(255,214,10,.16),var(--canvas) 55%)}
+.lgentry .lgcup{width:34px;height:34px;border-radius:10px;background:rgba(255,214,10,.22);display:grid;place-items:center;flex:0 0 auto}.lgentry .lgcup svg{width:20px;height:20px}
+.lgentry .tx{flex:1;min-width:0;display:flex;flex-direction:column}.lgentry b{font-size:15px;letter-spacing:-.2px}.lgentry small{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgentry .cv{width:14px;height:14px;color:var(--ink-3)}
+.lg .lghero{text-align:center;padding:18px 16px 16px;background:radial-gradient(120% 90% at 50% 0%,rgba(255,214,10,.2),var(--canvas) 70%)}
+.lg .lgh1{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a67c00}.lg .lgh1 svg{width:18px;height:18px}
+html[data-theme=dark] .lg .lgh1{color:#ffd60a}
+.lg .lgk{margin-top:10px;font-size:13px;color:var(--ink-2)}
+.lg .lgbig{font:700 40px/1.1 var(--font-disp,inherit);letter-spacing:-1.2px;margin-top:2px}
+.lg .lgsum{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.lg .lgsum i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}.lg .lgsum i.g{background:#ffc400}.lg .lgsum i.r{background:var(--down)}
+.lg .lgchips{display:flex;gap:6px;overflow-x:auto;margin:0 16px 12px;scrollbar-width:none}.lg .lgchips::-webkit-scrollbar{display:none}
+.lg .lgchips button{flex:0 0 auto;border:1px solid var(--card-edge);background:var(--canvas);color:var(--ink);border-radius:999px;padding:6px 13px;font:500 13px/1 inherit;cursor:pointer}
+.lg .lgchips button.on{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.lgpod{display:grid;grid-template-columns:1fr 1.12fr 1fr;align-items:end;gap:8px;margin:6px 16px 14px}
+.lgpod .pd{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:0}
+.lgpod .pdt{position:relative;margin-bottom:6px}.lgpod .pdt .tile{width:46px;height:46px;border-radius:14px}
+.lgpod .p1 .pdt .tile{width:56px;height:56px;border-radius:17px;box-shadow:0 0 0 3px #ffd60a}
+.lgpod .md{position:absolute;right:-7px;bottom:-6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--font-disp,inherit);font-style:normal;color:#fff;border:2px solid var(--canvas)}
+.lgpod .p1 .md{background:#e6b800}.lgpod .p2 .md{background:#a7adb7}.lgpod .p3 .md{background:#c9814a}
+.lgpod .pdn{font-size:13px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgpod .pdx{font-size:15px;font-weight:700;margin:1px 0 6px}
+.lgpod .pdb{width:100%;border-radius:12px 12px 4px 4px}
+.lgpod .p1 .pdb{height:74px;background:linear-gradient(180deg,rgba(255,214,10,.55),rgba(255,214,10,.12))}
+.lgpod .p2 .pdb{height:52px;background:linear-gradient(180deg,rgba(167,173,183,.5),rgba(167,173,183,.1))}
+.lgpod .p3 .pdb{height:38px;background:linear-gradient(180deg,rgba(201,129,74,.5),rgba(201,129,74,.1))}
+.lgtable,.lgbench{margin-bottom:14px}
+.lgrow{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--hairline);background:none;padding:10px 14px;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.lgtable .lgrow:first-child,.lgbench .lgrow:first-child,.lgrel + .lgrow{border-top:0}
+.lgrow .rk{width:20px;text-align:center;font:700 14px/1 var(--font-disp,inherit);color:var(--ink-3)}
+.lgrow .tile{width:34px;height:34px;border-radius:10px;flex:0 0 auto}
+.lgrow .nm{flex:1;min-width:0;display:flex;flex-direction:column}.lgrow .nm b{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.lgrow .nm small{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgrow .xr{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:70px}.lgrow .xr b{font-size:15px;font-weight:600}
+.lgrow .bar{width:64px;height:4px;border-radius:2px;background:var(--sunken);overflow:hidden;display:block}.lgrow .bar em{display:block;height:100%;background:var(--up);border-radius:2px;margin-left:auto}.lgrow .bar.neg em{background:var(--down)}
+.lgrow.rel{background:linear-gradient(90deg,var(--down-bg),transparent 75%)}
+.lgrel{display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-top:1.5px dashed var(--down);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--down)}
+.lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
+.lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
+.lg .tabsw{margin-top:14px}
 .hstar{margin:0 16px 12px}.hstar:empty{display:none}
 .hstar button{display:flex;align-items:center;gap:12px;width:100%;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:11px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
 .hstar .badge{flex:0 0 auto;font:800 11px/1 var(--font-disp,inherit);letter-spacing:.6px;text-transform:uppercase;padding:8px 7px;border-radius:9px;transform:rotate(-6deg)}
@@ -1998,7 +2033,7 @@ html[data-theme=dark] .league .lgt.gold{color:#ffd60a}
     </div>
     <div class="menu" id="moreMenu" role="menu" hidden></div>
   </header>
-  <div id="ptr" aria-hidden="true"><svg viewBox="0 0 120 170" width="120" height="170"><path class="gd"/></svg><div class="gb"><span class="gbt">₹</span></div><i class="gs1"></i><i class="gs2"></i></div>
+  <div id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
 
   <main>
     <!-- OVERVIEW -->
@@ -2038,6 +2073,7 @@ html[data-theme=dark] .league .lgt.gold{color:#ffd60a}
         <div id="capWrap"></div>
         <div class="card asum" id="assetSum" hidden></div>
         <div class="lpills hpills" id="holdEntry"></div>
+        <div class="lgentry" id="lgEntry"></div>
         <div class="htools" id="holdTools"></div>
         <div class="search" id="assetSearch" hidden></div>
         <div class="card tight" id="assetList"></div>
@@ -2158,7 +2194,7 @@ html[data-theme=dark] .league .lgt.gold{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2297,7 +2333,18 @@ function paintDate(){
   el.textContent = '';                         // date line removed — the title stands alone
 }
 paintDate();
-window.addEventListener('scroll', ()=>{ const n=$('.nav'); if(n) n.classList.toggle('mini', window.scrollY > 44); }, { passive:true });
+// the title fold, driven by the scroll position itself (see the .nav CSS)
+let navRaf = 0;
+function navFold(){ navRaf = 0; const n = $('.nav'), h = $('#title'); if (!n || !h) return;
+  if (n.classList.contains('inner')){ n.style.removeProperty('--p'); n.style.removeProperty('--tx'); n.classList.remove('mini'); return; }
+  const p = Math.min(1, Math.max(0, window.scrollY / 44)), sc = 1 - .15 * p;
+  n.style.setProperty('--p', p.toFixed(3));
+  const tx = p * (n.clientWidth / 2 - h.offsetWidth * sc / 2 - h.offsetLeft);
+  n.style.setProperty('--tx', tx.toFixed(1) + 'px');
+  n.classList.toggle('mini', p >= 1);
+}
+window.addEventListener('scroll', ()=>{ if (!navRaf) navRaf = requestAnimationFrame(navFold); }, { passive:true });
+window.addEventListener('resize', ()=>{ if (!navRaf) navRaf = requestAnimationFrame(navFold); });
 // Background refreshes pause while a ticker or platform page is open, so the page
 // you're reading (and its chart) never redraws under you. Pull to refresh still works.
 const onDetail = () => typeof pageStack!=='undefined' && pageStack.length > 0;
@@ -2397,7 +2444,8 @@ function renderHome(d){
     ['Invested', fCompact(tot.invested), ''],
     ['Returns', fCompact(tot.currReturns), cls(tot.currReturns)],
     ['XIRR', fPct(tot.xirr,false), '']
-  ].map(([k,v,c])=>`<div><div class="k">${k}</div><div class="v num money ${c}">${v}</div></div>`).join('');
+  ].map(([k,v,c])=>k==='XIRR' ? `<div><button class="kxirr" data-league aria-label="Open the XIRR league"><div class="k">${k}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div><div class="v num money ${c}">${v}</div></button></div>` : `<div><div class="k">${k}</div><div class="v num money ${c}">${v}</div></div>`).join('');
+  { const kx = $('#kpis [data-league]'); if (kx) kx.onclick = () => pushPage({ kind:'league', tab:'assets' }); }
 
   // assets
   const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && (a.value!==0 || (/^EPF$/i.test(a.name) && epfD())) && !/^Less:|^Charges/i.test(a.name))
@@ -3097,11 +3145,8 @@ function renderAssets(holdings, usdInr){
         <div class="hrow"><span>Holdings</span><b>${n}</b></div>
         <div class="hrow"><span>Share of Indian stocks</span><b>${all.value ? fPct(st.value/all.value,false) : '—'}</b></div>
         <div class="hrow"><span>Share of portfolio</span><b>${st.alloc!=null ? fPct(st.alloc,false) : '—'}</b></div></div><button class="capmore2 ${capOpen?'on':''}" data-capmore aria-expanded="${capOpen}">${capOpen ? 'Less' : 'More'}${chev('M6 9l6 6 6-6')}</button>`); }
-    { const card = $('#assetSum'), old = $('#capLeague'); if (old) old.remove();
-      if (capTab==='All' && card && !card.hidden){ const h = capLeague(rows, S); if (h){ card.insertAdjacentHTML('afterend', `<div id="capLeague">${h}</div>`);
-        $$('#capLeague [data-cap]').forEach(b=>b.onclick=()=>{ capTab = b.dataset.cap; renderAssets(all0, usdInr); scrollTo({ top:0, behavior:'smooth' }); }); } } }
     const cm = $('#assetSum [data-capmore]'); if (cm) cm.onclick = ()=>{ capOpen = !capOpen; renderAssets(all0, usdInr); };
-  } else { $('#capWrap').innerHTML = ''; const ol = $('#capLeague'); if (ol) ol.remove(); }
+  } else $('#capWrap').innerHTML = '';
   $('#assetList').innerHTML = list.map(h=>{
     const m = money(h), m2 = money2(h);
     // a US card in ₹: cost at buy-date rates, so returns include what the dollar did since
@@ -3271,6 +3316,7 @@ function renderBreakdown(bd, bk){
   renderPlatforms(bk);
   renderBucketList(bk);
   holdEntry(bk);
+  lgEntry();
 }
 // the two cards under the overview card on Holdings: each opens its own page
 const IC_LAYERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>';
@@ -4151,7 +4197,7 @@ function show(v, sec){
   $('#navBack').hidden = v!=='trend' && v!=='txn';
   { const nb = $('#navBack'); if (nb && nb.lastChild) nb.lastChild.textContent = v==='txn' ? 'Holdings' : 'Overview'; }
   $('.nav').classList.toggle('inner', v==='trend' || v==='txn');
-  $('.nav').dataset.v = isAcc ? 'acc' : v;      // Trends looks like an inner page: back, centred title
+  $('.nav').dataset.v = isAcc ? 'acc' : v; requestAnimationFrame(navFold);      // Trends looks like an inner page: back, centred title
   $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
   $('#title').textContent=TITLES[isAcc ? 'acc' : v]; $('#spSeg').hidden = isAcc; paintDate(); $('#fab').hidden = (v!=='txn' && v!=='spend' && v!=='break') || isAcc; paintDfab();
   $('#fab').setAttribute('aria-label', v==='spend' ? 'Add expense' : 'Add transaction');
@@ -4235,41 +4281,19 @@ function ptrBlocked(e){
   return !!(document.querySelector('#sheet.show, #xsheet.show, .sheet.open, .sheet:not([hidden]) .panel, #lock:not([hidden])')
          || ($('#moreMenu') && !$('#moreMenu').hidden) || (e.target.closest && e.target.closest('input,textarea,select,.chart')));
 }
-// Goo drop: a drip oozes from the top edge in the app blue, necks thinner as you pull,
-// and pinches off into a ₹ bead once it's armed; the bead bobs while the sheet loads.
-function ptrGoo(p, mode){
-  const el = ptrEl(); if (!el) return; const cx = 60, T = 0;
-  const d = $('.gd', el), b = $('.gb', el), t = $('.gbt', el), s1 = $('.gs1', el), s2 = $('.gs2', el);
-  const bead = (y, r, fs) => { b.style.top = y+'px'; b.style.width = b.style.height = (2*r)+'px'; b.style.background = r ? '' : 'transparent'; t.style.fontSize = (fs || r*1.05)+'px'; };
-  s1.style.cssText = s2.style.cssText = '';
-  if (mode==='pull'){
-    const L = 18 + p*95, r = 10 + p*7, nk = Math.max(1.5, 14 - p*13);
-    d.setAttribute('d', `M${cx-30} ${T} C${cx-nk} ${T+10}, ${cx-nk} ${T+L-r*1.6}, ${cx-r} ${T+L} A${r} ${r} 0 1 0 ${cx+r} ${T+L} C${cx+nk} ${T+L-r*1.6}, ${cx+nk} ${T+10}, ${cx+30} ${T} Z`);
-    bead(T+L, 0, 11 + p*6);
-  } else if (mode==='armed'){
-    const L = 116, r = 17;
-    d.setAttribute('d', `M${cx-30} ${T} Q${cx} ${T+18} ${cx+30} ${T} Z M${cx-1.6} ${T+10} L${cx+1.6} ${T+10} L${cx+.8} ${T+L-r-5} L${cx-.8} ${T+L-r-5} Z`);
-    bead(T+L, r);
-  } else if (mode==='load'){
-    d.setAttribute('d', `M${cx-26} ${T} Q${cx} ${T+12} ${cx+26} ${T} Z`);
-    bead(T+64, 17);
-    s1.style.cssText = `left:${cx-26}px;top:${T+78}px`; s2.style.cssText = `left:${cx+20}px;top:${T+82}px;width:4px;height:4px`;
-  }
-}
 function ptrPaint(px, armed){
   const el = ptrEl(); if (!el) return;
-  el.classList.remove('gone');
-  el.style.opacity = px > 2 ? 1 : 0;
-  ptrGoo(Math.min(1, px / PTR_ARM), armed ? 'armed' : 'pull');
-  if (armed && !el.classList.contains('armed')) haptic(6);
+  el.style.transition = 'none';
+  el.style.opacity = Math.min(1, px / PTR_ARM);
+  el.style.transform = `translate(-50%, ${px - 56}px) rotate(${px * 3.2}deg)`;
   el.classList.toggle('armed', !!armed);
 }
 function ptrSpin(on){
   const el = ptrEl(); if (!el) return;
   ptrBusy = on;
-  if (on){ el.classList.remove('gone','armed'); el.classList.add('spin'); el.style.opacity = 1; ptrGoo(1, 'load'); }
-  else if (el.classList.contains('spin')){ el.classList.remove('spin'); el.classList.add('gone'); setTimeout(()=>{ if (!ptrBusy){ el.style.opacity = 0; } }, 220); setTimeout(()=>{ if (!ptrBusy) el.classList.remove('gone'); }, 450); }
-  else { el.classList.remove('armed'); el.style.opacity = 0; }
+  el.style.transition = 'transform .25s ease, opacity .25s ease';
+  if (on){ el.classList.add('spin'); el.style.opacity = 1; el.style.transform = 'translate(-50%, 8px)'; }
+  else { el.classList.remove('spin','armed'); el.style.opacity = 0; el.style.transform = 'translate(-50%, -56px)'; }
 }
 window.addEventListener('touchstart', e=>{
   if (ptrBusy || loading || e.touches.length !== 1 || !ptrAtTop() || ptrBlocked(e)) { ptrY0 = null; return; }
@@ -4292,9 +4316,9 @@ window.addEventListener('touchend', ()=>{
 // switch control from a tap gives the system's light tick (iOS 18+). Off-tap calls are silent there.
 function haptic(p){
   try{ if (navigator.vibrate){ navigator.vibrate(p || 8); return; }
-    let l = haptic.l; if (!l){ l = document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText = 'position:fixed;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none';
-      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); i.tabIndex = -1; l.appendChild(i); document.body.appendChild(l); haptic.l = l; }
-    l.click(); }catch(e){}
+    const l = document.createElement('label'); l.ariaHidden = 'true'; l.style.display = 'none';
+    const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); l.appendChild(i);
+    document.head.appendChild(l); l.click(); document.head.removeChild(l); }catch(e){}
 }
 // a tick on steppers, segmented switches and range pickers
 document.addEventListener('click', e=>{ const t = e.target.closest && e.target.closest('[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],#homeRanges button,[data-vbv],[data-capmore]');
@@ -4434,7 +4458,7 @@ function stepper(p){
       <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
       <button data-step="1" aria-label="Next" ${i>=p.list.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
-function pageTitle(p){ return p.kind==='xsearch' ? 'Search' : p.kind==='platlist' ? 'Platforms' : p.kind==='bklist' ? 'Buckets' : p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
+function pageTitle(p){ return p.kind==='league' ? 'XIRR League' : p.kind==='xsearch' ? 'Search' : p.kind==='platlist' ? 'Platforms' : p.kind==='bklist' ? 'Buckets' : p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='dividends' ? 'Dividends'
   : p.kind==='expcat' || p.kind==='inccat' ? p.cat : p.kind==='budgets' ? 'Budgets' : p.kind==='acct' ? accPageTitle(p.acc) : p.kind==='zakat' ? 'Zakat' : p.kind==='interest' ? 'Interest' : p.kind==='intq' ? 'Interest' : p.kind==='constr' ? 'Construction' : p.kind==='epf' ? 'EPF' : p.kind==='nps' ? 'NPS' : p.kind==='tax' ? 'Tax' : p.kind==='books' ? 'Books' : p.kind==='bklog' ? 'Activity'
   : p.kind==='accform' ? (p.acc ? 'Edit account' : 'New account') : p.kind==='profile' ? 'Profile' : p.kind==='defaults' ? 'Defaults' : p.kind==='recurring' ? 'Recurring' : p.kind==='recdetail' ? 'Details' : p.kind==='recform' ? (p.id ? 'Edit recurring' : 'New recurring') : p.platform; }
 // Payouts logged on the US Stocks tab for one ticker, newest first
@@ -4477,7 +4501,7 @@ function renderPage(){
   $('#page').classList.remove('kbpad');
   const prev = pageStack[pageStack.length-2];
   const back = prev ? pageTitle(prev) : (TITLES[activeView] || 'Back');
-  const body = p.kind==='platlist' ? '<div class="card tight" id="pgPlatList"></div>' : p.kind==='bklist' ? '<div class="card tight" id="pgBkList"></div>' : p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
+  const body = p.kind==='league' ? leagueBody(p) : p.kind==='platlist' ? '<div class="card tight" id="pgPlatList"></div>' : p.kind==='bklist' ? '<div class="card tight" id="pgBkList"></div>' : p.kind==='holding' ? holdingBody(p.ticker) : p.kind==='dividends' ? dividendsBody(p.ticker, p.platform)
     : p.kind==='expcat' ? expcatBody(p) : p.kind==='inccat' ? inccatBody(p) : p.kind==='budgets' ? budgetsBody(p) : p.kind==='acct' ? accBody(p) : p.kind==='zakat' || p.kind==='interest' ? ziPageBody(p) : p.kind==='intq' ? ziQBody(p) : p.kind==='constr' ? constrBody(p) : p.kind==='epf' ? epfBody(p) : p.kind==='nps' ? npsBody(p) : p.kind==='tax' ? taxBody(p) : p.kind==='books' ? booksBody() : p.kind==='bklog' ? bkLogBody()
     : p.kind==='accform' ? accFormBody(p) : p.kind==='profile' ? profileBody() : p.kind==='defaults' ? defaultsBody() : p.kind==='recurring' ? recurringBody()
     : p.kind==='recform' ? recFormBody(p) : p.kind==='xsearch' ? xSearchBody(p) : p.kind==='recdetail' ? recDetailBody(p) : p.kind==='bucket' ? bucketBody(p.bucket) : platformBody(p.platform);
@@ -4488,6 +4512,7 @@ function renderPage(){
         : p.kind==='recdetail' ? '<button class="pg-edit" id="pgEdit">Edit</button>'
         : p.kind==='books' ? `<button class="pg-add ${booksBusy?'spin':''}" id="pgRefresh" aria-label="Check again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>` : stepper(p)}</div>` + body;
   $('#pgBack').onclick = popPage;
+  if (p.kind==='league'){ wireLeague(p); return; }
   if (p.kind==='platlist'){ renderPlatforms(D.data.buckets, '#pgPlatList'); return; }
   if (p.kind==='bklist'){ renderBucketList(D.data.buckets, '#pgBkList'); return; }
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
@@ -4656,20 +4681,80 @@ function drawHist(ticker, usdRow, cid='histChart'){
 let assetChart = load('inv.assetChart') === true;
 const assetChartKey = (cat, usd) => (usd ? 'C$:' : 'C:') + cat;
 const catLoad = {}, catXirr = {};
-// XIRR league: the caps ranked like a sports table — champions on top, relegation zone at the bottom
-function capLeague(rows, S){
-  const T = [['Largecap','Largecap'],['Midcap','Midcap'],['Smallcap','Smallcap'],['Debt','Liquid']];
-  T.forEach(([k])=>{ if (!(('Stocks|'+k) in catXirr)) loadCategory('Stocks|'+k); });
-  const capOf2 = h => { const s = String(h.sub||'').toLowerCase(); return /large/.test(s)?'Largecap':/mid/.test(s)?'Midcap':/small/.test(s)?'Smallcap':/debt|liquid/.test(s)?'Debt':''; };
-  const L = T.map(([k,l])=>{ const st = S(k), hs = rows.filter(h=>capOf2(h)===k), day = hs.reduce((a,h)=>a+(h.day||0),0);
-    return { k, l, x: catXirr['Stocks|'+k], ret: st.invested ? (st.realized + st.pnl)/st.invested : null, day, n: hs.length }; }).filter(r=>r.n || r.x!=null);
-  if (L.length < 2) return '';
-  const known = L.filter(r=>r.x!=null).sort((a,b)=>b.x-a.x), rest = L.filter(r=>r.x==null), R = known.concat(rest), last = known.length - 1;
-  const cup = '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M7 3h10v4a5 5 0 0 1-10 0z" fill="#ffd60a" stroke="#d9a400" stroke-width="1.2"/><path d="M7 5H4.5a2.5 2.5 0 0 0 3 3.5M17 5h2.5a2.5 2.5 0 0 1-3 3.5" fill="none" stroke="#d9a400" stroke-width="1.4"/><path d="M12 12v4M8.5 20h7l-1-4h-5z" fill="#d9a400" stroke="#d9a400" stroke-width="1.2" stroke-linejoin="round"/></svg>';
-  const tag = (r, i) => i===0 && r.x!=null ? `<span class="lgt gold">${cup}Champions</span>` : i===last && known.length > 2 && r.x < 0 ? '<span class="lgt rel">Relegation zone</span>' : i===last && known.length > 2 ? '<span class="lgt rel soft">Bottom of the table</span>' : '';
-  return `<div class="league"><div class="lgh"><span>XIRR league</span><span class="lgc">XIRR</span></div>${R.map((r,i)=>`<button class="lgr ${i===0&&r.x!=null?'top':''} ${i===last && r.x!=null && r.x<0 && known.length>2?'bot':''}" data-cap="${r.k}">
-    <b class="lgp">${r.x!=null ? i+1 : '–'}</b><span class="lgn">${esc(r.l)}<small>${r.n} ${r.n===1?'stock':'stocks'}${r.ret!=null?` · ${r.ret<0?'−':'+'}${fPct(Math.abs(r.ret),false)} overall`:''}</small></span>${tag(r,i)}
-    <span class="lgf ${r.day>0?'up':r.day<0?'down':''}">${r.day>0?'▲':r.day<0?'▼':'•'}</span><b class="lgx num ${r.x!=null?cls(r.x):''}">${r.x!=null ? (r.x<0?'−':'') + fPct(Math.abs(r.x),false) : '<span class="sk"></span>'}</b></button>`).join('')}</div>`;
+/* XIRR League — every asset class and every holding ranked by XIRR, like a season table.
+   Asset XIRRs come from Net Worth; holding XIRRs are worked out here from all the orders
+   (fetched once, when the page opens). Under a month old, or no orders: on the bench. */
+let lgTx = null, lgBusy = false, lgErr = null, lgFilt = 'All';
+async function leagueLoad(){
+  if (lgBusy || lgTx) return; lgBusy = true; lgErr = null;
+  try{ const j = await api({ action:'txns', limit: 5000 }); lgTx = (j && j.data && j.data.transactions) || []; }
+  catch(e){ lgErr = e.message || 'Could not load orders'; }
+  lgBusy = false; lgEntry();
+  const t = pageStack[pageStack.length-1]; if (t && t.kind==='league'){ const el = $('#page'), y = el.scrollTop; renderPage(); el.scrollTop = y; }
+}
+const lgAge = d => { const m = Math.floor(d/30.44); return m < 12 ? `${m} mo` : `${Math.floor(m/12)}y${m%12 ? ' ' + (m%12) + 'm' : ''}`; };
+function leagueData(){
+  const d = D && D.data; if (!d) return null;
+  const fx = (d.netWorth && d.netWorth.head && d.netWorth.head.usdInr) || null;
+  const by = {};
+  (d.holdings||[]).filter(h=>h.qty>0 && (!isUSD(h) || fx)).forEach(h=>{ const k = String(h.ticker).toUpperCase();
+    const o = by[k] = by[k] || { k, h, cat:h.category, value:0, day:0 }; o.value += isUSD(h) ? (h.value||0)*fx : (h.value||0); o.day += h.day||0; });
+  const tx = lgTx || [], now = Date.now();
+  const hold = Object.values(by).map(o=>{ const ts = tx.filter(t=>String(t.ticker).toUpperCase()===o.k);
+    const first = ts.reduce((m,t)=>{ const v = Date.parse(t.date); return v && v < m ? v : m; }, Infinity);
+    return { ...o, x: lgTx ? platXirr(ts, o.value) : undefined, age: isFinite(first) ? (now-first)/864e5 : null }; });
+  const tot = ((d.netWorth && d.netWorth.assets) || []).find(a=>a.isTotal) || {};
+  const assets = ((d.netWorth && d.netWorth.assets) || []).filter(a=>!a.isTotal && (a.value||0) > 0 && !/^Less:|^Charges/i.test(a.name)).map(a=>{
+    let x = a.xirr; const c = assetCatFor(a.name, d.holdings);
+    if (x==null && lgTx && c){ const hs = hold.filter(r=>r.cat===c); x = platXirr(tx.filter(t=>t.category===c), hs.reduce((s,r)=>s+r.value,0)); }
+    return { k:a.name, name:a.name, cat:c, value:a.value, day:a.dayChange||0, x: x ?? null, asset:true }; });
+  return { hold, assets, pf: tot.xirr };
+}
+function lgEntry(){
+  const el = $('#lgEntry'); if (!el) return;
+  const L = leagueData(), top = L && lgTx ? L.hold.filter(r=>r.x!=null).sort((a,b)=>b.x-a.x)[0] : null;
+  el.innerHTML = `<button data-league><span class="lgcup">${LG_CUP}</span><span class="tx"><b>XIRR League</b><small>${top ? `Leader: ${esc(top.k)} · ${fPct(top.x,false)}` : 'Every asset and holding, ranked by returns'}</small></span><svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  el.querySelector('[data-league]').onclick = () => pushPage({ kind:'league', tab:'hold' });
+}
+const LG_CUP = '<svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10v4.5a5 5 0 0 1-10 0z" fill="#ffd60a" stroke="#c99700" stroke-width="1.3"/><path d="M7 5H4.5a2.5 2.5 0 0 0 3 3.6M17 5h2.5a2.5 2.5 0 0 1-3 3.6" stroke="#c99700" stroke-width="1.5"/><path d="M12 12.5V16M8.5 20.5h7l-1-4.5h-5z" fill="#c99700" stroke="#c99700" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+function leagueBody(p){
+  if (!lgTx && !lgBusy && !lgErr) setTimeout(leagueLoad, 0);
+  const L = leagueData(); if (!L) return '<div class="pg-load">Loading…</div>';
+  const tab = p.tab || 'hold', isH = tab==='hold';
+  const cats = [...new Set(L.hold.map(r=>r.cat))];
+  if (lgFilt!=='All' && !cats.includes(lgFilt)) lgFilt = 'All';
+  const pool = isH ? L.hold.filter(r=>lgFilt==='All' || r.cat===lgFilt) : L.assets;
+  const ranked = pool.filter(r=>r.x!=null).sort((a,b)=>b.x-a.x), bench = pool.filter(r=>r.x==null);
+  const tileOf = r => r.asset ? mark(r.name) : tickerTile(r.h);
+  const xs = x => (x<0?'−':'') + fPct(Math.abs(x),false);
+  const mx = Math.max(...ranked.map(r=>Math.abs(r.x)), .01);
+  const meta = r => r.asset ? `${fCompact(r.value)}` : `${esc(CAT_LABEL[r.cat]||r.cat)}${r.age!=null ? ' · held ' + lgAge(r.age) : ''}`;
+  const loading = isH && !lgTx;
+  // podium: 2 · 1 · 3
+  const pod = ranked.length >= 3 ? `<div class="lgpod">${[1,0,2].map(i=>{ const r = ranked[i];
+      return `<button class="pd p${i+1}" data-lg="${esc(r.k)}"><div class="pdt">${tileOf(r)}<i class="md">${i+1}</i></div><div class="pdn">${esc(r.asset?r.name:r.k)}</div><div class="pdx num ${cls(r.x)}">${xs(r.x)}</div><div class="pdb"></div></button>`; }).join('')}</div>` : '';
+  const rest = ranked.length >= 3 ? ranked.slice(3) : ranked, base = ranked.length >= 3 ? 3 : 0;
+  const relN = ranked.length >= 6 ? Math.min(3, ranked.filter(r=>r.x<0).length) : 0, relAt = rest.length - relN;
+  const row = (r, i) => `${i===relAt && relN ? '<div class="lgrel"><span>Relegation zone</span></div>' : ''}<button class="lgrow ${i>=relAt && relN ? 'rel':''}" data-lg="${esc(r.k)}">
+      <b class="rk">${base+i+1}</b>${tileOf(r)}<span class="nm"><b>${esc(r.asset?r.name:r.k)}</b><small>${meta(r)}</small></span>
+      <span class="xr"><b class="num ${cls(r.x)}">${xs(r.x)}</b><i class="bar ${r.x<0?'neg':''}"><em style="width:${(Math.abs(r.x)/mx*100).toFixed(1)}%"></em></i></span></button>`;
+  const seg = `<div class="tabsw"><div class="seg" id="lgSeg"><button data-lt="hold" class="${isH?'on':''}">Holdings</button><button data-lt="assets" class="${!isH?'on':''}">Assets</button></div></div>`;
+  const chips = isH && cats.length > 1 ? `<div class="lgchips">${['All',...cats].map(c=>`<button data-lf="${esc(c)}" class="${c===lgFilt?'on':''}">${esc(c==='All'?'All':CAT_LABEL[c]||c)}</button>`).join('')}</div>` : '';
+  const champ = ranked[0], last = ranked[ranked.length-1];
+  const hero = `<div class="card lghero"><div class="lgh1">${LG_CUP}<span>Season ${new Date().getFullYear()}</span></div>
+      <div class="lgk">Portfolio XIRR</div><div class="lgbig num ${L.pf!=null?cls(L.pf):''}">${L.pf!=null ? xs(L.pf) : '—'}</div>
+      ${champ && !loading ? `<div class="lgsum"><span><i class="g"></i>Top: <b>${esc(champ.asset?champ.name:champ.k)}</b> ${xs(champ.x)}</span>${last && last!==champ ? `<span><i class="r"></i>Bottom: <b>${esc(last.asset?last.name:last.k)}</b> ${xs(last.x)}</span>` : ''}</div>` : ''}</div>`;
+  const table = loading ? `<div class="card tight lgtable">${Array.from({length:6},()=>'<div class="lgrow sk"><b class="rk"></b><i class="skt"></i><span class="nm"><i class="skl"></i><i class="skl s"></i></span><span class="xr"><i class="skl"></i></span></div>').join('')}</div>`
+    : lgErr && isH ? `<div class="card"><div class="empty">${esc(lgErr)}</div></div>`
+    : ranked.length ? `${pod}${rest.length ? `<div class="card tight lgtable">${rest.map(row).join('')}</div>` : ''}` : '<div class="card"><div class="empty">Nothing to rank yet</div></div>';
+  const benchH = !loading && bench.length ? `<div class="sechead"><h2>On the bench</h2><span class="cnt">${bench.length}</span></div><div class="card tight lgbench">${bench.map(r=>`<button class="lgrow" data-lg="${esc(r.k)}"><b class="rk">–</b>${tileOf(r)}<span class="nm"><b>${esc(r.asset?r.name:r.k)}</b><small>${r.asset ? 'No XIRR yet' : r.age!=null && r.age < 30 ? 'Under a month old' : 'No orders found'}</small></span><span class="xr"><b class="num">${fCompact(r.value)}</b></span></button>`).join('')}</div>` : '';
+  return `<div class="lg">${hero}${seg}${chips}${table}${benchH}<p class="lgfoot">XIRR annualises each return using the date of every buy and sell, so a holding bought last month and one held for years can be compared fairly. Holdings under a month old sit on the bench until their number means something.</p></div>`;
+}
+function wireLeague(p){
+  $$('#page [data-lt]').forEach(b=>b.onclick=()=>{ p.tab = b.dataset.lt; renderPage(); });
+  $$('#page [data-lf]').forEach(b=>b.onclick=()=>{ lgFilt = b.dataset.lf; const el = $('#page'), y = el.scrollTop; renderPage(); el.scrollTop = y; });
+  $$('#page [data-lg]').forEach(b=>b.onclick=()=>{ const k = b.dataset.lg;
+    if ((p.tab||'hold')==='assets'){ const c = assetCatFor(k, D.data.holdings); if (c){ popPage(); openAssetCat(c); } } else openHolding(k); });
 }
 async function loadCategory(cat){
   const c = catLoad[cat];
@@ -4688,7 +4773,7 @@ async function loadCategory(cat){
     histCache['C:'+cat] = histCache['C$:'+cat] = { err: msg, at: Date.now() };
     catLoad[cat] = { at: Date.now() };
   }
-  if ((assetCat===cat || assetCat + '|' + capTab===cat || (assetCat==='Stocks' && capTab==='All' && /^Stocks\|/.test(cat))) && D && D.data) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
+  if ((assetCat===cat || assetCat + '|' + capTab===cat) && D && D.data) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
 }
 
 // One call per platform: its orders and its weekly invested-vs-value history.
@@ -5241,7 +5326,7 @@ function spBudgetHtml(){
   const graph = `<div class="vbg-ch" aria-label="Spending graph — swipe for ${vbView==='daily'?'monthly':'daily'}"><svg></svg><div class="tip"></div></div>
       <div class="vbg-ft">${vbView==='daily' ? `<div class="vbg-lg"><span><i></i>This month</span><span><i class="dots"></i>Last month</span></div>` : ''}
         <div class="vbg-dots">${['daily','monthly'].map(v=>`<button data-vbv="${v}" class="${vbView===v?'on':''}" aria-label="${v==='daily'?'Daily':'Monthly'} graph"></button>`).join('')}</div></div>`;
-  const figs = `<div class="spstats lcr"><div><span>Spends</span><b class="num money">${fINR(spends)}</b></div><div><span>Investment</span><b class="num money">${fINR(invested)}</b></div><div><span>Income</span><b class="num money">${fINR(incoming)}</b></div></div>`;
+  const figs = `<div class="spstats lcr"><div><span>Spends</span><b class="num money">${fINR2(spends)}</b></div><div><span>Investment</span><b class="num money">${fINR2(invested)}</b></div><div><span>Income</span><b class="num money">${fINR2(incoming)}</b></div></div>`;
   const looseRows = loose.map(x=>`<div class="row tap" data-xcat="${esc(x.c)}">${xTile(x.c)}<div class="l"><div class="n">${esc(x.c)}</div><div class="m">No budget</div></div>
       <div class="r"><div class="v num money">${fINR2(x.s)}</div></div></div>`).join('');
   return `<div class="card tight vbc"><div class="vb-sum"><div><div class="k">Remaining (monthly)</div><div class="big num money ${left<0?'down':''}">${bigAmt(fINR2(left))}</div></div>
@@ -5715,7 +5800,7 @@ function spListHtml(){
   // the filter lives behind a button beside search; counts are for this month
   txCounts = { all: all.length, ex: all.filter(TXF.ex).length, tr: all.filter(TXF.tr).length, in: all.filter(TXF.in).length };
   const fOn = txFilter !== 'all', net = inn - spent;
-  return `<div class="tline num money"><div><span>Income</span><b class="up">${fINR(inn)}</b></div><div><span>Expense</span><b>${fINR(spent)}</b></div><div><span>Net</span><b class="${net<0?'down':''}">${fINR(net)}</b></div></div>
+  return `<div class="tline num money"><div><span>Income</span><b class="up">${fINR2(inn)}</b></div><div><span>Expense</span><b>${fINR2(spent)}</b></div><div><span>Net</span><b class="${net<0?'down':''}">${fINR2(net)}</b></div></div>
     ${recDueHtml()}
     <div class="srow"><div class="search" id="xSearch"></div>
       <button class="fbtn ${fOn?'on':''}" data-fmenu aria-label="Filter">${FILTER_IC}${fOn?'<span class="dot"></span>':''}</button></div>
