@@ -198,7 +198,6 @@ main{padding:0}
      flashes a white box over its icon on the way past */
   opacity:0;transition:opacity .12s ease}
 .tile img.ok{opacity:1}
-.tile img.full{padding:0;object-fit:cover;background:none;box-shadow:none}
 .tile.us{--tile:#e7f0fd;--tileink:#0b5fc1}
 .tile.in{--tile:#e8f5ec;--tileink:#177245}
 .tile.cr{--tile:#efe9fd;--tileink:#5b3bc4}
@@ -2028,7 +2027,8 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .hentry .ic svg{width:16px;height:16px}
 .hentry .tx{min-width:0}
 .hentry .t{font-size:15px;font-weight:600;letter-spacing:-.2px;line-height:1.2}
-.hentry .m{font-size:12px;color:var(--ink-2);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hentry .m{font-size:12px;color:var(--ink-2);letter-spacing:-.1px;line-height:1.3;margin-top:1px}
+.hentry .m>span{white-space:nowrap}
 .hentry .sk{display:inline-block;width:64px;height:9px;border-radius:5px;vertical-align:middle;background:linear-gradient(90deg,var(--sunken) 25%,var(--hairline) 50%,var(--sunken) 75%);background-size:200% 100%;animation:hsk 1.2s linear infinite}
 @keyframes hsk{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion: reduce){.hentry .sk{animation:none}}
@@ -2230,7 +2230,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03m';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2270,11 +2270,13 @@ const usd2 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
 const usd0 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
 const usd  = { format: v => (paiseOn() ? usd2 : usd0).format(v) };
 const DEC  = () => paiseOn() ? {minimumFractionDigits:2,maximumFractionDigits:2} : {maximumFractionDigits:0};
-// headline and list amounts: whole rupees (paise stay on Spend entries, detail pages and forms)
-const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inr.format(Math.round(Math.abs(v)));
+// every full ₹ figure follows Settings ▸ Two decimals
+const fINR  = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(paiseOn() ? Math.abs(v) : Math.round(Math.abs(v)));
 // Spend tab: rupees with paise, like Money Manager
 const fINR2 = v => v==null ? '—' : (v<0?'−':'') + '₹' + inrM().format(Math.abs(v));
-const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inr.format(Math.round(Math.abs(v)));
+const fINRs = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inrM().format(paiseOn() ? Math.abs(v) : Math.round(Math.abs(v)));
+// change figures in pills and the line under a value: always whole rupees, whatever Two decimals says
+const fChg = v => v==null ? '—' : (v<0?'−':'+') + '₹' + inr.format(Math.round(Math.abs(v)));
 const fCompact = v => { if(v==null) return '—'; const a=Math.abs(v), s=v<0?'−':'';
   if(a>=1e7) return s+'₹'+(a/1e7).toFixed(2)+'Cr'; if(a>=1e5) return s+'₹'+(a/1e5).toFixed(1)+'L';
   if(a>=1e3) return s+'₹'+(a/1e3).toFixed(1)+'k'; return s+'₹'+inr.format(a); };
@@ -2468,7 +2470,7 @@ function renderHome(d){
   $('#nw').innerHTML = bigAmt(fINR2(nwVal));
   milestone(nwVal);
   paintBooks();
-  $('#nwSub').innerHTML = `<span class="pill ${cls(h.netWorthDay)} num money">${fINRs(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>`;
+  $('#nwSub').innerHTML = `<span class="pill ${cls(h.netWorthDay)} num money">${fChg(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>`;
 
   // hero chart + ranges
   $('#homeRanges').innerHTML = Object.keys(RANGES).map(r=>`<button class="${r===range?'on':''}" data-r="${r}">${r}</button>`).join('');
@@ -2491,7 +2493,7 @@ function renderHome(d){
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>${a.dayChange!=null
-        ? `<div class="s"><span class="pill sm dpill ${cls(a.dayChange)} num money">${fINRs(a.dayChange)}${a.dayChangePct!=null ? ' · ' + fPct(Math.abs(a.dayChangePct),false) : ''}</span></div>` : ''}</div>
+        ? `<div class="s"><span class="pill sm dpill ${cls(a.dayChange)} num money">${fChg(a.dayChange)}${a.dayChangePct!=null ? ' · ' + fPct(Math.abs(a.dayChangePct),false) : ''}</span></div>` : ''}</div>
     </div>`).join('') +
     (tot.value!=null ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(tot.value)}</span></div>` : '');
 
@@ -2558,7 +2560,7 @@ function homeStar(d){
                : (ap >= .03 ? ['dragged the team down','had a day it would rather forget'] : ap >= .01 ? ['had a rough day','took one for the team'] : ['slipped a little today','had a sleepy, slightly red day']);
   const q = L[new Date().getDate() % 2];
   el.innerHTML = `<button data-star class="${up?'up':'down'}"><span class="badge">${up?'MVP':'Oops'}</span>
-    <span class="tx"><div class="t"><b>${esc(t)}</b> ${q}</div><div class="m num money ${up?'up':'down'}">${fINRs(top.day)}${top.pct!=null?` · ${fPct(ap,false)}`:''}</div></span>
+    <span class="tx"><div class="t"><b>${esc(t)}</b> ${q}</div><div class="m num money ${up?'up':'down'}">${fChg(top.day)}${top.pct!=null?` · ${fPct(ap,false)}`:''}</div></span>
     <svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
   el.querySelector('[data-star]').onclick = () => openHolding(t);
 }
@@ -2642,7 +2644,7 @@ function openWrap(ym){
   document.body.appendChild(ov);
   const bars = [...ov.querySelectorAll('.wbars b')], sl = ov.querySelector('.wslide');
   const countUp = () => sl.querySelectorAll('.wcnt').forEach(el=>{ const to = +el.dataset.to, pre = el.dataset.pre, t1 = performance.now();
-    (function f(t){ const k = Math.min(1, (t - t1)/1100), e = 1 - Math.pow(1-k, 3); el.textContent = pre + Math.round(to*e).toLocaleString('en-IN'); if (k < 1 && el.isConnected) requestAnimationFrame(f); })(t1); });
+    (function f(t){ const k = Math.min(1, (t - t1)/1100), e = 1 - Math.pow(1-k, 3); el.textContent = pre + (k < 1 ? Math.round(to*e).toLocaleString('en-IN') : inrM().format(to)); if (k < 1 && el.isConnected) requestAnimationFrame(f); })(t1); });
   const go = k => { if (k >= S.length) return close(); i = Math.max(0, k); ov.dataset.bg = S[i].bg; sl.innerHTML = `<div class="win">${S[i].h}</div>`;
     bars.forEach((b,j)=>b.style.width = j < i ? '100%' : '0%'); t0 = performance.now(); haptic(6); countUp();
     if (S[i].fx==='confetti') setTimeout(()=>{ if (ov.isConnected) confetti(sl.querySelector('.wh, .wbig')); }, 350);
@@ -2662,8 +2664,8 @@ function homeMonth(){
   const b = typeof rvBudget==='function' ? rvBudget() : null, Y = typeof taxYear==='function' ? taxYear() : null, n = Y && Y.advance && Y.advance.next;
   const cv = '<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
   const mon = new Date().toLocaleDateString('en-IN',{ month:'long' }), parts = [];
-  if (b) parts.push(`<button data-hm="budget"><span class="ic ${b.left<0?'ov':'bk'}">${IC_WALLET}</span><span class="tx"><div class="t">Budget</div><div class="m num money ${b.left<0?'down':''}">${fINR(Math.abs(b.left))} ${b.left<0?'over':'left'}</div></span>${cv}</button>`);
-  if (n && n.amount > 0) parts.push(`<button data-hm="tax"><span class="ic tx2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TAX_ICON}</svg></span><span class="tx"><div class="t">Tax due</div><div class="m num money">${fINR(n.amount)} · ${esc(dayLbl(n.date))}</div></span>${cv}</button>`);
+  if (b) parts.push(`<button data-hm="budget"><span class="ic ${b.left<0?'ov':'bk'}">${IC_WALLET}</span><span class="tx"><div class="t">Budget</div><div class="m num money ${b.left<0?'down':''}"><span>${fINR(Math.abs(b.left))}</span> <span>${b.left<0?'over':'left'}</span></div></span>${cv}</button>`);
+  if (n && n.amount > 0) parts.push(`<button data-hm="tax"><span class="ic tx2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TAX_ICON}</svg></span><span class="tx"><div class="t">Tax due</div><div class="m num money"><span>${fINR(n.amount)}</span> <span>by ${esc(dayLbl(n.date))}</span></div></span>${cv}</button>`);
   el.innerHTML = parts.join('');
   el.style.gridTemplateColumns = parts.length===1 ? '1fr' : '';
   $$('#homeMonth [data-hm]').forEach(x=>x.onclick=()=> x.dataset.hm==='tax' ? pushPage({ kind:'tax' }) : show('spend','budget'));
@@ -2905,13 +2907,13 @@ function bucketMark(name, i){
 // logo is matched on the brand inside the name — all three Jupiter rows share
 // one file. Drop a PNG in /logos and add a line here to use it.
 const BANK_LOGOS = [[/sbi/i,'SBI'],[/icici/i,'ICICI'],[/jupiter/i,'JUPITER'],[/deel/i,'DEEL'],[/indmoney|indwallet/i,'INDMONEY'],[/amazon\s*pay/i,'AMAZONPAY']];
-// logos kept in the page itself (no file in logos/), drawn edge to edge
-const LOGO_INLINE = { AMAZONPAY:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAMAAABiM0N1AAAASFBMVEX////4+fno6uvAw8f+nhngjSGalIuUd09pXk1FTFI4Qks2P0c1QEo1P0g0P0k0PkgzPkgzPkcyPkgxPUgvO0UrOkgoN0UkMDuHBy/XAAACPklEQVR42u2W3ZKrIBCEAZV/0OzA8P5venrM7s0mJqZqz51TUsGgX3qaAaK2Pwp1gS7QBbpAF+gCfUfONdeay97NW0XbpN2HzoNocJOrZao8RsNNpjFkCPdcT4IqRWuDNWYKnFuwE3p+BGvLbcvsred8EtSC0lobrUxozShjjFIeHRAq42OcBxltN66Tmrj6QI2tmoa0yEGZdjq1FrS+NbykNSQNRAAkaBMrcPaZoGNQoFpJsmGYY6GGeQLjZsD+SBEer22CH1YprZSAPGRJy9tninKGogBPfIziT25GV/vc6lcejSqusHgSd4+i+GNMO1/ZMmtqCjGIKdCCWpoEBL45sPqFIi3OCMMovG4ktTwmdWD1McigoCdLLbN0fLO+AXRo9QtFUcoHq6XsdbRhgVEeh1a/UrTF+3LHykdHrua1+WAbWfe1pn57ATlYcbA6pVJSOgGitK/+TL92KPYwDbtJ5454DyqRKd3GoIeEsTGNTMm7ZVk8re9AtLjCFOP6ZNfMkeIiMS/l6w2oyqMuQnsqj6xSYkRmeITep9a7m2fnV+5Uxdi6SlQYnL5gTvSL67Pj9NbssrFf5nlxHrrw87RHl34J+0j0s+/lRB2lTvLCjBydDyFKBO+d27/0nZelr6dOkbRx2lHzjrv7e7/x1Cks4UHQ0bmWiMm7H9YP0QWZBIpPOIcn7Zq2zhQknz0kSbhU4fFKTzivjuwC1rfbu9WYxDtgrR+f/Zj/vZxk8ku9/tZcoAt0gS7QBfpPoH8bujTffmMcsAAAAABJRU5ErkJggg==' };
+// logos kept in the page itself (no file in logos/)
+const LOGO_INLINE = { CASH:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='11' fill='%23e8f5ec'/><g fill='none' stroke='%23177245' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><rect x='9' y='15' width='30' height='18' rx='3'/><circle cx='24' cy='24' r='4'/><path d='M14.5 20v.01M33.5 28v.01'/></g></svg>", AMAZONPAY:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAMAAABiM0N1AAAASFBMVEX////4+fno6uvAw8f+nhngjSGalIuUd09pXk1FTFI4Qks2P0c1QEo1P0g0P0k0PkgzPkgzPkcyPkgxPUgvO0UrOkgoN0UkMDuHBy/XAAACPklEQVR42u2W3ZKrIBCEAZV/0OzA8P5venrM7s0mJqZqz51TUsGgX3qaAaK2Pwp1gS7QBbpAF+gCfUfONdeay97NW0XbpN2HzoNocJOrZao8RsNNpjFkCPdcT4IqRWuDNWYKnFuwE3p+BGvLbcvsred8EtSC0lobrUxozShjjFIeHRAq42OcBxltN66Tmrj6QI2tmoa0yEGZdjq1FrS+NbykNSQNRAAkaBMrcPaZoGNQoFpJsmGYY6GGeQLjZsD+SBEer22CH1YprZSAPGRJy9tninKGogBPfIziT25GV/vc6lcejSqusHgSd4+i+GNMO1/ZMmtqCjGIKdCCWpoEBL45sPqFIi3OCMMovG4ktTwmdWD1McigoCdLLbN0fLO+AXRo9QtFUcoHq6XsdbRhgVEeh1a/UrTF+3LHykdHrua1+WAbWfe1pn57ATlYcbA6pVJSOgGitK/+TL92KPYwDbtJ5454DyqRKd3GoIeEsTGNTMm7ZVk8re9AtLjCFOP6ZNfMkeIiMS/l6w2oyqMuQnsqj6xSYkRmeITep9a7m2fnV+5Uxdi6SlQYnL5gTvSL67Pj9NbssrFf5nlxHrrw87RHl34J+0j0s+/lRB2lTvLCjBydDyFKBO+d27/0nZelr6dOkbRx2lHzjrv7e7/x1Cks4UHQ0bmWiMm7H9YP0QWZBIpPOIcn7Zq2zhQknz0kSbhU4fFKTzivjuwC1rfbu9WYxDtgrR+f/Zj/vZxk8ku9/tZcoAt0gS7QBfpPoH8bujTffmMcsAAAAABJRU5ErkJggg==' };
 // platforms (Holdings ▸ Platforms) use their name: Kite → logos/KITE.png, INDmoney → logos/INDMONEY.png
 function logoMark(name, list, [svg,tint]){
   let file = list ? '' : logoSafe(name);
   for (const [re,f] of list||[]) if (re.test(name)) { file = f; break; }
-  if (LOGO_INLINE[file]) return `<div class="tile ${tint}">${svg}<img class="ok full" src="${LOGO_INLINE[file]}" alt=""></div>`;
+  if (LOGO_INLINE[file]) return `<div class="tile ${tint}">${svg}<img class="ok" src="${LOGO_INLINE[file]}" alt=""></div>`;
   return `<div class="tile ${tint}">${svg}${file ? `<img loading="lazy" decoding="async"
     src="logos/${file}.png" alt="" onload="this.classList.add('ok')" onerror="this.remove()">` : ''}</div>`;
 }
@@ -3217,7 +3219,7 @@ function renderAssets(holdings, usdInr){
     </div>`;
   }).join('') + (list.length
       ? `<div class="listfoot"><span>${list.length} holding${list.length===1?'':'s'}</span>
-         <span>${(()=>{ const sm = list===rows ? sum : list.reduce((s,h)=>s+(native ? (h.value||0) : inInr(h)),0); return native && !inrMode ? '$'+Math.round(sm).toLocaleString('en-US') : fCompact(native ? sm*fx : sm); })()}</span></div>${holdFootNote(rows, all)}`
+         <span>${(()=>{ const sm = list===rows ? sum : list.reduce((s,h)=>s+(native ? (h.value||0) : inInr(h)),0); return native && !inrMode ? usd.format(sm) : fCompact(native ? sm*fx : sm); })()}</span></div>${holdFootNote(rows, all)}`
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
@@ -3391,7 +3393,7 @@ function renderTrends(daily, monthly){
   const invV = h.netWorth!=null && h.runningBalance!=null ? h.netWorth - h.runningBalance : h.investmentValue;
   const total = (invV||0) + cashV, pc = v => total ? Math.round(v/total*100)+'%' : '';
   $('#nwComp').innerHTML = `<div class="k">Net worth today</div><div class="pg-big num money">${bigAmt(fINR2(total))}</div>
-    <div class="nwsub">${h.netWorthDay!=null ? `<span class="pill ${cls(h.netWorthDay)} num money">${fINRs(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>` : ''}</div>
+    <div class="nwsub">${h.netWorthDay!=null ? `<span class="pill ${cls(h.netWorthDay)} num money">${fChg(h.netWorthDay)} · ${fPct(Math.abs(h.netWorthDayPct??0),false)}</span> <span class="today">today</span>` : ''}</div>
     <div class="nwp-bar"><i style="flex:${Math.max(invV,0)};background:var(--blue)"></i><i style="flex:${Math.max(cashV,0)};background:var(--cashc)"></i></div>
     <div class="nwsplit"><div><span><i style="background:var(--blue)"></i>Investments<em>${pc(invV)}</em></span><b class="num money">${fINR(invV)}</b></div>
       <div><span><i style="background:var(--cashc)"></i>Cash<em>${pc(cashV)}</em></span><b class="num money">${fINR(cashV)}</b></div></div>`;
@@ -4442,7 +4444,7 @@ const priceMoney = usdRow => v => v==null ? '—'
   : (v<0?'−':'') + (usdRow ? usd2.format(Math.abs(v)) : '₹' + inrP.format(Math.abs(v)));
 const qtyFmt = n => n==null ? '—' : n>=1000 ? inr.format(Math.round(n)) : String(+Number(n).toFixed(4));
 const arrowAmt = (v, m) => v==null ? '—'
-  : `<span class="${cls(v)}">${v?`<span class="arrow">${v>0?'▲':'▼'}</span> `:''}${m(Math.abs(v))}</span>`;
+  : `<span class="${cls(v)}">${v?`<span class="arrow">${v>0?'▲':'▼'}</span> `:''}${m(Math.round(Math.abs(v))).replace(/\.0+(?!\d)/,'')}</span>`;   // change: whole units
 
 // list = the tickers shown alongside it, in on-screen order, for the prev / next arrows
 function openHolding(ticker, list){
@@ -6089,7 +6091,7 @@ const CARD_ICONS = [
   [/icici/i, () => `<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="#ececef"/><rect x="5" y="11" width="30" height="18" rx="3" fill="#232326"/>${CARD_CHIP(9,15.5)}<path d="M9 24.5h11" stroke="#f08a24" stroke-width="1.8" stroke-linecap="round"/></svg>`]
 ];
 const cardMark = a => { const m = CARD_ICONS.find(([re])=>re.test(a.name)); return m ? `<div class="tile cardic">${m[1]()}</div>` : null; };
-const accMark = a => !a ? bankMark('') : (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}</div>`
+const accMark = a => !a ? bankMark('') : (isCashAcc(a) || /\bcash\b/i.test(a.name)) ? `<div class="tile in">${ICONS.cash}<img class="ok" src="${LOGO_INLINE.CASH}" alt=""></div>`
   : (accKind(a)==='card' && cardMark(a)) || bankMark(a.name);
 const nameMark = n => { const a = accByName(n); return a ? accMark(a) : bankMark(n); };
 function spAccountsHtml(){
@@ -6769,7 +6771,7 @@ function accGroupsHtml(acc, only){
       const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
       const tick = '';   // a match says nothing: only a difference is shown
       return `<div class="row tap" data-acc="${esc(a.name)}">${accMark(a)}
-        <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? `<span class="${last.amt>0?'up':''}">${last.amt>0?'+':'−'}${fINR(Math.abs(last.amt))}</span> · ${agoDay(last.date)}` : 'No activity yet'}</div>`}</div>
+        <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? `<span class="${last.amt>0?'up':''}">${fChg(last.amt)}</span> · ${agoDay(last.date)}` : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
       ? `<div class="rowtotal num money"><span>Total</span><span>${fINR2(list.reduce((t,a)=>t+accBalance(a.name),0))}</span></div>`
@@ -6858,7 +6860,7 @@ function cashbackHtml(a, p){
         <div class="inwrap"><span>₹</span><input data-cbtot inputmode="decimal" value="${p.cbTot ? esc(groupNum(String(p.cbTot),'en-IN')) : ''}" placeholder="${last ? esc(String(last.total)) : '0'}"></div>
         ${last ? `<div class="calc"><div><span>Last total (${esc(fDate(last.date))})</span><span class="num money">${fINR2(last.total)}</span></div>
           ${last.since ? `<div><span>Logged since, with purchases</span><span class="num money">${fINR2(last.since)}</span></div>` : ''}
-          <div class="t"><span>Cashback this month</span><b class="num money ${delta<0?'down':''}">${p.cbTot ? (delta>=0?'+':'') + fINR2(delta) : '—'}</b></div></div>`
+          <div class="t"><span>New since ${esc(fDate(last.date))}</span><b class="num money ${p.cbTot && delta<0?'down':''}" data-cbdelta>${p.cbTot ? (delta>=0?'+':'') + fINR2(delta) : '—'}</b></div></div>`
           : `<label style="margin-top:12px">How much of that came this month?</label>
              <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt!=null ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="the first time only"></div>`}
         ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
@@ -6874,7 +6876,8 @@ function cashbackHtml(a, p){
     }
   }
   return `<div class="cbk"><div class="hd"><h2>Cashback</h2>${form ? '' : `<button class="hadd" data-cbadd>${mode==='total' ? 'Update total' : '+ Add'}</button>`}</div>
-    <div class="st"><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>Avg / month</span><b class="num money">${active ? fINR(yearSum/active) : '—'}</b></div></div>
+    ${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : L.reduce((x,i)=>x+i.amount,0);
+      return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div></div>`; })()}
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
     ${rows ? `<div class="lst">${rows}</div>` : ''}
@@ -6886,7 +6889,12 @@ function wireCashback(p){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   const add = $('#page [data-cbadd]'); if (add) add.onclick = ()=>{ p.cb = true; p.cbTot = ''; p.cbAmt = null; p.cbYm = ymNow(); p.cbErr = ''; again(); setTimeout(()=>{ const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i) i.focus(); }, 50); };
   const x = $('#page [data-cbx]'); if (x) x.onclick = ()=>{ p.cb = false; again(); };
-  const tot = $('#page [data-cbtot]'); if (tot){ commaInput(tot,'en-IN'); tot.onchange = ()=>{ p.cbTot = numPlain(tot.value); again(); }; }
+  const tot = $('#page [data-cbtot]'); if (tot){ commaInput(tot,'en-IN');
+    // the difference shows as you type, not only after leaving the box
+    const live = ()=>{ p.cbTot = numPlain(tot.value); const b = $('#page [data-cbdelta]'), last = cbLastTotal(a.name); if (!b || !last) return;
+      const t = Number(p.cbTot)||0, d = Math.round((t - last.total - last.since)*100)/100;
+      b.textContent = t ? (d>=0?'+':'') + fINR2(d) : '—'; b.classList.toggle('down', !!t && d<0); };
+    tot.addEventListener('input', live); tot.onchange = ()=>{ live(); if (!$('#page [data-cbdelta]')) again(); }; }
   const amt = $('#page [data-cbamt]'); if (amt){ commaInput(amt,'en-IN'); amt.oninput = ()=>{ p.cbAmt = numPlain(amt.value); }; }
   const my = $('#page [data-cbym]'); if (my) my.onchange = ()=>{ p.cbYm = my.value || ymNow(); if (amt) p.cbAmt = numPlain(amt.value); again(); };
   const sv = $('#page [data-cbsave]'); if (sv) sv.onclick = async ()=>{
@@ -8174,7 +8182,7 @@ const PI = {
   home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
   chart:'<path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/>',
   card:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/>',
-  dec:'<text x="12" y="12.6" font-size="14.5" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif">.00</text><path d="M3.5 19h16.5M17 15.8l3.2 3.2-3.2 3.2"/>',
+  dec:'<text x="12" y="12.4" font-size="11.5" font-weight="700" fill="currentColor" stroke="none" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif">.00</text><path d="M6 17.5h11.5M15.2 15.2l2.3 2.3-2.3 2.3"/>',
   sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
   sync:'<path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M5 3v5h5M19 21v-5h-5"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
@@ -8640,7 +8648,7 @@ function start(){
 const isRiver = () => document.documentElement.getAttribute('data-ui')==='river';
 let rvFontIn = false, rvBuilt = false, rvRaf = 0, rvL = null, rvOff = 0, rvFirst = true;
 const RV_FUT = 62, RV_PAST = 45;
-const rvR = v => v==null ? '—' : (v<0?'−':'') + '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
+const rvR = v => fINR(v);
 const rvPlus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 function applyUi(){
   const on = isRiver(), zm = isZoom(), dlo = isDial();
