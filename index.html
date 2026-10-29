@@ -1994,7 +1994,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-02d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-02e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2700,31 +2700,35 @@ function renderAssets(holdings, usdInr){
   const inrMode = !!(native && haveFx && usInr);
   const sum = rows.reduce((s,h)=> s + (native ? (h.value||0) : inInr(h)), 0);
 
+  const capOf = h => { const x = String(h.sub||'').toLowerCase(); return /small/.test(x) ? 'Smallcap' : /mid/.test(x) ? 'Midcap' : /large/.test(x) ? 'Largecap' : /debt|liquid/.test(x) ? 'Debt' : ''; };
+  // Indian stocks on a market-cap tab: the same card as All, for that cap's holdings alone
+  const capSel = assetCat==='Stocks' && ['Largecap','Smallcap','Midcap','Debt'].includes(capTab) ? capTab : null;
   // summary of whatever the chip shows — in dollars for US alone, otherwise rupees
   { const el = $('#assetSum');
-    if (!rows.length || (assetCat==='Stocks' && capTab!=='All')){ el.hidden = true; }   // a cap tab has its own card
+    if (!rows.length){ el.hidden = true; }
     else {
       // Figures come from the Net Worth tab whenever it has a matching row, so the
       // card agrees with Overview: the Total row for All (net of excluded buckets,
       // US cost at the rates actually paid), the asset row for a rupee category.
       // US Stocks alone stays in dollars from the Master List.
       const nwA = ((D && D.data && D.data.netWorth && D.data.netWorth.assets) || []);
-      const nwRow = assetCat==='All' ? nwA.find(a=>a.isTotal) : nwA.find(a=>!a.isTotal && assetCatFor(a.name, all)===assetCat);
+      const cr = capSel ? rows.filter(h=>capOf(h)===capSel) : rows, csum = capSel ? cr.reduce((s,h)=>s+(h.value||0),0) : sum;
+      const nwRow = capSel ? null : assetCat==='All' ? nwA.find(a=>a.isTotal) : nwA.find(a=>!a.isTotal && assetCatFor(a.name, all)===assetCat);
       const useNW = !native && nwRow && nwRow.value!=null && nwRow.invested!=null;
       const k = inrMode ? fx : 1;   // US in rupees: every dollar figure × today's rate
-      const total = useNW ? nwRow.value : sum * k;
-      const invested = useNW ? nwRow.invested : rows.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0);
+      const total = useNW ? nwRow.value : csum * k;
+      const invested = useNW ? nwRow.invested : cr.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0);
       const ret = useNW && nwRow.currReturns!=null ? nwRow.currReturns : total - invested;
       const rp = useNW && nwRow.currPnlPct!=null ? nwRow.currPnlPct : invested ? ret/invested : null;
       // Day is held in rupees on every row; divide back to dollars only for the US view
-      const dayRows = rows.filter(h=>h.day!=null);
+      const dayRows = cr.filter(h=>h.day!=null);
       const dayInr = dayRows.reduce((s,h)=>s+h.day,0);
       const day = useNW && nwRow.dayChange!=null ? nwRow.dayChange
                 : !dayRows.length ? null : native && !inrMode ? (haveFx ? dayInr/fx : null) : dayInr;
       const dp = useNW && nwRow.dayChangePct!=null ? nwRow.dayChangePct : day!=null && (total-day) ? day/(total-day) : null;
       const usdOut = native && !inrMode;
       const mo = usdOut ? (v => usd.format(v)) : (v => fINR(v));
-      const xr = nwRow && nwRow.xirr!=null ? nwRow.xirr : null;
+      const xr = capSel ? (catXirr['Stocks|'+capSel] ?? null) : nwRow && nwRow.xirr!=null ? nwRow.xirr : null;
       el.hidden = false;
       // short side figures: dollars in K / M, rupees in K / L / Cr
       const dp2 = (n, d) => String(+n.toFixed(d));
@@ -2734,10 +2738,10 @@ function renderAssets(holdings, usdInr){
       const skm = v => `${v<0?'−':v>0?'+':''}${km(v)}`;
       // the logs end at the last morning snapshot: add today's point from the holdings
       // as they stand, so the line ends where the card does (new buys included)
-      const ck0 = assetChartKey(assetCat, native && !inrMode), ck = 'T:' + ck0, base = histCache[ck0];
+      const ck0 = capSel ? 'C:Stocks|' + capSel : assetChartKey(assetCat, native && !inrMode), ck = 'T:' + ck0, base = histCache[ck0];
       if (base && base.pts && base.pts.length){
         const today = new Date().toLocaleDateString('en-CA'), last = base.pts[base.pts.length-1];
-        const live = { date: today, invested: rows.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0), value: sum * k };
+        const live = { date: today, invested: cr.reduce((s,h)=>s+(native && !inrMode ? (h.invested||0) : invInr(h)),0), value: csum * k };
         histCache[ck] = { pts: last.date < today ? [...base.pts, live] : [...base.pts.slice(0,-1), live], at: base.at };
       } else histCache[ck] = base || {};
       el.innerHTML = `${chartToggle(assetChart)}${native && haveFx ? `<div class="ccy" role="group" aria-label="Currency"><button data-ccy="usd" class="${inrMode?'':'on'}">$</button><button data-ccy="inr" class="${inrMode?'on':''}">₹</button></div>` : ''}
@@ -2754,14 +2758,14 @@ function renderAssets(holdings, usdInr){
       const tg = $('#assetSum [data-loadchart]');
       if (tg) tg.onclick = ()=>{ assetChart = !assetChart; save('inv.assetChart', assetChart); renderAssets(all, usdInr); };
       $$('#assetSum [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; renderAssets(all, usdInr); });
-      if (assetChart){ loadCategory(assetCat); drawHist(ck, native && !inrMode, 'assetChart'); }
+      if (capSel) loadCategory('Stocks|' + capSel);       // its chart and its XIRR come from the script
+      if (assetChart){ if (!capSel) loadCategory(assetCat); drawHist(ck, native && !inrMode, 'assetChart'); }
     }
   }
 
   // Indian stocks: tabs by market cap (the Master List's Sub-Category), each with its
   // figures from the Breakdown tab's Asset Level table, then only those holdings
   const capOn = assetCat==='Stocks', CAPS = [['All','All'],['Largecap','Largecap'],['Smallcap','Smallcap'],['Midcap','Midcap'],['Debt','Liquid']];
-  const capOf = h => { const x = String(h.sub||'').toLowerCase(); return /small/.test(x) ? 'Smallcap' : /mid/.test(x) ? 'Midcap' : /large/.test(x) ? 'Largecap' : /debt|liquid/.test(x) ? 'Debt' : ''; };
   let list = rows;
   if (capOn){
     if (!CAPS.some(c=>c[0]===capTab)) capTab = 'All';
@@ -2777,19 +2781,7 @@ function renderAssets(holdings, usdInr){
     const kv = (v, signed) => `<b class="money tipv ${signed ? cls(v) : ''}" data-full="${esc(signed ? (v<0?'−':v>0?'+':'') + fINR2(Math.abs(v)) : fINR2(v))}">${signed && v>0 ? '+' : ''}${fKL(v)}</b>`;
     const pc = v => st.invested ? ` <em class="${cls(v)}">(${fPct(v/st.invested,false)})</em>` : '';
     $('#capWrap').innerHTML = `<div class="captabs">${CAPS.map(([k,l])=>`<button data-cap="${k}" class="${k===capTab?'on':''}">${l}</button>`).join('')}</div>
-      ${capTab==='All' ? '' : `<div class="card capstat hstats num"><div class="caphd"><div class="k">${capTab==='All' ? 'Indian stocks' : esc(capTab==='Debt' ? 'Liquid (debt)' : capTab)}</div>
-          <button class="capmore ${capOpen?'on':''}" data-capmore aria-expanded="${capOpen}" aria-label="${capOpen ? 'Fewer details' : 'More details'}">${chev('M6 9l6 6 6-6')}</button></div>
-        <div class="big money">${bigAmt(fINR2(st.value))}</div>
-        <div class="kgrid k2">
-          <div><span>Invested</span>${kv(st.invested)}</div>
-          <div><span>Current P&amp;L${pc(st.pnl)}</span>${kv(st.pnl, true)}</div>
-        </div>
-        <div class="capx" ${capOpen ? '' : 'hidden'}>
-        <div class="hrow"><span>Realised</span><b class="${cls(st.realized)}">${sp(st.realized)}</b></div>
-        <div class="hrow"><span>Total P&amp;L${pc(tot)}</span><b class="${cls(tot)}">${sp(tot)}</b></div>
-        <div class="hrow"><span>Holdings</span><b>${n}</b></div>
-        <div class="hrow"><span>Share of Indian stocks</span><b>${all.value ? fPct(st.value/all.value,false) : '—'}</b></div>
-        <div class="hrow"><span>Share of portfolio</span><b>${st.alloc!=null ? fPct(st.alloc,false) : '—'}</b></div></div></div>`}`;   // All: the card above already covers it
+      `;   // the card above shows the tab's figures (value, today, invested, P&L, XIRR, chart)
     $$('#capWrap [data-cap]').forEach(b=>b.onclick=()=>{ capTab = b.dataset.cap; renderAssets(all0, usdInr); });
     { const on = $('#capWrap .captabs .on'), bar = $('#capWrap .captabs'); if (on && bar) bar.scrollLeft = Math.max(0, on.offsetLeft - (bar.clientWidth - on.offsetWidth)/2); }
     const cm = $('#capWrap [data-capmore]'); if (cm) cm.onclick = ()=>{ capOpen = !capOpen; renderAssets(all0, usdInr); };
@@ -4273,7 +4265,7 @@ function drawHist(ticker, usdRow, cid='histChart'){
 // 'C:<cat>'; US Stocks also in dollars under 'C$:US Stocks' for the $ view.
 let assetChart = load('inv.assetChart') === true;
 const assetChartKey = (cat, usd) => (usd ? 'C$:' : 'C:') + cat;
-const catLoad = {};
+const catLoad = {}, catXirr = {};
 async function loadCategory(cat){
   const c = catLoad[cat];
   if (c && (c.loading || (Date.now() - c.at) < (c.ok ? 6e5 : 2e4))) return;
@@ -4282,6 +4274,7 @@ async function loadCategory(cat){
     const j = await api({ action:'category', category:cat });
     const pts = (j.data && j.data.points) || [];
     histCache['C:'+cat] = { pts, at: Date.now() };
+    if (j.data && 'xirr' in j.data) catXirr[cat] = j.data.xirr;
     const up = pts.filter(p=>p.usdValue!=null);
     if (up.length) histCache['C$:'+cat] = { pts: up.map(p=>({ date:p.date, invested:p.usdInvested, value:p.usdValue })), at: Date.now() };
     catLoad[cat] = { ok:true, at: Date.now() };
@@ -4290,7 +4283,7 @@ async function loadCategory(cat){
     histCache['C:'+cat] = histCache['C$:'+cat] = { err: msg, at: Date.now() };
     catLoad[cat] = { at: Date.now() };
   }
-  if (assetCat===cat && D && D.data) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
+  if ((assetCat===cat || assetCat + '|' + capTab===cat) && D && D.data) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
 }
 
 // One call per platform: its orders and its weekly invested-vs-value history.
