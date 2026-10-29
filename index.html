@@ -1456,7 +1456,17 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cccats .more{display:block;width:100%;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0 2px;cursor:pointer}
 .ccbigbuy{display:flex;align-items:baseline;gap:8px;margin:12px -16px -16px;padding:12px 16px;border-top:1px solid var(--hairline);font-size:13px;color:var(--ink-2)}
 .ccbigbuy b{color:var(--ink);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ccact{padding-top:0}
+.ccbox{padding:14px 0 0;overflow:hidden}.ccbox>.seg{margin:0 16px 2px}.ccbox>.seg button{font-size:13.5px;padding:6px 4px}   /* like Net worth › Change */
+.ccbox .ccsp{padding:14px 16px 16px}
+.cchd{align-items:center}.cchd .ccmon{margin:-6px 0}.cchd .ccmon button{padding:0;margin:0}   /* not a .sechead link button */
+.cctools{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px}.cctools .hsort{padding:6px 0}
+.ccic{display:flex;gap:8px}.ccic .hsbtn{width:34px;height:34px;position:relative;background:var(--parchment);border-color:transparent}.ccic .hsbtn svg{width:16px;height:16px}
+.ccic .hsbtn.on{background:rgba(0,102,204,.12);color:var(--blue)}.ccic .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 6px 0 12px}.ccsearch input{font-size:15px}
+.ccsx{flex:none;font-size:14px;color:var(--blue);padding:0 8px}
+.ccbox .fchip{margin:4px 16px 4px}   /* the active filter, as on Spend › Activity */
+.ccrows{padding:0 16px}.ccrows .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
+.ccrows .more{display:block;width:calc(100% + 32px);margin:0 -16px;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0;cursor:pointer}
 .cctabs{display:flex;align-items:flex-end;gap:10px;margin:18px 16px 12px;border-bottom:1px solid var(--hairline)}   /* underline tabs, like the asset pages */
 .cctabs .captabs{flex:1;margin:0;border-bottom:0;overflow:visible}   /* two tabs always fit: no sideways scroll on a drag */.cctabs .ccmon{margin-bottom:7px}
 .ccmon{display:flex;align-items:center;background:var(--sunken);border-radius:999px;padding:3px}
@@ -2036,7 +2046,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
-:is([data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.ccact .chip,[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]):has(> .hz){position:relative}
+:is([data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,[data-acts],[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]):has(> .hz){position:relative}
 .hz{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.011;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:1}
 .xextras{margin:4px 2px 12px;display:flex;flex-direction:column;gap:6px}
 .xxck{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);padding:4px 2px;cursor:pointer}
@@ -2261,7 +2271,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03r';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03s';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4410,7 +4420,7 @@ window.addEventListener('touchend', ()=>{
 // invisible switch laid over them: your tap flips it (the tick) and the click carries on to
 // the control underneath as usual (tried on Daily/Weekly/Monthly first: ticks, still switches).
 function haptic(p){ try{ if (navigator.vibrate) navigator.vibrate(p || 8); }catch(e){} }
-const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.ccact .chip,[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]';
+const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,[data-acts],[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]';
 function hapify(root){
   if (navigator.vibrate) return;
   (root.querySelectorAll ? root : document).querySelectorAll(HAP_SEL).forEach(el=>{
@@ -6827,11 +6837,12 @@ function ccMonths(moves){ const ym = ymNow(), first = moves.length ? moves[moves
   const out = []; for (let m = first < ymAdd(ym,-5) ? first : ymAdd(ym,-5); m <= ym; m = ymAdd(m,1)) out.push(m); return out; }
 function ccTabsHtml(a, p, moves){
   const all = ccMonths(moves); if (!p.ccm || !all.includes(p.ccm)) p.ccm = ymNow();
-  const i = all.indexOf(p.ccm), tab = p.ccTab || 'spend';
+  const i = all.indexOf(p.ccm), tab = p.ccTab || 'act';   // Activity first
   const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-  return `<div class="cctabs"><div class="captabs cct"><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button></div>
+  return `<div class="sechead cchd"><h2>Transactions</h2>
       <div class="ccmon"><button data-ccs="-1" aria-label="Previous month" ${i<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${esc(ymShort(p.ccm).slice(0,3))}${p.ccm.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.ccm.slice(2,4) : ''}</span><button data-ccs="1" aria-label="Next month" ${i>=all.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
-    ${tab==='spend' ? ccSpendHtml(a, p, moves) : ccActivityHtml(p, moves)}`;
+    <div class="card ccbox"><div class="seg"><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button></div>
+    ${tab==='spend' ? ccSpendHtml(a, p, moves) : ccActivityHtml(p, moves)}</div>`;
 }
 function ccSpendHtml(a, p, moves){
   const ex = moves.filter(m=>m.kind==='expense'), ym = ymNow(), sel = p.ccm || ym;
@@ -6856,7 +6867,7 @@ function ccSpendHtml(a, p, moves){
   const byC = {}; inM.forEach(x=>{ const c = x.e.category||'Other'; (byC[c] = byC[c] || { c, t:0, n:0 }); byC[c].t -= x.amt; byC[c].n++; });
   const cats = Object.values(byC).sort((a,b)=>b.t-a.t), cmx = cats.length ? cats[0].t : 1, showC = p.ccCatAll ? cats : cats.slice(0,4);
   const big = inM.slice().sort((a,b)=>a.amt-b.amt)[0];
-  return `<div class="card ccsp">
+  return `<div class="ccsp">
     <div class="cctop"><div><div class="k">Spent in ${esc(ymLabel(sel).split(' ')[0])}${sel===ym ? ' so far' : ''}</div>
         <div class="ccbig num money">${bigAmt(fINR2(cur))}</div>
         <div class="ccsub">${n ? `${n} purchase${n===1?'':'s'}` : 'No purchases'}${vs ? ' · ' + vs : ''}</div></div></div>
@@ -6868,13 +6879,34 @@ function ccSpendHtml(a, p, moves){
     ${big ? `<div class="ccbigbuy"><span>Biggest</span><b>${esc(big.title)}</b><span class="num money">${fINR2(-big.amt)} · ${esc(fDate(big.date))}</span></div>` : ''}
   </div>`;
 }
+// Activity: Sort on the left; search and filter (All / Spends / Payments) on the right
+const CC_SORT = [['new','Newest'],['old','Oldest'],['hi','Highest'],['lo','Lowest']];
+const CC_TYPE = { all:['All',()=>true], spends:['Spends',m=>m.kind==='expense'], pay:['Payments',m=>m.kind!=='expense'] };
+function ccActPool(p, moves){
+  const sel = p.ccm || ymNow(), f = CC_TYPE[p.actF] ? p.actF : 'all', q = String(p.actQ||'').trim().toLowerCase();
+  const pool = moves.filter(m=>m.date.slice(0,7)===sel && CC_TYPE[f][1](m)
+    && (!q || [m.title, m.meta, m.e.note, m.e.desc, m.e.category, String(Math.abs(m.amt))].join(' ').toLowerCase().includes(q)));
+  const k = p.actS || 'new';
+  pool.sort(k==='old' ? (a,b)=>a.date<b.date?-1:a.date>b.date?1:0 : k==='hi' ? (a,b)=>Math.abs(b.amt)-Math.abs(a.amt) : k==='lo' ? (a,b)=>Math.abs(a.amt)-Math.abs(b.amt) : (a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  return pool;
+}
+function ccActRows(p, moves){
+  const pool = ccActPool(p, moves), N = p.actN || 12, shown = pool.slice(0, N), sel = p.ccm || ymNow();
+  return (shown.length ? shown.map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)} · ${esc(fDate(m.date))}</div></div>
+      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')
+    : `<div class="empty">${p.actQ ? 'No matches' : 'Nothing'} in ${esc(ymLabel(sel).split(' ')[0])}</div>`)
+    + (pool.length > N ? `<button class="more" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : '');
+}
 function ccActivityHtml(p, moves){
-  const f = p.actF || 'all', sel = p.ccm || ymNow(), pool = moves.filter(m=>m.date.slice(0,7)===sel && (f==='all' || (f==='spends' ? m.kind==='expense' : m.kind!=='expense')));
-  const N = p.actN || 12, shown = pool.slice(0, N);
-  const chips = [['all','All'],['spends','Spends'],['pay','Payments']].map(([k,l])=>`<button class="chip ${k===f?'on':''}" data-actf="${k}">${l}</button>`).join('');
-  return `<div class="chips ccact">${chips}</div>
-    <div class="acclist">${shown.length ? dayRows(shown) : `<div class="card tight"><div class="empty">Nothing in ${esc(ymLabel(sel).split(' ')[0])}</div></div>`}
-    ${pool.length > N ? `<button class="ccmore" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : ''}</div>`;
+  const lbl = (CC_SORT.find(x=>x[0]===(p.actS||'new'))||CC_SORT[0])[1], fOn = p.actF && p.actF!=='all', sOpen = p.actSO || !!p.actQ;
+  const chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  return `<div class="cctools">${sOpen
+      ? `<label class="search ccsearch">${SRCH_ICON}<input type="search" data-actq placeholder="Search this month" value="${esc(p.actQ||'')}" autocomplete="off"><button class="ccsx" data-actqx aria-label="Close search">Cancel</button></label>`
+      : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
+         <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
+    ${fOn ? `<div class="fchip"><button data-actfx>${esc(CC_TYPE[p.actF][0])}<span aria-hidden="true">✕</span></button></div>` : ''}
+    <div class="ccrows">${ccActRows(p, moves)}</div>`;
 }
 function accBody(p){
   const a = accByName(p.acc); if (!a) return '<div class="pg-load">Account not found</div>';
@@ -7196,13 +7228,27 @@ function wireAccPage(p){
   $$('#page [data-cct]').forEach(b=>b.onclick=()=>{ p.ccTab = b.dataset.cct; rerender(); });
   const cc = $('#page [data-cccat]'); if (cc) cc.onclick = ()=>{ p.ccCatAll = !p.ccCatAll; rerender(); };
   const cba = $('#page [data-cball]'); if (cba) cba.onclick = ()=>{ p.cbAll = !p.cbAll; rerender(); };
-  $$('#page [data-actf]').forEach(b=>b.onclick=()=>{ p.actF = b.dataset.actf; p.actN = 12; rerender(); });
-  const am2 = $('#page [data-actmore]'); if (am2) am2.onclick = ()=>{ p.actN = (p.actN||12) + 20; rerender(); };
-  $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
+  const wireMore = () => { const am2 = $('#page [data-actmore]'); if (am2) am2.onclick = ()=>{ p.actN = (p.actN||12) + 20; rerender(); }; };
+  wireMore();
+  const so = $('#page [data-acts]'); if (so) so.onchange = ()=>{ p.actS = so.value; p.actN = 12; rerender(); };
+  const sr = $('#page [data-actsrch]'); if (sr) sr.onclick = ()=>{ p.actSO = true; rerender(); const i = $('#page [data-actq]'); if (i) i.focus(); };
+  const qx = $('#page [data-actqx]'); if (qx) qx.onclick = e=>{ e.preventDefault(); p.actSO = false; p.actQ = ''; p.actN = 12; rerender(); };
+  const qi = $('#page [data-actq]'); if (qi) qi.oninput = ()=>{ p.actQ = qi.value; p.actN = 12;   // only the list redraws, so the keyboard stays up
+    const box = $('#page .ccrows'), a = accByName(p.acc); if (!box || !a) return; box.innerHTML = ccActRows(p, accMoves(a.name)); wireMore(); wireMv(); };
+  const fx = $('#page [data-actfx]'); if (fx) fx.onclick = ()=>{ p.actF = 'all'; p.actN = 12; rerender(); };
+  const fb = $('#page [data-actflt]'); if (fb) fb.onclick = ()=>{   // same small menu as Spend › Activity's filter
+    closeTxMenu(); const r = fb.getBoundingClientRect(), a = accByName(p.acc), ms = accMoves(a.name).filter(m=>m.date.slice(0,7)===(p.ccm||ymNow()));
+    const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
+    const m = document.createElement('div'); m.className = 'fmenu'; m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+    m.innerHTML = Object.entries(CC_TYPE).map(([k,[l,fn]])=>`<button data-ccf="${k}"><span>${l}</span>${(p.actF||'all')===k ? '<i>✓</i>' : `<small class="num">${ms.filter(fn).length}</small>`}</button>`).join('');
+    m.querySelectorAll('[data-ccf]').forEach(b=>b.onclick=()=>{ p.actF = b.dataset.ccf; p.actN = 12; closeTxMenu(); rerender(); });
+    document.body.append(bd, m); };
+  const wireMv = () => $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
     const [kind,row] = r.dataset.mv.split(':'), d = xd();
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers;
     openXSheet((pool||[]).find(e=>String(e.row)===row), kind);
   });
+  wireMv();
   const ed = $('#page .xbed');
   if (ed){
     const inp = ed.querySelector('input'); commaInput(inp,'en-IN'); inp.focus(); inp.select();
