@@ -488,6 +488,8 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .cch span,.cc2 span{display:block;font-size:12px;color:var(--ink-2);letter-spacing:-.05px;margin-bottom:3px}
 .cch b{display:block;font-family:var(--font-disp);font-size:30px;font-weight:600;letter-spacing:-.9px;line-height:1.1;white-space:nowrap}
 .cch b.down{color:var(--down)}
+.cch b.pg-big{font-size:34px;letter-spacing:-1px;margin:0}   /* same as the title amount on other pages */
+.cch b.pg-big span{display:inline;margin-bottom:0;font-size:.6em;letter-spacing:0}.cch b.pg-big .bcs{color:inherit}.cch b.pg-big .bdc{color:var(--ink-2)}.cch b.pg-big.down .bdc{color:inherit}
 .cch .r{text-align:right}.cch .r b{font-family:inherit;font-size:17px;letter-spacing:-.3px}
 .cch .r small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
 .ccp{margin:16px 0 16px;padding:14px;border-radius:14px;background:var(--parchment)}
@@ -2022,13 +2024,13 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .hstar .tx{min-width:0;flex:1}.hstar .t{font-size:15px;letter-spacing:-.2px;line-height:1.25}.hstar .t b{font-weight:700}
 .hstar .m{font-size:13px;margin-top:2px}.hstar .m.up{color:var(--up)}.hstar .m.down{color:var(--down)}
 .hstar .cv{color:var(--ink-3);width:14px;height:14px;flex:0 0 auto}
-.hentry button{display:flex;align-items:center;gap:10px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink);min-width:0}
+.hentry button{display:flex;align-items:center;gap:8px;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 10px 10px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink);min-width:0}
 .hentry .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}
 .hentry .ic svg{width:16px;height:16px}
 .hentry .tx{min-width:0}
 .hentry .t{font-size:15px;font-weight:600;letter-spacing:-.2px;line-height:1.2}
-.hentry .m{font-size:12px;color:var(--ink-2);letter-spacing:-.1px;line-height:1.3;margin-top:1px}
-.hentry .m>span{white-space:nowrap}
+/* one line, whole rupees: a quick glance, the page behind it has the paise */
+.hentry .m{font-size:12px;color:var(--ink-2);letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hentry .sk{display:inline-block;width:64px;height:9px;border-radius:5px;vertical-align:middle;background:linear-gradient(90deg,var(--sunken) 25%,var(--hairline) 50%,var(--sunken) 75%);background-size:200% 100%;animation:hsk 1.2s linear infinite}
 @keyframes hsk{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion: reduce){.hentry .sk{animation:none}}
@@ -2230,7 +2232,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03p';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2659,13 +2661,15 @@ function openWrap(ym){
   ov.addEventListener('touchend', e=>{ if (sy!=null && e.changedTouches[0].clientY - sy > 90) close(); sy = null; }, { passive:true });
   go(0); raf = requestAnimationFrame(tick); window.__wrapGo = go;
 }
+// the two tiles under Net worth: whole rupees, a lakh and up as ₹3.5L, so the line never wraps
+const hmAmt = v => Math.abs(v) >= 1e5 ? fCompact(Math.abs(v)) : '₹' + inr.format(Math.round(Math.abs(v)));
 function homeMonth(){
   const el = $('#homeMonth'); if (!el) return;
   const b = typeof rvBudget==='function' ? rvBudget() : null, Y = typeof taxYear==='function' ? taxYear() : null, n = Y && Y.advance && Y.advance.next;
   const cv = '<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
   const mon = new Date().toLocaleDateString('en-IN',{ month:'long' }), parts = [];
-  if (b) parts.push(`<button data-hm="budget"><span class="ic ${b.left<0?'ov':'bk'}">${IC_WALLET}</span><span class="tx"><div class="t">Budget</div><div class="m num money ${b.left<0?'down':''}"><span>${fINR(Math.abs(b.left))}</span> <span>${b.left<0?'over':'left'}</span></div></span>${cv}</button>`);
-  if (n && n.amount > 0) parts.push(`<button data-hm="tax"><span class="ic tx2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TAX_ICON}</svg></span><span class="tx"><div class="t">Tax due</div><div class="m num money"><span>${fINR(n.amount)}</span> <span>by ${esc(dayLbl(n.date))}</span></div></span>${cv}</button>`);
+  if (b) parts.push(`<button data-hm="budget"><span class="ic ${b.left<0?'ov':'bk'}">${IC_WALLET}</span><span class="tx"><div class="t">Budget</div><div class="m num money ${b.left<0?'down':''}">${hmAmt(b.left)} ${b.left<0?'over':'left'}</div></span>${cv}</button>`);
+  if (n && n.amount > 0) parts.push(`<button data-hm="tax"><span class="ic tx2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TAX_ICON}</svg></span><span class="tx"><div class="t">Tax due</div><div class="m num money">${hmAmt(n.amount)} · ${esc(dayLbl(n.date))}</div></span>${cv}</button>`);
   el.innerHTML = parts.join('');
   el.style.gridTemplateColumns = parts.length===1 ? '1fr' : '';
   $$('#homeMonth [data-hm]').forEach(x=>x.onclick=()=> x.dataset.hm==='tax' ? pushPage({ kind:'tax' }) : show('spend','budget'));
@@ -6080,7 +6084,8 @@ function accMoves(name){
   });
   return out.sort((x,y)=>x.date<y.date?1:x.date>y.date?-1:0);
 }
-const accBalance = name => { const a = accByName(name); return (a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+m.amt,0); };
+// rounded to the paisa: adding up many entries leaves float dust (−0.0000001) that read as "−₹0.00 credit"
+const accBalance = name => { const a = accByName(name); const v = Math.round(((a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+m.amt,0))*100)/100; return v || 0; };
 // one icon per account, the same everywhere (lists, its page, the entry form, Net Worth rows):
 // cash accounts (Cash, Cash · C) the cash note, everything else its bank's logo (or the bank fallback)
 // credit cards get a small picture of the card itself (colours from the real card, no logos)
@@ -6794,7 +6799,7 @@ function accBody(p){
     let x = at(t.getFullYear(), t.getMonth()); if (x < t) x = at(t.getFullYear(), t.getMonth()+1); return x; };
   const due = card && a.dueDay ? nextDue(a.dueDay) : null;
   const owed = Math.max(0,-bal);
-  const ccHero = !card ? '' : `<div class="cch"><div><span>${bal>0?'Credit':'Outstanding'}</span><b class="num money ${owed>0?'down':''}">${fINR2(bal>0?bal:owed)}</b></div>
+  const ccHero = !card ? '' : `<div class="cch"><div><span>${bal>0?'Credit':'Outstanding'}</span><b class="pg-big num money ${owed>0?'down':''}">${bigAmt(fINR2(bal>0?bal:owed))}</b></div>
       <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b></div></div>
     ${a.limit ? `<div class="ccp"><div class="cc2"><div><span>Limit used</span><b class="num money">${fINR2(owed)}</b></div><div class="r"><span>Total limit</span><b class="num money">${fINR2(a.limit)}</b></div></div>
       ${pbar(owed/a.limit)}
