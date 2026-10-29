@@ -2030,8 +2030,8 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgpod .p1 .pdb{height:74px;background:linear-gradient(180deg,rgba(255,214,10,.55),rgba(255,214,10,.12))}
 .lgpod .p2 .pdb{height:52px;background:linear-gradient(180deg,rgba(167,173,183,.5),rgba(167,173,183,.1))}
 .lgpod .p3 .pdb{height:38px;background:linear-gradient(180deg,rgba(201,129,74,.5),rgba(201,129,74,.1))}
-.lgtable,.lgbench{margin-bottom:14px}
-.lgrow{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--hairline);background:none;padding:10px 14px;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.lgtable,.lgbench{margin-bottom:14px}.card.tight.lgtable,.card.tight.lgbench{padding:0;overflow:hidden}   /* rows run edge to edge, so the tints reach the sides */
+.lgrow{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--hairline);background:none;padding:10px 16px;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
 .lgtable .lgrow:first-child,.lgbench .lgrow:first-child,.lgrel + .lgrow{border-top:0}
 .lgrow .rk{width:20px;text-align:center;font:700 14px/1 var(--font-disp,inherit);color:var(--ink-3)}
 .lgrow .tile{width:34px;height:34px;border-radius:10px;flex:0 0 auto}
@@ -2040,7 +2040,10 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow .xr{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:70px}.lgrow .xr b{font-size:15px;font-weight:600}
 .lgrow .bar{width:64px;height:4px;border-radius:2px;background:var(--sunken);overflow:hidden;display:block}.lgrow .bar em{display:block;height:100%;background:var(--up);border-radius:2px;margin-left:auto}.lgrow .bar.neg em{background:var(--down)}
 .lgrow.rel{background:linear-gradient(90deg,var(--down-bg),transparent 75%)}
-.lgrel{display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-top:1.5px dashed var(--down);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--down)}
+.lgrow.pd1{background:linear-gradient(90deg,rgba(255,196,0,.22),transparent 75%)}.lgrow.pd1 .rk{color:#b8860b}
+.lgrow.pd2{background:linear-gradient(90deg,rgba(150,160,175,.22),transparent 75%)}.lgrow.pd2 .rk{color:#7d8592}
+.lgrow.pd3{background:linear-gradient(90deg,rgba(205,127,50,.2),transparent 75%)}.lgrow.pd3 .rk{color:#a0522d}
+.lgrel{display:flex;align-items:center;gap:8px;padding:8px 16px 6px;border-top:1.5px dashed var(--down);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--down)}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
@@ -2269,7 +2272,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03v';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4835,7 +4838,7 @@ function leagueBody(p){
   if (!lgTx && !lgBusy && !lgErr) setTimeout(leagueLoad, 0);
   const L = leagueData(); if (!L) return '<div class="pg-load">Loading…</div>';
   const tab = p.tab || 'hold', isH = tab==='hold';
-  const cats = [...new Set(L.hold.map(r=>r.cat))];
+  const seen = [...new Set(L.hold.map(r=>r.cat))], cats = CAT_ORDER.filter(c=>seen.includes(c)).concat(seen.filter(c=>!CAT_ORDER.includes(c)));   // same order as the Holdings chips
   if (lgFilt!=='All' && !cats.includes(lgFilt)) lgFilt = 'All';
   const pool = isH ? L.hold.filter(r=>lgFilt==='All' || r.cat===lgFilt) : L.assets;
   const ranked = pool.filter(r=>r.x!=null).sort((a,b)=>b.x-a.x), bench = pool.filter(r=>r.x==null);
@@ -4847,9 +4850,9 @@ function leagueBody(p){
   // podium: 2 · 1 · 3
   const pod = ranked.length >= 3 ? `<div class="lgpod">${[1,0,2].map(i=>{ const r = ranked[i];
       return `<button class="pd p${i+1}" data-lg="${esc(r.k)}"><div class="pdt"><span class="ring">${tileOf(r)}</span><i class="md">${i+1}</i></div><div class="pdn">${esc(r.asset?r.name:r.k)}</div><div class="pdx num ${cls(r.x)}">${xs(r.x)}</div><div class="pdb"></div></button>`; }).join('')}</div>` : '';
-  const rest = ranked.length >= 3 ? ranked.slice(3) : ranked, base = ranked.length >= 3 ? 3 : 0;
+  const rest = ranked, base = 0;   // the podium's three are in the list too, tinted gold, silver and bronze
   const relN = ranked.length >= 6 ? Math.min(3, ranked.filter(r=>r.x<0).length) : 0, relAt = rest.length - relN;
-  const row = (r, i) => `${i===relAt && relN ? '<div class="lgrel"><span>Relegation zone</span></div>' : ''}<button class="lgrow ${i>=relAt && relN ? 'rel':''}" data-lg="${esc(r.k)}">
+  const row = (r, i) => `${i===relAt && relN ? '<div class="lgrel"><span>Relegation zone</span></div>' : ''}<button class="lgrow ${i>=relAt && relN ? 'rel' : i<3 && ranked.length>=3 ? 'pd' + (i+1) : ''}" data-lg="${esc(r.k)}">
       <b class="rk">${base+i+1}</b>${tileOf(r)}<span class="nm"><b>${esc(r.asset?r.name:r.k)}</b><small>${meta(r)}</small></span>
       <span class="xr"><b class="num ${cls(r.x)}">${xs(r.x)}</b><i class="bar ${r.x<0?'neg':''}"><em style="width:${(Math.abs(r.x)/mx*100).toFixed(1)}%"></em></i></span></button>`;
   const seg = `<div class="tabsw"><div class="seg" id="lgSeg"><button data-lt="hold" class="${isH?'on':''}">Holdings</button><button data-lt="assets" class="${!isH?'on':''}">Assets</button></div></div>`;
@@ -6887,9 +6890,11 @@ function ccSpendHtml(a, p, moves){
 // Activity: Sort on the left; search and filter (All / Spends / Payments) on the right
 const CC_SORT = [['new','Newest'],['old','Oldest'],['hi','Highest'],['lo','Lowest']];
 const CC_TYPE = { all:['All',()=>true], spends:['Spends',m=>m.kind==='expense'], pay:['Payments',m=>m.kind!=='expense'] };
+const BK_TYPE = { all:['All',()=>true], spends:['Spends',m=>m.kind==='expense'], in:['Money in',m=>m.kind==='income'], tr:['Transfers',m=>m.kind==='transfer'] };
+const actTypes = p => { const a = accByName(p.acc); return a && accKind(a)==='card' ? CC_TYPE : BK_TYPE; };
 function ccActPool(p, moves){
-  const sel = p.ccm || ymNow(), f = CC_TYPE[p.actF] ? p.actF : 'all', q = String(p.actQ||'').trim().toLowerCase();
-  const pool = moves.filter(m=>m.date.slice(0,7)===sel && CC_TYPE[f][1](m)
+  const T = actTypes(p), sel = p.ccm || ymNow(), f = T[p.actF] ? p.actF : 'all', q = String(p.actQ||'').trim().toLowerCase();
+  const pool = moves.filter(m=>m.date.slice(0,7)===sel && T[f][1](m)
     && (!q || [m.title, m.meta, m.e.note, m.e.desc, m.e.category, String(Math.abs(m.amt))].join(' ').toLowerCase().includes(q)));
   const k = p.actS || 'new';
   pool.sort(k==='old' ? (a,b)=>a.date<b.date?-1:a.date>b.date?1:0 : k==='hi' ? (a,b)=>Math.abs(b.amt)-Math.abs(a.amt) : k==='lo' ? (a,b)=>Math.abs(a.amt)-Math.abs(b.amt) : (a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
@@ -6909,7 +6914,7 @@ function ccActivityHtml(p, moves){
       ? `<label class="search ccsearch">${SRCH_ICON}<input type="search" data-actq placeholder="Search this month" value="${esc(p.actQ||'')}" autocomplete="off"><button class="ccsx" data-actqx aria-label="Close search">Cancel</button></label>`
       : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
          <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
-    ${fOn ? `<div class="fchip"><button data-actfx>${esc(CC_TYPE[p.actF][0])}<span aria-hidden="true">✕</span></button></div>` : ''}
+    ${fOn ? `<div class="fchip"><button data-actfx>${esc((actTypes(p)[p.actF]||['All'])[0])}<span aria-hidden="true">✕</span></button></div>` : ''}
     <div class="ccrows">${ccActRows(p, moves)}</div>`;
 }
 function accBody(p){
@@ -6948,8 +6953,7 @@ function accBody(p){
         <div><span>Out · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
         <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>`}
     </div>
-    ${card ? cashbackHtml(a, p) + ccTabsHtml(a, p, moves)
-      : `${ziBankHtml(a)}<div class="acclist">${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}</div>`}`;
+    ${card ? cashbackHtml(a, p) : ziBankHtml(a, p)}${ccTabsHtml(a, p, moves)}`;   // cards: cashback · banks: interest · then Transactions
 }
 /* ---------- Cashback on a card: saved as Income · Cashback into the card.
    'monthly' cards: type what came in. 'total' cards: type the lifetime total from
@@ -7015,12 +7019,21 @@ function cashbackHtml(a, p){
     ${form || ''}
   </div>`;
 }
+// bring a just-opened form fully into view above the keyboard: its bottom (the Save button) just
+// above the keyboard, its top never under the page header. Run again once the keyboard has opened.
+function revealForm(form){
+  if (!form) return; const pg = $('#page');
+  const go = () => { const vv = window.visualViewport, h = vv ? vv.height + vv.offsetTop : innerHeight, r = form.getBoundingClientRect(), top = 70;
+    let d = r.bottom + 16 - h; if (r.top - d < top) d = r.top - top; if (Math.abs(d) > 2) pg.scrollBy({ top:d, behavior:'smooth' }); };
+  go(); setTimeout(go, 380); setTimeout(go, 750);
+  if (window.visualViewport) visualViewport.addEventListener('resize', go, { once:true });
+}
 function wireCashback(p){
   const a = accByName(p.acc); if (!a) return;
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   const add = $('#page [data-cbadd]'); if (add) add.onclick = ()=>{ p.cb = true; p.cbTot = ''; p.cbAmt = null; p.cbYm = ymNow(); p.cbErr = ''; again();
     // focus inside the tap itself: iPhone only raises the keyboard for a focus made during the tap, not after a timeout
-    const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i){ i.focus(); i.scrollIntoView({ block:'center', behavior:'smooth' }); } };
+    const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i){ i.focus({ preventScroll:true }); revealForm($('#page .cbform')); } };
   const x = $('#page [data-cbx]'); if (x) x.onclick = ()=>{ p.cb = false; again(); };
   const tot = $('#page [data-cbtot]'); if (tot){ commaInput(tot,'en-IN');
     // the difference shows as you type, not only after leaving the box
@@ -7096,7 +7109,7 @@ function ziRemindHtml(){
 }
 
 // a bank's page: its interest, every quarter (and the yearly rows before)
-function ziBankHtml(a){
+function ziBankHtml(a, p){ p = p || {};
   const b = ziBanks(), col = ziColOf(a.name); if (!b || !col) return '';
   const rows = b.rows.filter(r=>r.v && r.v[col]!=null);
   const qs = rows.filter(r=>r.date >= ZI_QSTART), lastQ = qs[qs.length-1];
@@ -7110,12 +7123,12 @@ function ziBankHtml(a){
   const label = r => r.date >= ZI_QSTART ? qLabel(r.date) : r.date ? 'Up to ' + qMon(r.date) + ' ' + r.date.slice(0,4) : (r.fy || '').replace('-', '–');
   const meta = r => r.date >= ZI_QSTART ? 'Quarter' : 'Yearly';
   const list = (pend ? `<div class="lr due"><span>${esc(qLabel(next))}<small>${next===due ? 'Due now' : 'From 25 ' + qMon(next)}</small></span><em>Pending</em></div>` : '')
-    + rows.slice().reverse().map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
+    + rows.slice().reverse().slice(0, p.ziAll ? 99 : (pend ? 0 : 1)).map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
   return `<div class="cbk zint"><div class="hd"><h2>Interest</h2>${pend ? `<button class="hadd" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))}</button>` : ''}</div>
     <div class="st"><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>All time</span><b class="num money">${fINR(all)}</b></div></div>
     <div class="bars">${sv.map((v,i)=>`<i class="${i===curI?'cur':''} ${v?'':'nil'}" style="height:${v ? Math.max(4, v/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${slots.map(q=>`<span>${qMon(q)}</span>`).join('')}</div>
-    <div class="lst">${list}</div></div>`;
+    <div class="lst">${list}${rows.length > (pend ? 0 : 1) ? `<button class="more" data-ziall>${p.ziAll ? 'Show fewer' : 'Show all ' + rows.length}</button>` : ''}</div></div>`;
 }
 
 // the quarter the next entry is for: the one due now, else the coming one
@@ -7234,6 +7247,7 @@ function wireAccPage(p){
   $$('#page [data-cct]').forEach(b=>b.onclick=()=>{ p.ccTab = b.dataset.cct; rerender(); });
   const cc = $('#page [data-cccat]'); if (cc) cc.onclick = ()=>{ p.ccCatAll = !p.ccCatAll; rerender(); };
   const cba = $('#page [data-cball]'); if (cba) cba.onclick = ()=>{ p.cbAll = !p.cbAll; rerender(); };
+  const zia = $('#page [data-ziall]'); if (zia) zia.onclick = ()=>{ p.ziAll = !p.ziAll; rerender(); };
   const wireMore = () => { const am2 = $('#page [data-actmore]'); if (am2) am2.onclick = ()=>{ p.actN = (p.actN||12) + 20; rerender(); }; };
   wireMore();
   const so = $('#page [data-acts]'); if (so) so.onchange = ()=>{ p.actS = so.value; p.actN = 12; rerender(); };
@@ -7246,7 +7260,7 @@ function wireAccPage(p){
     closeTxMenu(); const r = fb.getBoundingClientRect(), a = accByName(p.acc), ms = accMoves(a.name).filter(m=>m.date.slice(0,7)===(p.ccm||ymNow()));
     const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
     const m = document.createElement('div'); m.className = 'fmenu'; m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
-    m.innerHTML = Object.entries(CC_TYPE).map(([k,[l,fn]])=>`<button data-ccf="${k}"><span>${l}</span>${(p.actF||'all')===k ? '<i>✓</i>' : `<small class="num">${ms.filter(fn).length}</small>`}</button>`).join('');
+    m.innerHTML = Object.entries(actTypes(p)).map(([k,[l,fn]])=>`<button data-ccf="${k}"><span>${l}</span>${(p.actF||'all')===k ? '<i>✓</i>' : `<small class="num">${ms.filter(fn).length}</small>`}</button>`).join('');
     m.querySelectorAll('[data-ccf]').forEach(b=>b.onclick=()=>{ p.actF = b.dataset.ccf; p.actN = 12; closeTxMenu(); rerender(); });
     document.body.append(bd, m); };
   const wireMv = () => $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
