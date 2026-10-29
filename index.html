@@ -2230,7 +2230,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7282,7 +7282,8 @@ function xKeypad(okLabel){
 }
 
 /* what can be picked */
-const xSpendable = () => xAccounts().filter(a=>accKind(a)!=='wallet' || isCashAcc(a)).map(a=>a.name);
+// every active account can be paid from, wallets included
+const xSpendable = () => xAccounts().map(a=>a.name);
 const xAllAcc = () => xAccounts().map(a=>a.name);
 // fixed order: as the categories are listed on Money › Expense/Income Categories (not by use)
 function xCatsByUse(){ return xCats(); }
@@ -7578,11 +7579,12 @@ const ACC_FIRST = ['SBI','Jupiter Bank'];
 const xAccMark = a => accMark(a);
 function xAccGrid(names, on, cardsFirst){
   const accs = names.map(n=>accByName(n)).filter(Boolean);
-  const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : 'bank';
+  const kind = a => accKind(a)==='construction' ? 'con' : accKind(a)==='card' ? 'card' : isCashAcc(a) ? 'cash' : accKind(a)==='wallet' ? (/amazon\s*pay/i.test(a.name) ? 'everyday' : 'wal') : 'bank';
   const rank = a => { const i = ACC_FIRST.indexOf(a.name); return i < 0 ? 99 : i; };
   const banks = accs.filter(a=>kind(a)==='bank').sort((a,b)=>rank(a)-rank(b));
-  const groups = [['Everyday', banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='cash'))], ['Cards', accs.filter(a=>kind(a)==='card')],
-    ['Other banks', banks.filter(a=>rank(a)===99)], ['Construction', accs.filter(a=>kind(a)==='con')]];
+  // Everyday: the main banks, then Amazon Pay and Cash; any other wallet goes under Wallets
+  const groups = [['Everyday', banks.filter(a=>rank(a)<99).concat(accs.filter(a=>kind(a)==='everyday'), accs.filter(a=>kind(a)==='cash'))], ['Cards', accs.filter(a=>kind(a)==='card')],
+    ['Other banks', banks.filter(a=>rank(a)===99)], ['Wallets', accs.filter(a=>kind(a)==='wal')], ['Construction', accs.filter(a=>kind(a)==='con')]];
   if (cardsFirst) groups.unshift(groups.splice(1, 1)[0]);     // cashback: the cards on top
   return `<div class="xacc">${groups.filter(g=>g[1].length).map(([h,g])=>`<div class="xgh">${h}</div><div class="xgrid pills">${
     g.map(a=>`<button class="${a.name===on?'on':''}" data-a="${esc(a.name)}">${xAccMark(a)}<span>${esc(a.name)}</span></button>`).join('')}</div>`).join('')}</div>`;
@@ -7620,7 +7622,7 @@ function flowPanel(){
   else if (f==='category' && xIsLiq()) body = xGrid(liqSubs(), xSub, 'lq');
   else if (f==='category') body = xGrid(xCatsByUse(), xCat, 'c', { subs: xMode==='expense', icons: true });
   // every account picker (Paid via, Into, From, To) is the same grouped pill panel
-  else if (f==='account') body = xAccGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc, xMode==='income' && isCashback(xType));
+  else if (f==='account') body = xAccGrid(xMode==='income' ? xAllAcc() : xSpendable(), xAcc);   // same order in Expense, Transfer and Income
   else if (f==='from') body = xAccGrid(xAllAcc(), xFrom);
   else if (f==='to') body = xAccGrid(xAllAcc().filter(n=>n!==xFrom), xTo);
   else if (f==='type') body = xTypeGrid(inTypesList(), xType);
