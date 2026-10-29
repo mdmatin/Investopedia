@@ -2222,7 +2222,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -8134,7 +8134,7 @@ function profileBody(){
 
    <h3>Privacy</h3><div class="grp">
     ${row('eye','#8e8e93','Hide amounts', sw('blur', blur))}
-    ${row('shake','#ff9500','Shake to hide', sw('shake', !!load('inv.shake')), 'Shake the phone to blur every amount; shake again to show them')}
+    ${row('shake','#ff9500','Shake to hide', sw('shake', !!load('inv.shake')), 'Shake again to show amounts')}
     ${row('face','#34c759','Face ID lock', sw('faceid', !!lockCfg))}
     ${lockCfg ? row('timer','#ff9500','Lock', pick('lockAfter', PREF.lockAfter, LOCK_OPTS)) + row('lock','#007aff','Lock now', '', '', 'data-act="locknow"') : ''}
    </div>
