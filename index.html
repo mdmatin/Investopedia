@@ -1591,6 +1591,9 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .asum .ccy{position:absolute;top:13px;right:14px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
 .asum .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
 .asum .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pg-id .ccy{display:flex;align-self:center;background:var(--sunken);border-radius:999px;padding:2px;margin-right:8px}   /* holding page: the same $ / ₹ pill */
+.pg-id .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
+.pg-id .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .asum .big{font-family:var(--font-disp);font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15;margin-top:2px}
 .asum .big{font-size:26px}
@@ -2272,7 +2275,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03v';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4715,6 +4718,7 @@ function renderPage(){
     $$('#page [data-hr]').forEach(b=>b.onclick=()=>{ histRange=b.dataset.hr; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
   }
   if (p.kind==='holding'){
+    $$('#page [data-hccy]').forEach(b=>b.onclick=()=>{ p.inr = b.dataset.hccy==='inr'; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
     loadTickerTxns(p.ticker);
     if (p.showChart) loadTickerHistory(p.ticker);
     const h0 = (D.data.holdings||[]).find(x=>String(x.ticker).toUpperCase()===p.ticker.toUpperCase());
@@ -4943,29 +4947,34 @@ function holdingBody(ticker){
   const c = tkCache[ticker] || {};
   const txns = c.txns || [];
   const cat = (h&&h.category) || (led[0]&&led[0].category) || (txns[0]&&txns[0].category) || '';
-  const usdRow = cat==='US Stocks', m = nativeMoney(usdRow), pm = priceMoney(usdRow);
   const fx = d.netWorth && d.netWorth.head && d.netWorth.head.usdInr;
+  // US stocks: $ / ₹ switch on the page (₹ at today's rate; invested at what the rupees actually cost)
+  const isUS = cat==='US Stocks', top0 = pageStack[pageStack.length-1] || {}, inrOn = isUS && !!fx && !!top0.inr;
+  const k = inrOn ? fx : 1, usdRow = isUS && !inrOn;
+  const m0 = nativeMoney(usdRow), pm0 = priceMoney(usdRow), m = v => v==null ? m0(v) : m0(v*k), pm = v => v==null ? pm0(v) : pm0(v*k);
+  const ccy = isUS && fx ? `<div class="ccy" role="group" aria-label="Currency"><button data-hccy="usd" class="${inrOn?'':'on'}">$</button><button data-hccy="inr" class="${inrOn?'on':''}">₹</button></div>` : '';
 
   const divs = divsFor(ticker), divTot = divs.reduce((a,x)=>a+x.amount,0);
   let card, stats = '';
   if (h){
-    const ret = h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
-    const pct = h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
+    const inv = inrOn ? (h.invInr!=null ? h.invInr/k : h.invested) : h.invested;   // in $ terms; m() multiplies back by the rate
+    const ret = inrOn ? (h.value||0) - (inv||0) : h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
+    const pct = inrOn ? (inv ? ret/inv : null) : h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
     // Master List keeps Day in rupees on US rows — same conversion as the Assets list
-    const day = h.day==null ? null : usdRow ? (fx ? h.day/fx : null) : h.day;
+    const day = h.day==null ? null : isUS ? (fx ? h.day/fx : null) : h.day;   // in $; m() turns it back to ₹ when switched
     // 1 · value, current returns under it, then the history chart — like the Overview hero
     card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
         <div class="grow"><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${pm(h.ltp)}</span>`:''}</div></div>
-        ${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}</div>
+        ${ccy}${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}</div>
       <div class="pg-big num money">${bigAmt(m(h.value))}</div>
-      ${day!=null?`<div class="pg-sub num money"><span class="grp">${arrowAmt(day, m)}${h.dayPct!=null?` <span class="${cls(h.dayPct)}">(${fPct(h.dayPct,false)})</span>`:''} <span class="k">today</span></span></div>`:''}
+      ${day!=null?`<div class="pg-sub num money"><span class="grp">${arrowAmt(day*k, m0)}${h.dayPct!=null?` <span class="${cls(h.dayPct)}">(${fPct(h.dayPct,false)})</span>`:''} <span class="k">today</span></span></div>`:''}
       ${histInner(ticker, (pageStack[pageStack.length-1]||{}).showChart)}
     </div>
 `;
     // Overview tiles — label over value, two per row
     // Whole rupees in the tiles so three fit across; dollars keep their cents
-    const mm = usdRow ? m : fINR;
+    const mm = usdRow ? m : inrOn ? v => v==null ? '—' : '₹' + inr.format(Math.round(Math.abs(v*k))) : fINR;   // whole rupees so three fit across
     const sgn = (v, f=m) => v==null ? '—' : `${v<0?'−':v>0?'+':''}${f(Math.abs(v))}`;
     // Share of the whole portfolio and of this category, both in rupees
     const toInr = x => (x.category==='US Stocks' ? (x.value||0)*(fx||1) : (x.value||0));
@@ -4973,7 +4982,7 @@ function holdingBody(ticker){
     const catTot = allH.filter(x=>x.category===cat).reduce((a,x)=>a+toInr(x),0);
     const wAll = tot ? toInr(h)/tot : null, wCat = catTot ? toInr(h)/catTot : null;
     stats = `<div class="card hstats num"><div class="kgrid">
-      <div><span>Invested</span><b>${mm(h.invested)}</b></div>
+      <div><span>Invested</span><b>${mm(inv)}</b></div>
       <div><span>Avg cost</span><b>${pm(h.avg)}</b></div>
       <div><span>Quantity</span><b>${qtyFmt(h.qty)}</b></div>
       <div><span>Current P&amp;L${pct!=null?` <em class="${cls(pct)}">(${fPct(pct,false)})</em>`:''}</span><b class="${cls(ret)}">${sgn(ret,mm)}</b></div>
