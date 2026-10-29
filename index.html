@@ -496,6 +496,9 @@ html[data-theme=dark] .mpick-g button,html[data-theme=dark] .mpick-h button{back
 .cc2{display:flex;justify-content:space-between;gap:10px}.cc2 .r{text-align:right}
 .cc2 b{display:block;font-size:15px;font-weight:600;letter-spacing:-.25px;white-space:nowrap}
 .ccp .pbar{margin:12px 0}
+.cclim{margin:18px 0 0}.cclim .pbar{margin:0 0 8px}
+.cclim .ln{display:flex;justify-content:space-between;align-items:baseline;gap:10px;white-space:nowrap;font-size:13px;color:var(--ink-2);letter-spacing:-.1px}.cclim .ln b{color:var(--ink);font-weight:600;font-size:14px}
+.cclast{display:flex;justify-content:space-between;margin:16px 0 -2px;padding:12px 0 0;border-top:1px solid var(--hairline);font-size:13px;color:var(--ink-2)}.cclast b{font-weight:600}.cclast b.up{color:var(--up)}
 .pgcc{margin-top:14px}.pgcc .cardm{font-size:13px;color:var(--ink-2);letter-spacing:-.06px}.pgcc .pbar + .cardm{margin-top:9px}
 .pbar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:14px}
 .pbar i{display:block;height:100%;border-radius:4px;background:var(--up);transition:width .3s}
@@ -1434,6 +1437,32 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cbk .lr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:15px}
 .cbk .lr+.lr{border-top:.5px solid var(--hairline)}.cbk .lr small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
 .cbk .lr b{color:var(--up);font-weight:600}
+.cbk .lst .more{display:block;width:100%;text-align:center;border:0;border-top:.5px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0 10px;cursor:pointer}
+/* credit card: Spending */
+.ccsp{padding:16px}
+.ccsp .cctop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ccsp .k{font-size:13px;color:var(--ink-2);letter-spacing:-.1px}
+.ccsp .ccbig{font-family:var(--font-disp);font-size:30px;font-weight:600;letter-spacing:-.9px;line-height:1.15;margin-top:2px}
+.ccsp .ccsub{font-size:13px;color:var(--ink-2);margin-top:3px;letter-spacing:-.1px}.ccsp .ccsub .up{color:var(--up)}.ccsp .ccsub .down{color:var(--down)}
+.ccchart{width:100%;height:120px;display:block;margin:16px 0 4px;overflow:visible}
+.ccchart .ccb{cursor:pointer}.ccchart .ccb path{fill:var(--blue);opacity:.25;transition:opacity .15s}.ccchart .ccb.on path{opacity:1}
+.ccchart .ccb text{font-size:10px;fill:var(--ink-3)}.ccchart .ccb.on text{fill:var(--ink);font-weight:700}
+.ccchart .avg{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}.ccchart .avgt{font-size:9.5px;fill:var(--ink-3)}
+.cccats{margin:10px -16px 0;border-top:1px solid var(--hairline)}
+.ccc{display:flex;align-items:center;gap:12px;padding:11px 16px}.ccc+.ccc{border-top:.5px solid var(--hairline)}
+.ccc .l{flex:1;min-width:0}.ccc .n{display:flex;justify-content:space-between;font-size:15px;letter-spacing:-.2px}.ccc .n b{font-weight:600}
+.ccc .bar{height:4px;border-radius:2px;background:var(--sunken);margin:6px 0 4px;overflow:hidden}.ccc .bar i{display:block;height:100%;border-radius:2px;background:var(--blue)}
+.ccc .m{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3)}
+.cccats .more{display:block;width:100%;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0 2px;cursor:pointer}
+.ccbigbuy{display:flex;align-items:baseline;gap:8px;margin:12px -16px -16px;padding:12px 16px;border-top:1px solid var(--hairline);font-size:13px;color:var(--ink-2)}
+.ccbigbuy b{color:var(--ink);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ccact{padding-top:0}
+.cctabs{display:flex;align-items:flex-end;gap:10px;margin:18px 16px 12px;border-bottom:1px solid var(--hairline)}   /* underline tabs, like the asset pages */
+.cctabs .captabs{flex:1;margin:0;border-bottom:0}.cctabs .ccmon{margin-bottom:7px}
+.ccmon{display:flex;align-items:center;background:var(--sunken);border-radius:999px;padding:3px}
+.ccmon button{width:32px;height:32px;display:grid;place-items:center;border-radius:999px;color:var(--blue)}.ccmon button:disabled{color:var(--ink-3);opacity:.5}
+.ccmon button svg{width:17px;height:17px}.ccmon span{min-width:44px;text-align:center;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.ccmore{display:block;width:calc(100% - 32px);margin:4px 16px 0;padding:12px;border-radius:14px;background:var(--canvas);color:var(--blue);font-size:14px;text-align:center;border:0;cursor:pointer}
 .cbk .addcb{display:block;width:calc(100% - 32px);margin:12px 16px 0;padding:12px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15.5px;text-align:center}
 .cbform{margin:12px 12px 0;background:var(--canvas);border-radius:14px;padding:14px}
 .cbform label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}
@@ -2007,7 +2036,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
-:is([data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.captabs [data-cap]):has(> .hz){position:relative}
+:is([data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.ccact .chip,[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]):has(> .hz){position:relative}
 .hz{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.011;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:1}
 .xextras{margin:4px 2px 12px;display:flex;flex-direction:column;gap:6px}
 .xxck{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);padding:4px 2px;cursor:pointer}
@@ -2100,7 +2129,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
       <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
       <div class="card tight" id="wallets" hidden></div>
 
-      <div class="sechead"><h2>Accounts</h2><button data-go="acc">All</button></div>
+      <div class="sechead"><h2>Accounts</h2></div>
       <div class="tflt" id="accFlt" hidden></div>
       <div class="card tight" id="banks"></div>
 
@@ -2232,7 +2261,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03p';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03q';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4381,7 +4410,7 @@ window.addEventListener('touchend', ()=>{
 // invisible switch laid over them: your tap flips it (the tick) and the click carries on to
 // the control underneath as usual (tried on Daily/Weekly/Monthly first: ticks, still switches).
 function haptic(p){ try{ if (navigator.vibrate) navigator.vibrate(p || 8); }catch(e){} }
-const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.captabs [data-cap]';
+const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.ccact .chip,[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]';
 function hapify(root){
   if (navigator.vibrate) return;
   (root.querySelectorAll ? root : document).querySelectorAll(HAP_SEL).forEach(el=>{
@@ -6785,6 +6814,68 @@ function accGroupsHtml(acc, only){
 }
 const ordinal = n => n + (['th','st','nd','rd'][((n%100)-20)%10] || ['th','st','nd','rd'][n%100] || 'th');
 
+/* ---------- Credit card page, below the hero ----------
+   Spending: a month at a time (‹ › or tap a bar), six months of bars, and where it went by category.
+   Activity: the card's entries, newest first, a few at a time, with a Spends / Payments filter. */
+const dayRows = (ms, tile) => { const by = {}; ms.forEach(m=>(by[m.date]=by[m.date]||[]).push(m));
+  return Object.keys(by).sort().reverse().map(d=>`<div class="daygroup">${esc(fDate(d))}</div>
+    <div class="card tight">${by[d].map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
+      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join(''); };
+// Spending | Activity as two tabs, one month switcher for both
+function ccMonths(moves){ const ym = ymNow(), first = moves.length ? moves[moves.length-1].date.slice(0,7) : ym;
+  const out = []; for (let m = first < ymAdd(ym,-5) ? first : ymAdd(ym,-5); m <= ym; m = ymAdd(m,1)) out.push(m); return out; }
+function ccTabsHtml(a, p, moves){
+  const all = ccMonths(moves); if (!p.ccm || !all.includes(p.ccm)) p.ccm = ymNow();
+  const i = all.indexOf(p.ccm), tab = p.ccTab || 'spend';
+  const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<div class="cctabs"><div class="captabs cct"><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button></div>
+      <div class="ccmon"><button data-ccs="-1" aria-label="Previous month" ${i<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${esc(ymShort(p.ccm).slice(0,3))}${p.ccm.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.ccm.slice(2,4) : ''}</span><button data-ccs="1" aria-label="Next month" ${i>=all.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
+    ${tab==='spend' ? ccSpendHtml(a, p, moves) : ccActivityHtml(p, moves)}`;
+}
+function ccSpendHtml(a, p, moves){
+  const ex = moves.filter(m=>m.kind==='expense'), ym = ymNow(), sel = p.ccm || ym;
+  // six bars: the selected month and the five before it (or the latest six)
+  const end = ymAdd(sel,5) <= ym ? sel : ym, months = []; for (let k=5;k>=0;k--) months.push(ymAdd(end < sel ? sel : end,-k));
+  const si = months.indexOf(sel);
+  const sumOf = m => ex.filter(x=>x.date.slice(0,7)===m).reduce((t,x)=>t-x.amt,0);
+  const vals = months.map(sumOf), cur = vals[si], prev = sumOf(ymAdd(sel,-1));
+  const inM = ex.filter(x=>x.date.slice(0,7)===sel), n = inM.length;
+  // bars
+  const W = 330, H = 120, T = 8, B = 20, mx = Math.max(1, ...vals), bw = W/6;
+  const avg = vals.slice(0,5).filter(v=>v>0), av = avg.length ? avg.reduce((t,v)=>t+v,0)/avg.length : 0;
+  const y = v => T + (1 - v/mx)*(H-T-B);
+  const bars = months.map((m,i)=>{ const v = vals[i], top = y(v), h = Math.max(2, H-B-top), bx = i*bw + bw*.2, w = bw*.6;
+    return `<g class="ccb ${i===si?'on':''}" data-ccm="${m}"><rect x="${i*bw}" y="0" width="${bw}" height="${H}" fill="transparent"/>
+      <path d="${roundTop(bx, H-B-h, w, h, Math.min(5,w/2))}"/><text x="${bx+w/2}" y="${H-5}" text-anchor="middle">${esc(ymShort(m).slice(0,3))}</text></g>`; }).join('');
+  const avgLine = av ? `<line class="avg" x1="0" x2="${W}" y1="${y(av)}" y2="${y(av)}"/><text class="avgt" x="${W}" y="${y(av)-4}" text-anchor="end">avg ${esc(fCompact(av))}</text>` : '';
+  // vs the month before
+  const d = cur - prev, vs = !prev ? '' : Math.abs(d) < 1 ? `Same as ${esc(ymShort(ymAdd(sel,-1)).slice(0,3))}`
+    : `<span class="${d>0?'down':'up'}">${d>0?'▲':'▼'} ${fChg(Math.abs(d)).slice(1)}</span> vs ${esc(ymShort(ymAdd(sel,-1)).slice(0,3))}`;
+  // by category
+  const byC = {}; inM.forEach(x=>{ const c = x.e.category||'Other'; (byC[c] = byC[c] || { c, t:0, n:0 }); byC[c].t -= x.amt; byC[c].n++; });
+  const cats = Object.values(byC).sort((a,b)=>b.t-a.t), cmx = cats.length ? cats[0].t : 1, showC = p.ccCatAll ? cats : cats.slice(0,4);
+  const big = inM.slice().sort((a,b)=>a.amt-b.amt)[0];
+  return `<div class="card ccsp">
+    <div class="cctop"><div><div class="k">Spent in ${esc(ymLabel(sel).split(' ')[0])}${sel===ym ? ' so far' : ''}</div>
+        <div class="ccbig num money">${bigAmt(fINR2(cur))}</div>
+        <div class="ccsub">${n ? `${n} purchase${n===1?'':'s'}` : 'No purchases'}${vs ? ' · ' + vs : ''}</div></div></div>
+    <svg class="ccchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${avgLine}${bars}</svg>
+    ${cats.length ? `<div class="cccats">${showC.map(c=>`<div class="ccc">${xTile(c.c)}<div class="l"><div class="n"><span>${esc(c.c)}</span><b class="num money">${fINR2(c.t)}</b></div>
+        <div class="bar"><i style="width:${Math.max(2, c.t/cmx*100).toFixed(1)}%"></i></div>
+        <div class="m"><span>${c.n} purchase${c.n===1?'':'s'}</span><span>${Math.round(c.t/(cur||1)*100)}%</span></div></div></div>`).join('')}
+      ${cats.length > 4 ? `<button class="more" data-cccat>${p.ccCatAll ? 'Show fewer' : 'Show all ' + cats.length + ' categories'}</button>` : ''}</div>` : ''}
+    ${big ? `<div class="ccbigbuy"><span>Biggest</span><b>${esc(big.title)}</b><span class="num money">${fINR2(-big.amt)} · ${esc(fDate(big.date))}</span></div>` : ''}
+  </div>`;
+}
+function ccActivityHtml(p, moves){
+  const f = p.actF || 'all', sel = p.ccm || ymNow(), pool = moves.filter(m=>m.date.slice(0,7)===sel && (f==='all' || (f==='spends' ? m.kind==='expense' : m.kind!=='expense')));
+  const N = p.actN || 12, shown = pool.slice(0, N);
+  const chips = [['all','All'],['spends','Spends'],['pay','Payments']].map(([k,l])=>`<button class="chip ${k===f?'on':''}" data-actf="${k}">${l}</button>`).join('');
+  return `<div class="chips ccact">${chips}</div>
+    <div class="acclist">${shown.length ? dayRows(shown) : `<div class="card tight"><div class="empty">Nothing in ${esc(ymLabel(sel).split(' ')[0])}</div></div>`}
+    ${pool.length > N ? `<button class="ccmore" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : ''}</div>`;
+}
 function accBody(p){
   const a = accByName(p.acc); if (!a) return '<div class="pg-load">Account not found</div>';
   const bal = accBalance(a.name), card = accKind(a)==='card', moves = accMoves(a.name);
@@ -6800,10 +6891,9 @@ function accBody(p){
   const due = card && a.dueDay ? nextDue(a.dueDay) : null;
   const owed = Math.max(0,-bal);
   const ccHero = !card ? '' : `<div class="cch"><div><span>${bal>0?'Credit':'Outstanding'}</span><b class="pg-big num money ${owed>0?'down':''}">${bigAmt(fINR2(bal>0?bal:owed))}</b></div>
-      <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b></div></div>
-    ${a.limit ? `<div class="ccp"><div class="cc2"><div><span>Limit used</span><b class="num money">${fINR2(owed)}</b></div><div class="r"><span>Total limit</span><b class="num money">${fINR2(a.limit)}</b></div></div>
-      ${pbar(owed/a.limit)}
-      <div class="cc2"><div><span>Available limit</span><b class="num money">${fINR2(a.limit + bal)}</b></div><div class="r"><span>Used</span><b>${(owed/a.limit*100).toFixed(1)}%</b></div></div></div>` : ''}`;
+      <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b>${due && owed>0 ? `<small>${(()=>{ const n = Math.round((due - new Date(new Date().toDateString()))/864e5); return n<=0 ? 'today' : n===1 ? 'tomorrow' : 'in ' + n + ' days'; })()}</small>` : ''}</div></div>
+    ${a.limit ? `<div class="cclim">${pbar(owed/a.limit)}<div class="ln"><span><b class="num money">${fINR2(a.limit + bal)}</b> available</span><span class="num money">${(owed/a.limit*100).toFixed(1)}% of ${fCompact(a.limit)} used</span></div></div>` : ''}
+    ${(()=>{ const pay = moves.find(m=>m.amt>0 && m.kind!=='expense'); return pay ? `<div class="cclast"><span>Last payment</span><span class="num money"><b class="up">${fINR2(pay.amt)}</b> · ${esc(fDate(pay.date))}</span></div>` : ''; })()}`;
   const ed = p.setBal ? `<div class="ed xbed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${card?Math.max(0,-bal):bal}" aria-label="Actual balance"></div>
       <div class="hint" style="margin:8px 2px 0">${card?'What the card app says you owe.':'What the bank app shows right now.'} The difference is recorded as an adjustment.</div>
       <div class="btns"><button class="cancel">Cancel</button><button class="save">Set balance</button></div></div>` : '';
@@ -6818,12 +6908,12 @@ function accBody(p){
       ${card ? ccHero : `<div class="pg-big num money">${bigAmt(big)}</div>`}
       ${p.accMenu ? `<div class="menu accmenu" role="menu"><button data-setbal role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Set actual balance</button><button data-editacc role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Edit account</button></div>` : ''}
       ${ed}
-      <div class="spstats lcr"><div><span>${card?'Paid off':'In'} · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
-        <div><span>${card?'Spent':'Out'} · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
-        <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>
+      ${card ? '' : `<div class="spstats lcr"><div><span>In · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
+        <div><span>Out · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
+        <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>`}
     </div>
-    ${card ? cashbackHtml(a, p) : ziBankHtml(a)}
-    <div class="acclist">${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}</div>`;
+    ${card ? cashbackHtml(a, p) + ccTabsHtml(a, p, moves)
+      : `${ziBankHtml(a)}<div class="acclist">${list || '<div class="card tight"><div class="empty">Nothing recorded on this account yet</div></div>'}</div>`}`;
 }
 /* ---------- Cashback on a card: saved as Income · Cashback into the card.
    'monthly' cards: type what came in. 'total' cards: type the lifetime total from
@@ -6852,7 +6942,7 @@ function cashbackHtml(a, p){
   const yearSum = L.filter(i=>i.date.slice(0,4)===yr).reduce((s,i)=>s+i.amount,0);
   const active = Object.keys(byM).filter(m=>m.slice(0,4)===yr).length;
   const tm = byM[ym] || 0;
-  const rows = Object.keys(byM).sort().reverse().slice(0,6).map(m=>{
+  const allM = Object.keys(byM).sort().reverse(), rows = allM.slice(0, p.cbAll ? 12 : 1).map(m=>{
     const es = L.filter(i=>i.date.slice(0,7)===m), t = es.map(cbTotalOf).find(x=>x!=null);
     return `<div class="lr"><span>${esc(ymLabel(m).split(' ')[0])}<small>${t!=null ? `Total ${fINR(t)}` : es.length>1 ? `${es.length} entries` : `Logged ${esc(fDate(es[0].date))}`}</small></span><b class="num money">+${fINR2(byM[m])}</b></div>`; }).join('');
   let form = '';
@@ -6885,7 +6975,7 @@ function cashbackHtml(a, p){
       return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div></div>`; })()}
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
-    ${rows ? `<div class="lst">${rows}</div>` : ''}
+    ${rows ? `<div class="lst">${rows}${allM.length > 1 ? `<button class="more" data-cball>${p.cbAll ? 'Show fewer' : 'Show all ' + Math.min(12, allM.length) + ' months'}</button>` : ''}</div>` : ''}
     ${form || ''}
   </div>`;
 }
@@ -7101,6 +7191,13 @@ function wireAccPage(p){
     document.removeEventListener('click', off, true); if (p.accMenu){ e.stopPropagation(); e.preventDefault(); p.accMenu = false; rerender(); } }, true), 0);   // a tap outside only closes the menu
   const b = $('#page [data-setbal]'); if (b) b.onclick = ()=>{ p.accMenu = false; p.setBal = !p.setBal; rerender(); };
   const ea = $('#page [data-editacc]'); if (ea) ea.onclick = ()=>{ p.accMenu = false; pushPage({ kind:'accform', acc:p.acc }); };
+  $$('#page [data-ccm]').forEach(b=>b.onclick=()=>{ p.ccm = b.dataset.ccm; rerender(); });
+  $$('#page [data-ccs]').forEach(b=>b.onclick=()=>{ p.ccm = ymAdd(p.ccm || ymNow(), Number(b.dataset.ccs)); p.actN = 12; rerender(); });
+  $$('#page [data-cct]').forEach(b=>b.onclick=()=>{ p.ccTab = b.dataset.cct; rerender(); });
+  const cc = $('#page [data-cccat]'); if (cc) cc.onclick = ()=>{ p.ccCatAll = !p.ccCatAll; rerender(); };
+  const cba = $('#page [data-cball]'); if (cba) cba.onclick = ()=>{ p.cbAll = !p.cbAll; rerender(); };
+  $$('#page [data-actf]').forEach(b=>b.onclick=()=>{ p.actF = b.dataset.actf; p.actN = 12; rerender(); });
+  const am2 = $('#page [data-actmore]'); if (am2) am2.onclick = ()=>{ p.actN = (p.actN||12) + 20; rerender(); };
   $$('#page [data-mv]').forEach(r=>r.onclick=()=>{
     const [kind,row] = r.dataset.mv.split(':'), d = xd();
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers;
