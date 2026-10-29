@@ -1975,7 +1975,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
-[data-per]{position:relative}
+:is([data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.captabs [data-cap]):has(> .hz){position:relative}
 .hz{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.011;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:1}
 .hstar{margin:0 16px 12px}.hstar:empty{display:none}
 .hstar button{display:flex;align-items:center;gap:12px;width:100%;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:11px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
@@ -2198,7 +2198,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03e';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03f';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4321,13 +4321,13 @@ window.addEventListener('touchend', ()=>{
 // Haptics: Android buzzes through vibrate(). iPhone web apps can't tick from code, but a real
 // tap on a native switch does tick — so on iPhone, tappable controls listed in HAP_SEL get an
 // invisible switch laid over them: your tap flips it (the tick) and the click carries on to
-// the control underneath as usual. Trying it on one control first.
+// the control underneath as usual (tried on Daily/Weekly/Monthly first: ticks, still switches).
 function haptic(p){ try{ if (navigator.vibrate) navigator.vibrate(p || 8); }catch(e){} }
-const HAP_SEL = '#nwDays [data-per]';
+const HAP_SEL = '[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,.captabs [data-cap]';
 function hapify(root){
   if (navigator.vibrate) return;
   (root.querySelectorAll ? root : document).querySelectorAll(HAP_SEL).forEach(el=>{
-    if (el.querySelector(':scope > .hz')) return;
+    if (el.disabled || el.querySelector(':scope > .hz')) return;
     const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); i.className = 'hz'; i.tabIndex = -1; i.setAttribute('aria-hidden','true');
     el.appendChild(i); });
 }
