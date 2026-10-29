@@ -1556,6 +1556,7 @@ html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 /* ---------- multi-select (long-press an entry) ----------
    A ring shows on every entry row, filled blue when picked; the tab bar makes
    way for a bar with the count, the total and Delete. */
+#assetList .hcard{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .row[data-tx],.row[data-xrow]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 body.selecting .row[data-tx]::before,body.selecting .row[data-xrow]::before{content:"";flex:0 0 22px;height:22px;border-radius:50%;
   box-shadow:inset 0 0 0 1.6px var(--ink-3);transition:background-color .15s,box-shadow .15s}
@@ -1993,7 +1994,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-02c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-02d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2626,7 +2627,18 @@ function wireSearch(box, list, get, set){
   box.classList.toggle('has', !!get());
   applySearch(list(), get());
 }
-let assetQuery = '', capTab = 'All', capOpen = false, hSort = load('inv.hsort') || 'value';
+let assetQuery = '', capTab = 'All', capOpen = false, hSort = load('inv.hsort') || 'value', hDetail = !!load('inv.hdetail');
+// a long-press on any holding switches the whole list between simple and detailed rows (remembered)
+{ let hp = null, hEat = false;
+  document.addEventListener('pointerdown', ev=>{ const r = ev.target.closest && ev.target.closest('#assetList .hcard'); if (!r) return;
+    hp = { x:ev.clientX, y:ev.clientY, t:setTimeout(()=>{ hp = null; hEat = true; hDetail = !hDetail; save('inv.hdetail', hDetail);
+      if (D) renderAssets(D.data.holdings, D.data.netWorth && D.data.netWorth.head && D.data.netWorth.head.usdInr);
+      toast(hDetail ? 'Detailed rows · long-press for simple' : 'Simple rows · long-press for detail'); }, 450) }; }, true);
+  const stop = ()=>{ if (hp){ clearTimeout(hp.t); hp = null; } };
+  document.addEventListener('pointermove', ev=>{ if (hp && Math.hypot(ev.clientX-hp.x, ev.clientY-hp.y) > 10) stop(); }, true);
+  ['pointerup','pointercancel','scroll'].forEach(t=>document.addEventListener(t, stop, true));
+  document.addEventListener('contextmenu', ev=>{ if (ev.target.closest && ev.target.closest('#assetList .hcard')) ev.preventDefault(); }, true);
+  document.addEventListener('click', ev=>{ if (hEat){ hEat = false; if (ev.target.closest && ev.target.closest('#assetList')){ ev.preventDefault(); ev.stopPropagation(); } } }, true); }
 // switching tabs starts every search box empty again (Holdings, Trades, Activity)
 function clearSearches(){
   assetQuery = ''; xQuery = '';
@@ -2767,7 +2779,7 @@ function renderAssets(holdings, usdInr){
     $('#capWrap').innerHTML = `<div class="captabs">${CAPS.map(([k,l])=>`<button data-cap="${k}" class="${k===capTab?'on':''}">${l}</button>`).join('')}</div>
       ${capTab==='All' ? '' : `<div class="card capstat hstats num"><div class="caphd"><div class="k">${capTab==='All' ? 'Indian stocks' : esc(capTab==='Debt' ? 'Liquid (debt)' : capTab)}</div>
           <button class="capmore ${capOpen?'on':''}" data-capmore aria-expanded="${capOpen}" aria-label="${capOpen ? 'Fewer details' : 'More details'}">${chev('M6 9l6 6 6-6')}</button></div>
-        <div class="big money">${fINR(st.value)}</div>
+        <div class="big money">${bigAmt(fINR2(st.value))}</div>
         <div class="kgrid k2">
           <div><span>Invested</span>${kv(st.invested)}</div>
           <div><span>Current P&amp;L${pc(st.pnl)}</span>${kv(st.pnl, true)}</div>
@@ -2796,12 +2808,20 @@ function renderAssets(holdings, usdInr){
               : isUSD(h) ? (haveFx ? h.day / fx : null)      // to dollars; money() takes it back to ₹ in rupee mode
               : h.day;
     const val = (inv||0) + (ret||0);
+    // simple rows (the default): today and P&L as percentages only; a long-press on any row
+    // switches the list to detailed rows with the amounts, and back
+    const dpct = h.day==null ? null : (inInr(h) - h.day) ? h.day / (inInr(h) - h.day) : null;
+    const left = day==null ? m2(h.ltp)
+      : hDetail ? `<span class="${cls(day)}"><span class="arrow">${day>=0?'▲':'▼'}</span>${m(Math.abs(day))}</span> today`
+      : dpct==null ? m2(h.ltp) : `<span class="${cls(dpct)}"><span class="arrow">${dpct>=0?'▲':'▼'}</span>${fPct(Math.abs(dpct),false)}</span> today`;
+    const right = hDetail ? `${ret>=0?'+':'−'}${m(Math.abs(ret))}${p==null?'':` · ${fPct(Math.abs(p),false)}`}`
+      : p==null ? `${ret>=0?'+':'−'}${m(Math.abs(ret))}` : `${p>=0?'+':'−'}${fPct(Math.abs(p),false)}`;
     return `<div class="hcard hc1 tap" data-t="${esc(h.ticker)}" data-q="${esc(qWords(h.ticker, h.category, CAT_LABEL[h.category], h.platform))}">
       <div class="hc-top">${tickerTile(h)}
         <div class="hc-name"><div class="n">${esc(h.ticker)}</div>
-          <div class="sub">${day==null ? m2(h.ltp) : `<span class="${cls(day)}"><span class="arrow">${day>=0?'▲':'▼'}</span>${m(Math.abs(day))}</span> today`}</div></div>
+          <div class="sub">${left}</div></div>
         <div class="hc-val"><div class="v num money">${m(val)}</div>
-          <div class="s num money ${cls(ret)}">${ret>=0?'+':'−'}${m(Math.abs(ret))}${p==null?'':` · ${fPct(Math.abs(p),false)}`}</div></div>
+          <div class="s num money ${cls(ret)}">${right}</div></div>
       </div>
     </div>`;
   }).join('') + (list.length
