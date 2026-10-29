@@ -1975,7 +1975,8 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
-.haptest{display:inline-flex;align-items:center;gap:6px}.haptest button{width:34px;height:30px;border-radius:9px;background:var(--sunken);color:var(--ink);font:700 13px/1 inherit;border:0}.haptest .hapsw input{margin:0 0 0 4px}
+[data-per]{position:relative}
+.hz{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.011;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:1}
 .hstar{margin:0 16px 12px}.hstar:empty{display:none}
 .hstar button{display:flex;align-items:center;gap:12px;width:100%;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:11px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
 .hstar .badge{flex:0 0 auto;font:800 11px/1 var(--font-disp,inherit);letter-spacing:.6px;text-transform:uppercase;padding:8px 7px;border-radius:9px;transform:rotate(-6deg)}
@@ -2197,7 +2198,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4317,20 +4318,20 @@ window.addEventListener('touchend', ()=>{
 }, { passive:true });
 // Haptics: Android buzzes through vibrate(); iPhone has no vibrate, but toggling a hidden
 // switch control from a tap gives the system's light tick (iOS 18+). Off-tap calls are silent there.
-let hapL = null;
-function hapEl(){ if (hapL && hapL.isConnected) return hapL;
-  hapL = document.createElement('label'); hapL.setAttribute('aria-hidden','true');
-  hapL.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';
-  const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); i.tabIndex = -1; hapL.appendChild(i);
-  document.body.appendChild(hapL); return hapL; }
-function haptic(p){
-  try{ if (navigator.vibrate){ navigator.vibrate(p || 8); return; } hapEl().click(); }catch(e){}
+// Haptics: Android buzzes through vibrate(). iPhone web apps can't tick from code, but a real
+// tap on a native switch does tick — so on iPhone, tappable controls listed in HAP_SEL get an
+// invisible switch laid over them: your tap flips it (the tick) and the click carries on to
+// the control underneath as usual. Trying it on one control first.
+function haptic(p){ try{ if (navigator.vibrate) navigator.vibrate(p || 8); }catch(e){} }
+const HAP_SEL = '#nwDays [data-per]';
+function hapify(root){
+  if (navigator.vibrate) return;
+  (root.querySelectorAll ? root : document).querySelectorAll(HAP_SEL).forEach(el=>{
+    if (el.querySelector(':scope > .hz')) return;
+    const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); i.className = 'hz'; i.tabIndex = -1; i.setAttribute('aria-hidden','true');
+    el.appendChild(i); });
 }
-// the three ways iPhone might be made to tick, for the test buttons in Profile
-const HAP_WAYS = {
-  a: () => { const l = document.createElement('label'); l.ariaHidden = 'true'; l.style.display = 'none'; const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); l.appendChild(i); document.head.appendChild(l); l.click(); document.head.removeChild(l); },
-  b: () => hapEl().click(),
-  c: () => { const i = hapEl().querySelector('input'); i.click(); } };
+new MutationObserver(ms=>{ for (const m of ms) m.addedNodes.forEach(n=>{ if (n.nodeType===1) hapify(n.parentNode || n); }); }).observe(document.documentElement, { childList:true, subtree:true });
 // a tick on steppers, segmented switches and range pickers
 document.addEventListener('click', e=>{ const t = e.target.closest && e.target.closest('[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],#homeRanges button,[data-vbv],[data-capmore]');
   if (t && !t.disabled && !t.classList.contains('on')) haptic(6); }, true);
@@ -8093,7 +8094,6 @@ function profileBody(){
    <h3>Privacy</h3><div class="grp">
     ${row('eye','#8e8e93','Hide amounts', sw('blur', blur))}
     ${row('shake','#ff9500','Shake to hide', sw('shake', !!load('inv.shake')), 'Shake the phone to blur every amount; shake again to show them')}
-    ${row('shake','#8e8e93','Haptics test', `<span class="haptest"><button data-hap="a">A</button><button data-hap="b">B</button><button data-hap="c">C</button><label class="hapsw"><input type="checkbox" switch></label></span>`, 'Tap A, B, C, then the switch. Which ones tick?')}
     ${row('face','#34c759','Face ID lock', sw('faceid', !!lockCfg))}
     ${lockCfg ? row('timer','#ff9500','Lock', pick('lockAfter', PREF.lockAfter, LOCK_OPTS)) + row('lock','#007aff','Lock now', '', '', 'data-act="locknow"') : ''}
    </div>
@@ -8192,7 +8192,6 @@ function wireDefaults(){
   $$('#page [data-defsw]').forEach(b=>b.onclick=()=>{ const k = b.dataset.defsw; setDef(k, /^false$/i.test(DEF(k)) ? 'TRUE' : 'FALSE'); renderPageKeep(); });
 }
 function wireProfile(){
-  $$('#page [data-hap]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); HAP_WAYS[b.dataset.hap](); });
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-sw]').forEach(b=>b.onclick=async ()=>{
     const k = b.dataset.sw;
