@@ -1682,8 +1682,6 @@ body.selecting .tabs:not(.selbar),body.selecting .fab,body.selecting .dfab{displ
 
 /* Tax inputs: section colours matching the sheet's Tax settings table */
 .taxsec h3{display:flex;align-items:center;gap:8px}
-.taxsec .taxdot{width:8px;height:8px;border-radius:50%;background:var(--sec);flex:none}
-.card.taxin{box-shadow:inset 3px 0 0 color-mix(in srgb, var(--sec) 55%, transparent)}
 
 /* recurring-run banner on Spend: the reason sits under the title */
 .recerr .bk-t{white-space:normal;text-align:left}
@@ -2271,7 +2269,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03s';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03t';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6418,7 +6416,7 @@ function taxBody(p){
   const next = A && A.next ? A.next : null, days = next ? Math.ceil((new Date(next.date) - new Date(todayISO())) / 864e5) : null;
   const hero = `<div class="card pg-card pg-hero">
       <div class="pg-id"><div class="tile cr">${S(TAX_ICON)}</div><div class="grow"><div class="t">${refund ? 'Refund due' : 'Balance to pay'}</div><div class="s">${esc(taxUpdated(T))}</div></div>
-        <button class="taxre" data-taxrebuild aria-label="Recompute tax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg></button></div>
+        <button class="taxre" data-taxrebuild aria-label="Recompute tax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></div>
       <div class="pg-big num money ${refund ? 'up' : ''}">${bigAmt(fINR2(Math.abs(R.balance)))}</div>
       <div class="pg-sub num money"><span class="grp"><span class="k">Tax ${fINR(R.tax)} · paid ${fINR(R.credits)}${live ? ' so far' : ''}</span></span></div>
       <div class="spstats lcr"><div><span>Income</span><b class="num money">${fKL(R.normal)}</b></div>
@@ -6440,7 +6438,7 @@ function taxTabs(p, Y){
     const sal = Object.keys(inc.salary||{}).map(co=>row(esc(co), fINR(inc.salary[co]), 'Salary')).join('');
     const prof = Object.keys(inc.prof||{}).map(co=>row(esc(co), fINR(inc.prof[co]), /expected/i.test(co) ? 'Projected from the Inputs tab' : 'Consultancy · 44ADA, received')).join('');
     const presGross = R.presGross != null ? R.presGross : inc.freelance, presRate = R.presRate || 50;
-    body = `<div class="cmhead taxsec" style="--sec:#4285f4"><h3><span class="taxdot"></span>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
+    body = `<div class="cmhead taxsec" style="--sec:#4285f4"><h3>Income</h3><span class="num money">${fINR(R.normal)}</span></div><div class="card tight">
       ${sal}${inc.epfTaxable ? row('EPF payout', fINR(inc.epfTaxable), 'Taxed as salary, service under 5 years') : ''}
       ${R.std ? row('Standard deduction', neg(R.std), '', 'sub') : ''}${R.hra + R.pt + (R.ex||0) ? row('Exempt allowances / professional tax', neg(R.hra + R.pt + (R.ex||0)), R.ex ? 'Payslip exemptions (e.g. leave encashment)' : '', 'sub') : ''}
       ${prof}${presGross ? row('Deemed expenses', neg(presGross - R.freelance), '44ADA: ' + (100 - presRate) + '% of ' + fINR(presGross) + ', no other expense or standard deduction', 'sub') : ''}
@@ -6450,7 +6448,7 @@ function taxTabs(p, Y){
       ${R.slabCg ? row('Short-term gains at slab', fINR(R.slabCg), 'US stocks, gold, debt under their holding period') : ''}
       ${R.dedTotal ? row('Deductions', neg(R.dedTotal), Object.keys(R.ded).filter(k=>R.ded[k]).map(k=>({c80:'80C',nps1b:'NPS 80CCD(1B)',d80:'80D',tta:'80TTA',g80:'80G'})[k] + ' ' + fINR(R.ded[k])).join(' · '), 'sub') : ''}
       ${row('Taxable income', fINR(R.normal), '', 'tot')}</div>
-      <div class="cmhead taxsec" style="--sec:#ea4335"><h3><span class="taxdot"></span>Tax</h3><span class="num money">${fINR(R.tax)}</span></div><div class="card tight">
+      <div class="cmhead taxsec" style="--sec:#ea4335"><h3>Tax</h3><span class="num money">${fINR(R.tax)}</span></div><div class="card tight">
       ${row('On income', fINR(R.tNormal), 'Slab rates')}${R.rebate ? row('Rebate', neg(R.rebate), 'Income up to ₹12L', 'sub') : ''}
       ${R.tEqST ? row('Short-term equity 20%', fINR(R.tEqST)) : ''}${R.tEqLT ? row('Long-term equity 12.5%', fINR(R.tEqLT), 'Above the ₹1.25L exemption') : ''}
       ${R.tOtherLT ? row('Other long-term 12.5%', fINR(R.tOtherLT), 'US stocks, gold, debt') : ''}${R.tCrypto ? row('Crypto 30%', fINR(R.tCrypto)) : ''}
@@ -6459,9 +6457,9 @@ function taxTabs(p, Y){
     const bc = g.byClass || {}, keys = Object.keys(bc).sort((a,b)=>Math.abs(bc[b].lt + bc[b].st) - Math.abs(bc[a].lt + bc[a].st));
     const total = g.net.eqLT + g.net.eqST + g.net.otherLT + g.net.otherST + g.net.crypto;
     const used = Math.min(g.net.exempt, 125000), pct = Math.round(used / 1250);
-    body = `<div class="cmhead taxsec" style="--sec:#a142f4"><h3><span class="taxdot"></span>By asset</h3><span class="num money">${fINRs(total)}</span></div><div class="card tight">
+    body = `<div class="cmhead taxsec" style="--sec:#a142f4"><h3>By asset</h3><span class="num money">${fINRs(total)}</span></div><div class="card tight">
       ${keys.length ? keys.map(k=>{ const c = bc[k]; return `<div class="row"><div class="l"><div class="n">${esc(k)}</div><div class="m">${c.n} lot${c.n===1?'':'s'} · sold ${fKL(c.proceeds)}${c.lt ? ' · long ' + fINRs(c.lt) : ''}${c.st ? ' · short ' + fINRs(c.st) : ''}</div></div><div class="r"><div class="v num money ${cls(c.lt + c.st)}">${fINRs(c.lt + c.st)}</div></div></div>`; }).join('') : '<div class="empty">Nothing sold this year</div>'}</div>
-      <div class="cmhead taxsec" style="--sec:#a142f4"><h3><span class="taxdot"></span>How it is taxed</h3></div><div class="card tight">
+      <div class="cmhead taxsec" style="--sec:#a142f4"><h3>How it is taxed</h3></div><div class="card tight">
       ${row('Long-term Indian equity', fINRs(g.net.eqLT), '12.5% above ₹1.25L a year')}
       <div class="row"><div class="l"><div class="n">Exemption used</div><div class="tbar"><i style="width:${pct}%;--c:var(--pc0)"></i></div><div class="m">${fINR(used)} of ₹1,25,000 · ${fINR(125000 - used)} left this year</div></div></div>
       ${row('Short-term Indian equity', fINRs(g.net.eqST), '20%')}${row('Long-term US / gold / debt', fINRs(g.net.otherLT), '12.5%, no exemption')}
@@ -6470,11 +6468,11 @@ function taxTabs(p, Y){
   } else {
     const inst = (A && A.inst) || [], paidRows = (inc.advance||[]).map(a=>row(esc(fDateY(a.date)), fINR(a.amount), esc(a.note || 'Advance tax')));
     const st = x => !x.past ? '<span class="pill sm">upcoming</span>' : x.short > 0 ? `<span class="pill sm down">short ${fKL(x.short)}</span>` : '<span class="pill sm up">paid</span>';
-    body = `<div class="cmhead taxsec" style="--sec:#f9ab00"><h3><span class="taxdot"></span>Already paid</h3><span class="num money">${fINR(R.credits)}</span></div><div class="card tight">
+    body = `<div class="cmhead taxsec" style="--sec:#f9ab00"><h3>Already paid</h3><span class="num money">${fINR(R.credits)}</span></div><div class="card tight">
       ${inc.tds ? row('TDS on salary', fINR(inc.tds)) : ''}${inc.epfTds ? row('TDS on EPF payout', fINR(inc.epfTds)) : ''}
       ${paidRows.join('') || row('Advance tax', '—', 'Nothing recorded yet', 'sub')}${R.ftc ? row('US tax credit', fINR(R.ftc), 'Form 67 with the return') : ''}
       <button class="row tap epaddrow" data-taxpay><span class="epai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><div class="l"><div class="n">Record a tax payment</div><div class="m">Goes to Money as Bills/Utility › Taxes</div></div></button></div>
-      <div class="cmhead taxsec" style="--sec:#34a853"><h3><span class="taxdot"></span>Advance tax</h3><span class="num money">${A && A.needed ? fINR(A.due) + ' due' : 'not needed'}</span></div><div class="card tight">
+      <div class="cmhead taxsec" style="--sec:#34a853"><h3>Advance tax</h3><span class="num money">${A && A.needed ? fINR(A.due) + ' due' : 'not needed'}</span></div><div class="card tight">
       ${inst.length ? inst.map(x=>`<div class="row"><div class="l"><div class="n">${esc(fDateY(x.date))} · ${x.pct}%</div><div class="m">${fINR(x.want)} due · ${fINR(x.paid)} paid by then</div></div><div class="r">${st(x)}</div></div>`).join('') : '<div class="empty">Under ₹10,000 after TDS, so no instalments</div>'}
       ${A && A.presumptiveShare ? row('44ADA share', fINR(A.presumptiveShare), 'On the consultancy income: due in one go by 15 Mar, not by the quarter', 'sub') : ''}
       ${A && A.interest234C ? row('Interest 234C (estimate)', fINR(A.interest234C), '1% a month on each shortfall') : ''}</div>
@@ -6497,7 +6495,7 @@ const TAX_INPUTS = [
 function taxInputs(p, Y){
   const T = taxD(), S = (T && T.settings) || {};
   const need = k => (k==='indianDividends' || k==='usDividendTax' || k==='prof.expected') && !(S[k] && String(S[k].value).trim());
-  const sec = ([h, hue, keys]) => `<div class="cmhead taxsec" style="--sec:${hue}"><h3><span class="taxdot"></span>${h}</h3></div><div class="card tight taxin" style="--sec:${hue}">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num" title="${esc(v)}">${v.trim() ? esc(v.replace(/,\s*/g, ', ')) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
+  const sec = ([h, hue, keys]) => `<div class="cmhead taxsec" style="--sec:${hue}"><h3>${h}</h3></div><div class="card tight taxin" style="--sec:${hue}">${keys.map(([k, n, m]) => { const v = S[k] ? String(S[k].value) : ''; return `<button class="row tap" data-taxset="${k}"><div class="l"><div class="n">${n}</div><div class="m">${m}</div></div><div class="r"><div class="v num" title="${esc(v)}">${v.trim() ? esc(v.replace(/,\s*/g, ', ')) : need(k) ? '<span class="pill sm down">needed</span>' : '<span style="color:var(--ink-3)">—</span>'}</div></div></button>`; }).join('')}</div>`;
   return `<div class="ft" style="padding:4px 24px 10px;color:var(--ink-3);font-size:12.5px">What the records cannot tell: tap to change. Saved in the Tax settings table on the Tax Computation tab, then recomputed.</div>` + TAX_INPUTS.map(sec).join('');
 }
 function wireTax(p){
