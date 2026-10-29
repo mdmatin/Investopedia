@@ -249,6 +249,12 @@ main{padding:0}
   background:var(--canvas);border:1px solid var(--card-edge);font-size:15px;font-weight:600;color:var(--blue)}
 .loadmore[disabled]{opacity:.55}
 .loadend{text-align:center;padding:14px 16px 0;font-size:12.5px;color:var(--ink-3)}
+.htools{display:flex;align-items:center;justify-content:space-between;margin:0 16px 8px}.htools[hidden],#assetSearch[hidden]{display:none}
+.hsort{position:relative;display:flex;align-items:center;gap:5px;font-size:14px;color:var(--ink-2);padding:6px 2px}
+.hsort b{color:var(--ink);font-weight:600}.hsort svg{width:13px;height:13px;color:var(--ink-3)}
+.hsort select{position:absolute;inset:0;width:100%;opacity:0;font-size:16px;-webkit-appearance:none;appearance:none}
+.hsbtn{width:36px;height:36px;border-radius:50%;background:var(--canvas);border:1px solid var(--card-edge);display:grid;place-items:center;color:var(--ink-2)}.hsbtn svg{width:17px;height:17px}
+.lfnote{font-size:12.5px;color:var(--ink-2);line-height:1.4;padding:0 0 12px;margin-top:-4px}.searching .lfnote{display:none}
 .listfoot{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--hairline);
   font-weight:600;font-variant-numeric:tabular-nums}
 
@@ -1867,7 +1873,8 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
         <div id="capWrap"></div>
         <div class="card asum" id="assetSum" hidden></div>
         <div class="lpills hpills" id="holdEntry"></div>
-        <div class="search" id="assetSearch"></div>
+        <div class="htools" id="holdTools"></div>
+        <div class="search" id="assetSearch" hidden></div>
         <div class="card tight" id="assetList"></div>
       </div>
 
@@ -1986,7 +1993,7 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-02b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-02c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2619,12 +2626,13 @@ function wireSearch(box, list, get, set){
   box.classList.toggle('has', !!get());
   applySearch(list(), get());
 }
-let assetQuery = '', capTab = 'All', capOpen = false;
+let assetQuery = '', capTab = 'All', capOpen = false, hSort = load('inv.hsort') || 'value';
 // switching tabs starts every search box empty again (Holdings, Trades, Activity)
 function clearSearches(){
   assetQuery = ''; xQuery = '';
   [['#assetSearch','#assetList'],['#xSearch','#xList']].forEach(([b,l])=>{ const box = $(b), inp = box && box.querySelector('input');
     if (inp && inp.value){ inp.value = ''; box.classList.remove('has'); if ($(l)) applySearch($(l), ''); } });
+  { const sb = $('#assetSearch'), t = $('#holdTools'); if (sb && t){ sb.dataset.open = ''; sb.hidden = true; t.hidden = false; } }
   const q = $('#q'); if (q && q.value){ q.value = ''; if (D) renderTxns(D.data.transactions); }
 }   // the details list starts collapsed
 // a tap on a short figure (data-full) shows the exact amount above it for a moment
@@ -2651,7 +2659,8 @@ function renderAssets(holdings, usdInr){
   const invInr = h => isUSD(h) ? (h.invInr!=null ? h.invInr : (h.invested||0) * fx) : (h.invested||0);
   const two = DEC();
   // US rows read in dollars, or in rupees at today's rate when the US card's toggle says ₹
-  const inD = h => isUSD(h) && !inrMode, kx = h => isUSD(h) && inrMode ? fx : 1;
+  // (on All every row is in rupees, so the list compares at a glance; $ stays on US Stocks itself)
+  const inD = h => isUSD(h) && native && !inrMode, kx = h => isUSD(h) && (inrMode || !native) ? fx : 1;
   const money = h => v => { v = v * kx(h); return inD(h)
     ? '$' + (v<0?'−':'') + Math.abs(v).toLocaleString('en-US', two)
     : (v<0?'−':'') + '₹' + Math.abs(v).toLocaleString('en-IN', two); };
@@ -2669,8 +2678,11 @@ function renderAssets(holdings, usdInr){
     `<button class="chip ${c===assetCat?'on':''}" data-c="${esc(c)}">${esc(CAT_LABEL[c]||c)}</button>`).join('');
   $$('#assetChips .chip').forEach(c=>c.onclick=()=>{ assetCat=c.dataset.c; usInr=false; capOpen=false; renderAssets(all, fx); });
 
+  const pnlInr = h => inInr(h) - invInr(h);
+  const SORTS = { value:(a,b)=>inInr(b)-inInr(a), pnl:(a,b)=>pnlInr(b)-pnlInr(a),
+    day:(a,b)=>(b.day==null?-Infinity:b.day)-(a.day==null?-Infinity:a.day), az:(a,b)=>String(a.ticker).localeCompare(String(b.ticker)) };
   const rows = all.filter(h=>assetCat==='All'||h.category===assetCat)
-                  .sort((a,b)=>inInr(b)-inInr(a));
+                  .sort(SORTS[hSort] || SORTS.value);
   // one category filtered → total in its own currency; All → converted to ₹
   const native = assetCat!=='All' && rows.length && isUSD(rows[0]);
   const inrMode = !!(native && haveFx && usInr);
@@ -2678,7 +2690,7 @@ function renderAssets(holdings, usdInr){
 
   // summary of whatever the chip shows — in dollars for US alone, otherwise rupees
   { const el = $('#assetSum');
-    if (!rows.length){ el.hidden = true; }
+    if (!rows.length || (assetCat==='Stocks' && capTab!=='All')){ el.hidden = true; }   // a cap tab has its own card
     else {
       // Figures come from the Net Worth tab whenever it has a matching row, so the
       // card agrees with Overview: the Total row for All (net of excluded buckets,
@@ -2773,7 +2785,7 @@ function renderAssets(holdings, usdInr){
   $('#assetList').innerHTML = list.map(h=>{
     const m = money(h), m2 = money2(h);
     // a US card in ₹: cost at buy-date rates, so returns include what the dollar did since
-    const inrCost = isUSD(h) && inrMode && h.invInr!=null;
+    const inrCost = isUSD(h) && (inrMode || !native) && h.invInr!=null;
     const inv = inrCost ? h.invInr / fx : h.invested;          // money() multiplies by today's rate again
     const ret = inrCost ? (h.value||0) - inv : h.pnl!=null ? h.pnl : (h.value||0)-(h.invested||0);
     const p   = inrCost ? (inv ? ret/inv : null) : h.pnlPct!=null ? h.pnlPct : (h.invested ? ret/h.invested : null);
@@ -2794,7 +2806,7 @@ function renderAssets(holdings, usdInr){
     </div>`;
   }).join('') + (list.length
       ? `<div class="listfoot"><span>${list.length} holding${list.length===1?'':'s'}</span>
-         <span>${(()=>{ const sm = list===rows ? sum : list.reduce((s,h)=>s+(native ? (h.value||0) : inInr(h)),0); return native && !inrMode ? '$'+Math.round(sm).toLocaleString('en-US') : fCompact(native ? sm*fx : sm); })()}</span></div>`
+         <span>${(()=>{ const sm = list===rows ? sum : list.reduce((s,h)=>s+(native ? (h.value||0) : inInr(h)),0); return native && !inrMode ? '$'+Math.round(sm).toLocaleString('en-US') : fCompact(native ? sm*fx : sm); })()}</span></div>${holdFootNote(rows, all)}`
       : '<div class="empty">No holdings</div>');
 
   fitAssetRows();
@@ -2805,9 +2817,39 @@ function renderAssets(holdings, usdInr){
   const sb = $('#assetSearch');
   if (!sb.firstChild) sb.innerHTML = searchInner(assetQuery, 'Search holdings');
   wireSearch(sb, ()=>$('#assetList'), ()=>assetQuery, v=>assetQuery=v);
+  holdTools(sb, all, usdInr);
   $$('#assetList .hcard[data-t]').forEach(c=>c.onclick=()=>openHolding(c.dataset.t, $$('#assetList .hcard[data-t]:not([hidden])').map(x=>x.dataset.t)));
 }
 
+// above the list: Sort (Value / P&L / Day change / A–Z) on the left, a search icon on the right
+// that opens the search box in the same spot (it folds away again once empty and left)
+const HSORT = [['value','Value'],['pnl','P&L'],['day','Day change'],['az','A–Z']];
+function holdTools(sb, all, usdInr){
+  const el = $('#holdTools'); if (!el) return;
+  const open = !!assetQuery || sb.dataset.open==='1';
+  sb.hidden = !open; el.hidden = open;
+  const lbl = (HSORT.find(x=>x[0]===hSort)||HSORT[0])[1];
+  el.innerHTML = `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}
+      <select data-hsort aria-label="Sort holdings">${HSORT.map(([k,l])=>`<option value="${k}" ${k===hSort?'selected':''}>${l}</option>`).join('')}</select></label>
+    <button class="hsbtn" data-hsrch aria-label="Search holdings">${SRCH_ICON}</button>`;
+  el.querySelector('[data-hsort]').onchange = e => { hSort = e.target.value; save('inv.hsort', hSort); renderAssets(all, usdInr); };
+  const inp = sb.querySelector('input');
+  el.querySelector('[data-hsrch]').onclick = () => { sb.dataset.open = '1'; sb.hidden = false; el.hidden = true; inp.focus(); };
+  inp.onblur = () => setTimeout(()=>{ if (!inp.value && document.activeElement!==inp){ sb.dataset.open = ''; sb.hidden = true; el.hidden = false; } }, 150);
+}
+// All: why the list's total isn't the card's — the card (Net Worth tab) also counts assets with no
+// holdings rows (EPF, NPS…) and leaves out what's set aside (the "Less:" rows, e.g. construction)
+function holdFootNote(rows, all){
+  if (assetCat!=='All') return '';
+  const nwA = ((D && D.data && D.data.netWorth && D.data.netWorth.assets) || []);
+  const cats = new Set(rows.map(h=>h.category));
+  const extra = nwA.filter(a=>!a.isTotal && a.value && !/^Less:|^Charges/i.test(a.name) && !cats.has(assetCatFor(a.name, all)));
+  const less = nwA.filter(a=>/^Less:/i.test(a.name) && a.value);
+  if (!extra.length && !less.length) return '';
+  const names = L => L.map(a=>esc(a.name.replace(/^Less:\s*/i,''))).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const amt = L => fCompact(Math.abs(L.reduce((t,a)=>t+a.value,0)));
+  return `<div class="lfnote">The total above ${extra.length ? `also counts ${names(extra)} (${amt(extra)})` : ''}${extra.length && less.length ? ', and ' : ''}${less.length ? `leaves out ${amt(less)} set aside for ${names(less)}` : ''}.</div>`;
+}
 // Two decimals on every figure is the default, but three money columns on a
 // narrow phone can run out of room. Measure each row as rendered and, only for
 // the ones that actually overflow, fall back to the compact form (₹2.45L).
