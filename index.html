@@ -349,6 +349,7 @@ main{padding:0}
 .dl .z .arrow{font-size:.8em}
 .dl .more{display:block;width:100%;text-align:center;color:var(--blue);font-size:14px;padding:12px 0 8px;border-top:1px solid var(--hairline)}
 .nwhero .k{font-size:13px;color:var(--ink-2);font-weight:400;letter-spacing:-.1px}
+.bghero .k{font-size:12px}.bghero .pg-big{font-size:26px;letter-spacing:-.6px;margin-top:1px}   /* Budgets: the same size as Spend › Budget's Remaining */
 .nwhero .pg-big{margin-top:4px}
 .nwhero .nwsub{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:6px 0 2px}
 .nwhero .nwsub .today{font-size:14px;color:var(--ink-2)}
@@ -1462,8 +1463,7 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cctools{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px}.cctools .hsort{padding:6px 0}
 .ccic{display:flex;gap:8px}.ccic .hsbtn{width:34px;height:34px;position:relative;background:var(--parchment);border-color:transparent}.ccic .hsbtn svg{width:16px;height:16px}
 .ccic .hsbtn.on{background:rgba(0,102,204,.12);color:var(--blue)}.ccic .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--blue)}
-.ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 6px 0 12px}.ccsearch input{font-size:15px}
-.ccsx{flex:none;font-size:14px;color:var(--blue);padding:0 8px}
+.ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 12px}.ccsearch input{font-size:15px}
 .ccbox .fchip{margin:4px 16px 4px}   /* the active filter, as on Spend › Activity */
 .ccrows{padding:0 16px}.ccrows .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
 .ccrows .more{display:block;width:calc(100% + 32px);margin:0 -16px;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0;cursor:pointer}
@@ -1591,9 +1591,10 @@ em .arrow{font-size:.8em;margin-right:1px;color:inherit}
 .asum .ccy{position:absolute;top:13px;right:14px;display:flex;background:var(--sunken);border-radius:999px;padding:2px}
 .asum .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
 .asum .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.pg-id .ccy{display:flex;align-self:center;background:var(--sunken);border-radius:999px;padding:2px;margin-right:8px}   /* holding page: the same $ / ₹ pill */
+.pg-id .ccy{display:flex;align-self:center;background:var(--sunken);border-radius:999px;padding:2px;margin-left:-4px}   /* 8px from the chart button, as on the US Stocks card */   /* holding page: the same $ / ₹ pill */
 .pg-id .ccy button{width:34px;height:26px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);background:none}
 .pg-id .ccy button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pg-id:has(.ccy) .chart-tg{width:30px;height:30px}.pg-id:has(.ccy) .chart-tg svg{width:16px;height:16px}   /* same height as the $ / ₹ pill, as on the US Stocks card */
 html[data-theme=dark] .asum .ccy button.on{background:#48484a}
 .asum .big{font-family:var(--font-disp);font-size:28px;font-weight:600;letter-spacing:-.8px;line-height:1.15;margin-top:2px}
 .asum .big{font-size:26px}
@@ -2275,7 +2276,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03w';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03x';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4965,8 +4966,8 @@ function holdingBody(ticker){
     // 1 · value, current returns under it, then the history chart — like the Overview hero
     card = `<div class="card pg-card pg-hero">
       <div class="pg-id">${tickerTile({ticker, category:cat})}
-        <div class="grow"><div class="t">${esc(ticker)}</div><div class="s">${esc(CAT_LABEL[cat]||cat||'—')}${h.ltp!=null?` · <span class="num money">${pm(h.ltp)}</span>`:''}</div></div>
-        ${ccy}${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}</div>
+        <div class="grow"><div class="t">${esc(ticker)}</div>${h.ltp!=null?`<div class="s"><span class="num money">${pm(h.ltp)}</span></div>`:''}</div>   <!-- just the price under the name -->
+        ${chartToggle((pageStack[pageStack.length-1]||{}).showChart)}${ccy}</div>   <!-- as on the US Stocks card: chart button, then $ / ₹ at the edge -->
       <div class="pg-big num money">${bigAmt(m(h.value))}</div>
       ${day!=null?`<div class="pg-sub num money"><span class="grp">${arrowAmt(day*k, m0)}${h.dayPct!=null?` <span class="${cls(h.dayPct)}">(${fPct(h.dayPct,false)})</span>`:''} <span class="k">today</span></span></div>`:''}
       ${histInner(ticker, (pageStack[pageStack.length-1]||{}).showChart)}
@@ -6038,8 +6039,9 @@ function budgetsBody(p){
       + (open ? `<div class="ed"><div class="inwrap"><span>₹</span><input type="text" inputmode="decimal" value="${def[c]||0}" aria-label="${esc(c)} monthly budget"></div>
           <div class="btns"><button class="cancel">Cancel</button><button class="save">Save</button></div></div>` : '');
   }).join('');
-  return `<div class="card pg-card"><div class="k">Monthly budget</div><div class="pg-big num money">${bigAmt(fINR2(total))}</div>
-      <div class="pg-sub">The same every month unless you set a month on its own from a category's page.</div></div>
+  return `<div class="card pg-card nwhero bghero"><div class="k">Monthly budget</div><div class="pg-big num money">${bigAmt(fINR2(total))}</div>
+      <div class="pg-sub"><span class="k">The same every month unless you set a month on its own from a category's page.</span></div></div>`   // label and value as on the Net worth page
+    + `
     <div class="card tight">${rows}<div class="rowtotal num money"><span>Total</span><span>${fINR2(total)}</span></div></div>`;
 }
 
@@ -6920,7 +6922,7 @@ function ccActRows(p, moves){
 function ccActivityHtml(p, moves){
   const lbl = (CC_SORT.find(x=>x[0]===(p.actS||'new'))||CC_SORT[0])[1], fOn = p.actF && p.actF!=='all', sOpen = p.actSO || !!p.actQ;
   return `<div class="cctools">${sOpen
-      ? `<label class="search ccsearch">${SRCH_ICON}<input type="search" data-actq placeholder="Search this month" value="${esc(p.actQ||'')}" autocomplete="off"><button class="ccsx" data-actqx aria-label="Close search">Cancel</button></label>`
+      ? `<div class="search ccsearch ${p.actQ ? 'has' : ''}">${searchInner(p.actQ, 'Search this month').replace('<input ', '<input data-actq ').replace('autocapitalize="characters"', 'autocapitalize="off"')}</div>`   // the Holdings search box: ✕ clears, it folds away when left empty
       : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
          <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
     ${fOn ? `<div class="fchip"><button data-actfx>${esc((actTypes(p)[p.actF]||['All'])[0])}<span aria-hidden="true">✕</span></button></div>` : ''}
@@ -7261,9 +7263,16 @@ function wireAccPage(p){
   wireMore();
   const so = $('#page [data-acts]'); if (so) so.onchange = ()=>{ p.actS = so.value; p.actN = 12; rerender(); };
   const sr = $('#page [data-actsrch]'); if (sr) sr.onclick = ()=>{ p.actSO = true; rerender(); const i = $('#page [data-actq]'); if (i) i.focus(); };
-  const qx = $('#page [data-actqx]'); if (qx) qx.onclick = e=>{ e.preventDefault(); p.actSO = false; p.actQ = ''; p.actN = 12; rerender(); };
-  const qi = $('#page [data-actq]'); if (qi) qi.oninput = ()=>{ p.actQ = qi.value; p.actN = 12;   // only the list redraws, so the keyboard stays up
-    const box = $('#page .ccrows'), a = accByName(p.acc); if (!box || !a) return; box.innerHTML = ccActRows(p, accMoves(a.name)); wireMore(); wireMv(); };
+  const qi = $('#page [data-actq]');
+  if (qi){
+    const sbox = qi.closest('.search'), redraw = ()=>{ sbox.classList.toggle('has', !!qi.value);   // only the list redraws, so the keyboard stays up
+      const box = $('#page .ccrows'), a = accByName(p.acc); if (!box || !a) return; box.innerHTML = ccActRows(p, accMoves(a.name)); wireMore(); wireMv(); };
+    qi.oninput = ()=>{ p.actQ = qi.value; p.actN = 12; redraw(); };
+    qi.onkeydown = e=>{ if (e.key==='Enter') qi.blur(); };
+    sbox.querySelector('.sx').onclick = e=>{ e.preventDefault(); qi.value = ''; p.actQ = ''; p.actN = 12; redraw(); qi.focus(); };
+    // left empty: back to Sort, search and filter (as on Holdings)
+    qi.onblur = ()=>setTimeout(()=>{ if (!qi.value && document.activeElement!==qi && qi.isConnected){ p.actSO = false; p.actQ = ''; rerender(); } }, 150);
+  }
   const fx = $('#page [data-actfx]'); if (fx) fx.onclick = ()=>{ p.actF = 'all'; p.actN = 12; rerender(); };
   const fb = $('#page [data-actflt]'); if (fb) fb.onclick = ()=>{   // same small menu as Spend › Activity's filter
     closeTxMenu(); const r = fb.getBoundingClientRect(), a = accByName(p.acc), ms = accMoves(a.name).filter(m=>m.date.slice(0,7)===(p.ccm||ymNow()));
