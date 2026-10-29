@@ -1944,13 +1944,15 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lg .lgbig{font:700 40px/1.1 var(--font-disp,inherit);letter-spacing:-1.2px;margin-top:2px}
 .lg .lgsum{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
 .lg .lgsum i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}.lg .lgsum i.g{background:#ffc400}.lg .lgsum i.r{background:var(--down)}
-.lg .lgchips{display:flex;gap:6px;overflow-x:auto;margin:0 16px 12px;scrollbar-width:none}.lg .lgchips::-webkit-scrollbar{display:none}
-.lg .lgchips button{flex:0 0 auto;border:1px solid var(--card-edge);background:var(--canvas);color:var(--ink);border-radius:999px;padding:6px 13px;font:500 13px/1 inherit;cursor:pointer}
-.lg .lgchips button.on{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.lg .lgchips{padding:2px 16px 12px}
 .lgpod{display:grid;grid-template-columns:1fr 1.12fr 1fr;align-items:end;gap:8px;margin:6px 16px 14px}
 .lgpod .pd{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:0}
-.lgpod .pdt{position:relative;margin-bottom:6px}.lgpod .pdt .tile{width:46px;height:46px;border-radius:14px}
-.lgpod .p1 .pdt .tile{width:56px;height:56px;border-radius:17px;box-shadow:0 0 0 3px #ffd60a}
+.lgpod .pdt{position:relative;margin-bottom:6px}
+.lgpod .ring{display:block;border-radius:16px;padding:0}
+.lgpod .ring .tile{width:46px;height:46px;border-radius:14px}.lgpod .ring .tile img{border-radius:inherit}
+.lgpod .ring{position:relative}
+.lgpod .p1 .ring .tile{width:56px;height:56px;border-radius:17px}
+.lgpod .p1 .ring::before{content:"";position:absolute;inset:-5px;border-radius:22px;border:2.5px solid #f5c400;pointer-events:none}
 .lgpod .md{position:absolute;right:-7px;bottom:-6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--font-disp,inherit);font-style:normal;color:#fff;border:2px solid var(--canvas)}
 .lgpod .p1 .md{background:#e6b800}.lgpod .p2 .md{background:#a7adb7}.lgpod .p3 .md{background:#c9814a}
 .lgpod .pdn{font-size:13px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1973,6 +1975,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 .lgrow.sk .skt{width:34px;height:34px;border-radius:10px;background:var(--sunken)}.lgrow.sk .skl{display:block;height:10px;width:90px;border-radius:5px;background:var(--sunken)}.lgrow.sk .skl.s{width:60px;margin-top:6px}
 .lgfoot{margin:4px 28px 30px;font-size:12px;line-height:1.45;color:var(--ink-3);text-align:center}
 .lg .tabsw{margin-top:14px}
+.haptest{display:inline-flex;align-items:center;gap:6px}.haptest button{width:34px;height:30px;border-radius:9px;background:var(--sunken);color:var(--ink);font:700 13px/1 inherit;border:0}.haptest .hapsw input{margin:0 0 0 4px}
 .hstar{margin:0 16px 12px}.hstar:empty{display:none}
 .hstar button{display:flex;align-items:center;gap:12px;width:100%;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:11px 12px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
 .hstar .badge{flex:0 0 auto;font:800 11px/1 var(--font-disp,inherit);letter-spacing:.6px;text-transform:uppercase;padding:8px 7px;border-radius:9px;transform:rotate(-6deg)}
@@ -2194,7 +2197,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4314,12 +4317,20 @@ window.addEventListener('touchend', ()=>{
 }, { passive:true });
 // Haptics: Android buzzes through vibrate(); iPhone has no vibrate, but toggling a hidden
 // switch control from a tap gives the system's light tick (iOS 18+). Off-tap calls are silent there.
+let hapL = null;
+function hapEl(){ if (hapL && hapL.isConnected) return hapL;
+  hapL = document.createElement('label'); hapL.setAttribute('aria-hidden','true');
+  hapL.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1';
+  const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); i.tabIndex = -1; hapL.appendChild(i);
+  document.body.appendChild(hapL); return hapL; }
 function haptic(p){
-  try{ if (navigator.vibrate){ navigator.vibrate(p || 8); return; }
-    const l = document.createElement('label'); l.ariaHidden = 'true'; l.style.display = 'none';
-    const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); l.appendChild(i);
-    document.head.appendChild(l); l.click(); document.head.removeChild(l); }catch(e){}
+  try{ if (navigator.vibrate){ navigator.vibrate(p || 8); return; } hapEl().click(); }catch(e){}
 }
+// the three ways iPhone might be made to tick, for the test buttons in Profile
+const HAP_WAYS = {
+  a: () => { const l = document.createElement('label'); l.ariaHidden = 'true'; l.style.display = 'none'; const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch',''); l.appendChild(i); document.head.appendChild(l); l.click(); document.head.removeChild(l); },
+  b: () => hapEl().click(),
+  c: () => { const i = hapEl().querySelector('input'); i.click(); } };
 // a tick on steppers, segmented switches and range pickers
 document.addEventListener('click', e=>{ const t = e.target.closest && e.target.closest('[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],#homeRanges button,[data-vbv],[data-capmore]');
   if (t && !t.disabled && !t.classList.contains('on')) haptic(6); }, true);
@@ -4732,14 +4743,14 @@ function leagueBody(p){
   const loading = isH && !lgTx;
   // podium: 2 · 1 · 3
   const pod = ranked.length >= 3 ? `<div class="lgpod">${[1,0,2].map(i=>{ const r = ranked[i];
-      return `<button class="pd p${i+1}" data-lg="${esc(r.k)}"><div class="pdt">${tileOf(r)}<i class="md">${i+1}</i></div><div class="pdn">${esc(r.asset?r.name:r.k)}</div><div class="pdx num ${cls(r.x)}">${xs(r.x)}</div><div class="pdb"></div></button>`; }).join('')}</div>` : '';
+      return `<button class="pd p${i+1}" data-lg="${esc(r.k)}"><div class="pdt"><span class="ring">${tileOf(r)}</span><i class="md">${i+1}</i></div><div class="pdn">${esc(r.asset?r.name:r.k)}</div><div class="pdx num ${cls(r.x)}">${xs(r.x)}</div><div class="pdb"></div></button>`; }).join('')}</div>` : '';
   const rest = ranked.length >= 3 ? ranked.slice(3) : ranked, base = ranked.length >= 3 ? 3 : 0;
   const relN = ranked.length >= 6 ? Math.min(3, ranked.filter(r=>r.x<0).length) : 0, relAt = rest.length - relN;
   const row = (r, i) => `${i===relAt && relN ? '<div class="lgrel"><span>Relegation zone</span></div>' : ''}<button class="lgrow ${i>=relAt && relN ? 'rel':''}" data-lg="${esc(r.k)}">
       <b class="rk">${base+i+1}</b>${tileOf(r)}<span class="nm"><b>${esc(r.asset?r.name:r.k)}</b><small>${meta(r)}</small></span>
       <span class="xr"><b class="num ${cls(r.x)}">${xs(r.x)}</b><i class="bar ${r.x<0?'neg':''}"><em style="width:${(Math.abs(r.x)/mx*100).toFixed(1)}%"></em></i></span></button>`;
   const seg = `<div class="tabsw"><div class="seg" id="lgSeg"><button data-lt="hold" class="${isH?'on':''}">Holdings</button><button data-lt="assets" class="${!isH?'on':''}">Assets</button></div></div>`;
-  const chips = isH && cats.length > 1 ? `<div class="lgchips">${['All',...cats].map(c=>`<button data-lf="${esc(c)}" class="${c===lgFilt?'on':''}">${esc(c==='All'?'All':CAT_LABEL[c]||c)}</button>`).join('')}</div>` : '';
+  const chips = isH && cats.length > 1 ? `<div class="chips lgchips">${['All',...cats].map(c=>`<button data-lf="${esc(c)}" class="chip ${c===lgFilt?'on':''}">${esc(c==='All'?'All':CAT_LABEL[c]||c)}</button>`).join('')}</div>` : '';
   const champ = ranked[0], last = ranked[ranked.length-1];
   const hero = `<div class="card lghero"><div class="lgh1">${LG_CUP}<span>Season ${new Date().getFullYear()}</span></div>
       <div class="lgk">Portfolio XIRR</div><div class="lgbig num ${L.pf!=null?cls(L.pf):''}">${L.pf!=null ? xs(L.pf) : '—'}</div>
@@ -8082,6 +8093,7 @@ function profileBody(){
    <h3>Privacy</h3><div class="grp">
     ${row('eye','#8e8e93','Hide amounts', sw('blur', blur))}
     ${row('shake','#ff9500','Shake to hide', sw('shake', !!load('inv.shake')), 'Shake the phone to blur every amount; shake again to show them')}
+    ${row('shake','#8e8e93','Haptics test', `<span class="haptest"><button data-hap="a">A</button><button data-hap="b">B</button><button data-hap="c">C</button><label class="hapsw"><input type="checkbox" switch></label></span>`, 'Tap A, B, C, then the switch. Which ones tick?')}
     ${row('face','#34c759','Face ID lock', sw('faceid', !!lockCfg))}
     ${lockCfg ? row('timer','#ff9500','Lock', pick('lockAfter', PREF.lockAfter, LOCK_OPTS)) + row('lock','#007aff','Lock now', '', '', 'data-act="locknow"') : ''}
    </div>
@@ -8180,6 +8192,7 @@ function wireDefaults(){
   $$('#page [data-defsw]').forEach(b=>b.onclick=()=>{ const k = b.dataset.defsw; setDef(k, /^false$/i.test(DEF(k)) ? 'TRUE' : 'FALSE'); renderPageKeep(); });
 }
 function wireProfile(){
+  $$('#page [data-hap]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); HAP_WAYS[b.dataset.hap](); });
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-sw]').forEach(b=>b.onclick=async ()=>{
     const k = b.dataset.sw;
