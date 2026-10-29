@@ -2269,7 +2269,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03t';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2561,7 +2561,7 @@ function renderHome(d){
     ? `<div class="rowtotal num money"><span>${accFilt==='all' ? 'Liquid' : accFilt==='construction' ? 'Construction fund' : 'Total'}</span><span>${fINR(rbal)}</span></div>` : '';
   renderEditList(EL.banks);
   // a live balance opens its account (set the actual balance there)
-  $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
+  $$('#banks .row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc, list:accSibs(r) }));
 
   // wallets (Net Worth C21 Kite ₹, C22 INDmoney $) — edits go through setWallet
   const fx = h.usdInr || 0;
@@ -2755,7 +2755,7 @@ function renderEditList(L){
     + (L.open===i ? bankEditor(b) : '');
   }).join('') + L.foot || `<div class="empty">${L.empty}</div>`;
 
-  el.querySelectorAll('.row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
+  el.querySelectorAll('.row[data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc, list:accSibs(r) }));
   el.querySelectorAll('.row.tap:not([data-acc])').forEach(r=>r.onclick=e=>{
     if(e.target.closest('.ed')) return;              // taps inside the editor aren't a toggle
     const i = Number(r.dataset.i);
@@ -4557,9 +4557,13 @@ function catStep(p){
   return `<div class="pg-step cstep"><button data-cstep="-1" aria-label="Previous category" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
       <button data-cstep="1" aria-label="Next category" ${i>=L.length-1?'disabled':''}>${arrow('M9 5l7 7-7 7')}</button></div>`;
 }
+// an account page steps through the accounts in the list it was opened from (or every account)
+const accSibs = r => { const box = r.closest('#banks, #spBody, #page, section.view') || document; return [...new Set([...box.querySelectorAll('[data-acc]')].map(x=>x.dataset.acc))]; };
+const accAll = () => ACC_GROUPS.flatMap(([k])=>xAccounts().filter(a=>accKind(a)===k).map(a=>a.name));
 function stepper(p){
-  if ((p.kind!=='holding' && p.kind!=='platform' && p.kind!=='bucket') || !p.list) return '';
-  const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.platform); if (i<0) return '';
+  if (p.kind==='acct' && (!p.list || p.list.length < 2)) p.list = accAll();
+  if ((p.kind!=='holding' && p.kind!=='platform' && p.kind!=='bucket' && p.kind!=='acct') || !p.list) return '';
+  const i = p.list.indexOf(p.kind==='holding' ? p.ticker : p.kind==='bucket' ? p.bucket : p.kind==='acct' ? p.acc : p.platform); if (i<0) return '';
   const arrow = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<div class="pg-step">
       <button data-step="-1" aria-label="Previous" ${i<=0?'disabled':''}>${arrow('M15 5l-7 7 7 7')}</button>
@@ -4623,7 +4627,10 @@ function renderPage(){
   if (p.kind==='platlist'){ renderPlatforms(D.data.buckets, '#pgPlatList'); return; }
   if (p.kind==='bklist'){ renderBucketList(D.data.buckets, '#pgBkList'); return; }
   if (p.kind==='expcat' || p.kind==='inccat' || p.kind==='budgets'){ wireXPage(p); return; }
-  if (p.kind==='acct'){ wireAccPage(p); wireCashback(p); $$('#page [data-ziq]').forEach(b=>b.onclick=()=>pushPage({ kind:'intq', q:b.dataset.ziq })); return; }
+  if (p.kind==='acct'){
+    $$('#page [data-step]').forEach(b=>b.onclick=()=>{ const L = p.list||[], n = L[L.indexOf(p.acc) + Number(b.dataset.step)];
+      if (!n) return; Object.keys(p).forEach(k=>{ if (k!=='kind' && k!=='list') delete p[k]; }); p.acc = n; renderPage(); $('#page').scrollTop = 0; });
+    wireAccPage(p); wireCashback(p); $$('#page [data-ziq]').forEach(b=>b.onclick=()=>pushPage({ kind:'intq', q:b.dataset.ziq })); return; }
   if (p.kind==='zakat' || p.kind==='interest'){ wireZiPage(p); return; }
   if (p.kind==='intq'){ wireZiQ(p); return; }
   if (p.kind==='constr'){ wireConstr(p); return; }
@@ -5344,7 +5351,7 @@ function renderSpend(){
       <button data-ym="1" aria-label="Next month" ${spMonth>=cur?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div>`;
   el.innerHTML = (spSec==='accounts' ? '' : sw) + (spSec==='list' ? recErrHtml() : '') + (spSec==='budget' ? spBudgetHtml() : spSec==='monthly' ? spMonthlyHtml() : spSec==='accounts' ? spAccountsHtml() : spListHtml());
   paintBooks();      // the Books pill lives on Accounts now; this also sets the orange dots
-  $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
+  $$('#spBody [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc, list:accSibs(r) }));
   $$('#spBody [data-addacc]').forEach(b=>b.onclick=()=>pushPage({ kind:'accform' }));
   $$('#spBody [data-recerr]').forEach(b=>b.onclick=()=>{ const R = (xd()||{}).recErr; if (R && R.items) alert(R.items.map(x=>`${x.name}${x.ym ? ' · '+ymLabel(x.ym) : ''}\n${x.msg}`).join('\n\n') + '\n\nIt will be posted on the next run once fixed, or you can add it by hand.'); pushPage({ kind:'recurring' }); });
   $$('#spBody [data-bankgo]').forEach(b=>b.onclick=()=>{ const h = [...document.querySelectorAll('#spBody .sechead h2')].find(x=>x.textContent.trim()==='Bank'); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
@@ -6639,7 +6646,7 @@ function constrBody(p){
 }
 function wireConstr(p){
   const d = xd() || {}, all = (d.entries||[]).concat(d.constrOld||[]);
-  $$('#page [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc }));
+  $$('#page [data-acc]').forEach(r=>r.onclick=()=>pushPage({ kind:'acct', acc:r.dataset.acc, list:accSibs(r) }));
   if ($('#cfOther')){ EL.cfs.rows = constrFund().rows.filter(r=>!r.acc).map(r=>r.item).filter(Boolean); renderEditList(EL.cfs); }
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(all.find(e=>String(e.row)===r.dataset.xrow)));
   const gs = $('#page .mbscroll');
@@ -6898,10 +6905,9 @@ function ccActRows(p, moves){
 }
 function ccActivityHtml(p, moves){
   const lbl = (CC_SORT.find(x=>x[0]===(p.actS||'new'))||CC_SORT[0])[1], fOn = p.actF && p.actF!=='all', sOpen = p.actSO || !!p.actQ;
-  const chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   return `<div class="cctools">${sOpen
       ? `<label class="search ccsearch">${SRCH_ICON}<input type="search" data-actq placeholder="Search this month" value="${esc(p.actQ||'')}" autocomplete="off"><button class="ccsx" data-actqx aria-label="Close search">Cancel</button></label>`
-      : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
+      : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
          <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
     ${fOn ? `<div class="fchip"><button data-actfx>${esc(CC_TYPE[p.actF][0])}<span aria-hidden="true">✕</span></button></div>` : ''}
     <div class="ccrows">${ccActRows(p, moves)}</div>`;
@@ -6983,9 +6989,9 @@ function cashbackHtml(a, p){
       form = `<div class="cbform">
         <label>Total cashback shown in the card app</label>
         <div class="inwrap"><span>₹</span><input data-cbtot inputmode="decimal" value="${p.cbTot ? esc(groupNum(String(p.cbTot),'en-IN')) : ''}" placeholder="${last ? esc(String(last.total)) : '0'}"></div>
-        ${last ? `<div class="calc"><div><span>Last total (${esc(fDate(last.date))})</span><span class="num money">${fINR2(last.total)}</span></div>
+        ${last ? `<div class="calc"><div><span>Last total · ${esc(fDate(last.date))}</span><span class="num money">${fINR2(last.total)}</span></div>
           ${last.since ? `<div><span>Logged since, with purchases</span><span class="num money">${fINR2(last.since)}</span></div>` : ''}
-          <div class="t"><span>New since ${esc(fDate(last.date))}</span><b class="num money ${p.cbTot && delta<0?'down':''}" data-cbdelta>${p.cbTot ? (delta>=0?'+':'') + fINR2(delta) : '—'}</b></div></div>`
+          <div class="t"><span>New cashback</span><b class="num money ${p.cbTot && delta<0?'down':''}" data-cbdelta>${p.cbTot ? (delta>=0?'+':'') + fINR2(delta) : '—'}</b></div></div>`
           : `<label style="margin-top:12px">How much of that came this month?</label>
              <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt!=null ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="the first time only"></div>`}
         ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
@@ -7012,7 +7018,9 @@ function cashbackHtml(a, p){
 function wireCashback(p){
   const a = accByName(p.acc); if (!a) return;
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
-  const add = $('#page [data-cbadd]'); if (add) add.onclick = ()=>{ p.cb = true; p.cbTot = ''; p.cbAmt = null; p.cbYm = ymNow(); p.cbErr = ''; again(); setTimeout(()=>{ const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i) i.focus(); }, 50); };
+  const add = $('#page [data-cbadd]'); if (add) add.onclick = ()=>{ p.cb = true; p.cbTot = ''; p.cbAmt = null; p.cbYm = ymNow(); p.cbErr = ''; again();
+    // focus inside the tap itself: iPhone only raises the keyboard for a focus made during the tap, not after a timeout
+    const i = $('#page [data-cbtot]') || $('#page [data-cbamt]'); if (i){ i.focus(); i.scrollIntoView({ block:'center', behavior:'smooth' }); } };
   const x = $('#page [data-cbx]'); if (x) x.onclick = ()=>{ p.cb = false; again(); };
   const tot = $('#page [data-cbtot]'); if (tot){ commaInput(tot,'en-IN');
     // the difference shows as you type, not only after leaving the box
