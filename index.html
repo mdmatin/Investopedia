@@ -386,6 +386,13 @@ html[data-theme=dark] .athb.on{color:#ffd60a}
 .nwp-g2 .m{font-size:12px;color:var(--ink-3);margin-top:2px}
 :root{--cashc:#5ac8fa} html[data-theme=dark]{--cashc:#64d2ff}
 .chart svg{width:100%;height:100%;display:block;overflow:visible}
+/* sign-off at the end of Overview, Holdings, Accounts and Spend */
+.ft1{position:relative;margin:36px 0 0;padding:26px 24px 8px;overflow:hidden}
+.ft1 .hi{font:600 28px/1 'Caveat', cursive;color:var(--blue);transform:rotate(-3deg);transform-origin:left;display:inline-block}
+.ft1 .big{font:800 84px/.9 var(--font-disp);letter-spacing:-4.5px;margin:12px 0 0 -3px;color:var(--ink);position:relative}
+.ft1 .big b{color:var(--blue)}
+.ft1 .tag{margin-top:14px;font:600 17px/1.3 var(--font-disp);letter-spacing:-.3px;color:var(--ink-2)}
+.ft1 svg.c{position:absolute;right:-46px;top:-34px;width:170px;height:170px;opacity:.14;pointer-events:none}
 .gridline{stroke:var(--hairline);stroke-width:1}
 #ah.gridline,.dline .vl{stroke:color-mix(in srgb, var(--ink-3) 55%, var(--hairline))}   /* the picker's dotted line, every chart: a little darker than the grid */
 .axis{font-size:10.5px;fill:var(--ink-3);font-variant-numeric:tabular-nums}
@@ -2090,6 +2097,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 #assets .dpill{margin-top:3px}
 .hentry .ic.bk{background:var(--up-bg);color:var(--up)}
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&amp;text=That%27s%20everything%20for%20today.&amp;display=swap">
 </head>
 <body>
 
@@ -2151,6 +2159,9 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 
       <div class="sechead" id="consHead" hidden><h2>Construction fund</h2></div>
       <div class="card tight" id="construction" hidden></div>
+      <!-- sign-off at the end of each tab page -->
+      <div class="ft1" aria-hidden="true"><svg class="c" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" stroke="#0b57d0" stroke-width="22" stroke-dasharray="380 110" stroke-linecap="round" transform="rotate(30 100 100)"/><circle cx="160" cy="58" r="13" fill="#3ddc84"/></svg>
+        <div class="hi">That's everything for today.</div><div class="big">cent<b>ric</b>.</div><div class="tag">Every rupee, in one place.</div></div>
     </section>
 
     <!-- BREAKDOWN -->
@@ -2174,6 +2185,9 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
       <div class="hsec" id="s-buckets" hidden>
         <div class="card tight" id="buckets"></div>
       </div>
+      <!-- sign-off at the end of each tab page -->
+      <div class="ft1" aria-hidden="true"><svg class="c" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" stroke="#0b57d0" stroke-width="22" stroke-dasharray="380 110" stroke-linecap="round" transform="rotate(30 100 100)"/><circle cx="160" cy="58" r="13" fill="#3ddc84"/></svg>
+        <div class="hi">That's everything for today.</div><div class="big">cent<b>ric</b>.</div><div class="tag">Every rupee, in one place.</div></div>
     </section>
 
     <!-- TRENDS -->
@@ -2196,6 +2210,9 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
         <button data-s="budget">Budget</button>
       </div>
       <div id="spBody"></div>
+      <!-- sign-off at the end of each tab page -->
+      <div class="ft1" aria-hidden="true"><svg class="c" viewBox="0 0 200 200"><circle cx="100" cy="100" r="78" fill="none" stroke="#0b57d0" stroke-width="22" stroke-dasharray="380 110" stroke-linecap="round" transform="rotate(30 100 100)"/><circle cx="160" cy="58" r="13" fill="#3ddc84"/></svg>
+        <div class="hi">That's everything for today.</div><div class="big">cent<b>ric</b>.</div><div class="tag">Every rupee, in one place.</div></div>
     </section>
 
     <section class="view" id="v-txn">
@@ -2277,7 +2294,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03y';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-03z';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7137,7 +7154,7 @@ function ziBankHtml(a, p){ p = p || {};
   const list = (pend ? `<div class="lr due"><span>${esc(qLabel(next))}<small>${next===due ? 'Due now' : 'From 25 ' + qMon(next)}</small></span><em>Pending</em></div>` : '')
     + rows.slice().reverse().slice(0, p.ziAll ? 99 : (pend ? 0 : 1)).map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
   return `<div class="cbk zint"><div class="hd"><h2>Interest</h2>${pend ? `<button class="hadd" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))}</button>` : ''}</div>
-    <div class="st"><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>All time</span><b class="num money">${fINR(all)}</b></div></div>
+    <div class="st"><div><span>All time</span><b class="num money">${fINR(all)}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div></div>
     <div class="bars">${sv.map((v,i)=>`<i class="${i===curI?'cur':''} ${v?'':'nil'}" style="height:${v ? Math.max(4, v/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${slots.map(q=>`<span>${qMon(q)}</span>`).join('')}</div>
     <div class="lst">${list}${rows.length > (pend ? 0 : 1) ? `<button class="more" data-ziall>${p.ziAll ? 'Show fewer' : 'Show all ' + rows.length}</button>` : ''}</div></div>`;
