@@ -82,6 +82,8 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil((async () => {
+    // a note for the app too: if the message below doesn't reach it, it reads this when it comes to the front
+    try { await (await caches.open(CFG_CACHE)).put('./__go', new Response(JSON.stringify({ view: 'spend', at: Date.now() }))); } catch (err) {}
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of list) { try { await c.focus(); } catch (err) {} c.postMessage({ type: 'go', view: 'spend' }); return; }
     await self.clients.openWindow('./?go=spend');
