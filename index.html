@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04n';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04o';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -9695,10 +9695,15 @@ function goTo(view){
   if (pageStack.length && n){ history.go(-n); setTimeout(()=>show(view), 380); }   // popstate closes the pages
   else { while (pageStack.length) popPageNow(true); show(view); }
 }
-document.addEventListener('visibilitychange', ()=>{
-  if (document.visibilityState!=='visible' || !('caches' in window)) return;
+// iPhone brings the app to the front first and runs the alert's tap handler a moment later, so the
+// note isn't there yet when the app becomes visible: look for it a few times over the next few seconds
+function goNoteCheck(){
+  if (!('caches' in window)) return;
   caches.open('centric-cfg').then(c=>c.match('./__go')).then(r=>r && r.json()).then(g=>{ if (g && g.view && Date.now() - g.at < 2*60e3) goTo(g.view); }).catch(()=>{});
-});
+}
+function goNoteWatch(){ [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); }
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') goNoteWatch(); });
+window.addEventListener('focus', goNoteWatch); window.addEventListener('pageshow', goNoteWatch);
 /* Notifications (Settings › General): Web Push from the script. Turning it on asks iPhone for
    permission, subscribes with the script's key and sends a test alert. The service worker is
    given the script's address so it can fetch each alert's text (see sw.js). */
