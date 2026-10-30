@@ -1536,6 +1536,7 @@ body.paged{overflow:hidden}
 .pg-sub .sep2{color:var(--ink-3);margin:0 6px}
 .pg-sub .grp{white-space:nowrap}
 .pg-sub .arrow{font-size:.82em}
+.bksays svg{width:13px;height:13px;vertical-align:-1.5px;margin-right:4px}
 .pg-hero .hchart{height:160px;margin-top:18px}
 .hlg{display:flex;gap:14px;font-size:12px;color:var(--ink-2);margin-top:8px;align-items:center}
 .hlg i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
@@ -2294,7 +2295,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-03z';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04a';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4471,7 +4472,7 @@ function shakeToggle(){
   document.body.classList.toggle('blur'); const on = document.body.classList.contains('blur'); save(LS.blur, on);
   document.body.classList.remove('shook'); void document.body.offsetWidth; document.body.classList.add('shook');
   haptic(on ? [20,40,20] : 15);
-  toast(on ? 'Amounts hidden · shake again to show' : 'Amounts showing');
+  toast(on ? 'Amounts hidden' : 'Amounts showing');
   if (typeof paintMenu==='function') paintMenu();
 }
 if (load('inv.shake')){ if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission==='function')
@@ -6705,6 +6706,16 @@ function bankCheck(name){
   const diff = Math.round((accBalance(name) - r.bal) * 100) / 100;
   return { ok: Math.abs(diff) < 1, diff, bal: r.bal, at: r.at };
 }
+// account page: the bank's own balance from its latest text, under the big figure
+function bankSaysHtml(a){
+  const r = ((xd()||{}).bankBal||{})[a.name]; if (!r || r.bal==null || accKind(a)!=='bank') return '';
+  const c = bankCheck(a.name), when = r.date ? ' · ' + esc(fDate(r.date)) : '';
+  const ic = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  if (c && c.ok) return `<div class="pg-sub bksays"><span class="up">${ic(BK_OK)}Matches bank</span><span class="k">${when}</span></div>`;
+  if (c) return `<div class="pg-sub bksays num money"><span class="down">${ic(BK_WARN)}Off by ${fINR2(Math.abs(c.diff))}</span><span class="k"> · bank ${fINR2(r.bal)}${when}</span></div>`;
+  const why = xDrafts().some(d=>d.account===a.name || d.from===a.name || d.to===a.name) ? 'drafts waiting' : 'newer entries';   // not compared yet
+  return `<div class="pg-sub bksays num money"><span class="k">Bank said ${fINR2(r.bal)}${when} · ${why}</span></div>`;
+}
 const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok) : [];
 // one row, styled like the Books pill: which account differs (or how many) and by how much;
 // tapping opens that account, or with several, scrolls to the Bank list
@@ -6975,7 +6986,7 @@ function accBody(p){
   return `<div class="card pg-card pg-hero">
       <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div>
         <button class="chart-tg ${p.accMenu?'on':''}" data-accmenu aria-label="Edit" aria-haspopup="menu" aria-expanded="${p.accMenu?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
-      ${card ? ccHero : `<div class="pg-big num money">${bigAmt(big)}</div>`}
+      ${card ? ccHero : `<div class="pg-big num money">${bigAmt(big)}</div>${bankSaysHtml(a)}`}
       ${p.accMenu ? `<div class="menu accmenu" role="menu"><button data-setbal role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Set actual balance</button><button data-editacc role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Edit account</button></div>` : ''}
       ${ed}
       ${card ? '' : `<div class="spstats lcr"><div><span>In · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
