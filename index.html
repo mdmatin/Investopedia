@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04m';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04n';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -8995,7 +8995,7 @@ function start(){
   if(D){ render(); setStatus('Updated '+ago(Date.now()-D.at),'stale'); }
   refresh(); schedule();
   if (load('inv.start')==='spend' || /[?&]go=spend/.test(location.search)) show('spend');     // "Open on" in the profile menu, or a tapped draft alert
-  if (/[?&]go=/.test(location.search)) try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  if (/[?&]go=/.test(location.search)) try{ history.replaceState(null, '', location.pathname); caches.open('centric-cfg').then(c=>c.delete('./__go')); }catch(e){}   // opened from an alert: its note is used up
   if (typeof swCfg==='function') swCfg();   // (defined further down; on first load it runs from there)
 }
 /* ============================ RIVER (theme) ============================ */
@@ -9686,6 +9686,19 @@ if(cfg) start(); else $('#setup').hidden=false;
   btn.addEventListener('mousedown', e=>e.preventDefault());
   btn.addEventListener('click', ()=>{ if (!cur) return; cur.value = ''; cur.dispatchEvent(new Event('input', {bubbles:true})); cur.dispatchEvent(new Event('change', {bubbles:true})); cur.focus(); place(); });
 })();
+// a tapped alert while the app was open in the background: close whatever page is on top, then the tab.
+// The service worker also leaves a note in its cache, in case its message to the app got lost.
+function goTo(view){
+  try{ caches.open('centric-cfg').then(c=>c.delete('./__go')); }catch(e){}
+  closeTxMenu(); closeDrafts();
+  const n = (history.state && history.state.pg) || 0;
+  if (pageStack.length && n){ history.go(-n); setTimeout(()=>show(view), 380); }   // popstate closes the pages
+  else { while (pageStack.length) popPageNow(true); show(view); }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState!=='visible' || !('caches' in window)) return;
+  caches.open('centric-cfg').then(c=>c.match('./__go')).then(r=>r && r.json()).then(g=>{ if (g && g.view && Date.now() - g.at < 2*60e3) goTo(g.view); }).catch(()=>{});
+});
 /* Notifications (Settings › General): Web Push from the script. Turning it on asks iPhone for
    permission, subscribes with the script's key and sends a test alert. The service worker is
    given the script's address so it can fetch each alert's text (see sw.js). */
@@ -9722,7 +9735,7 @@ async function pushToggle(){
   let ready = false;
   navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.addEventListener('message', e=>{
-    if (e.data && e.data.type==='go' && e.data.view){ closeTxMenu(); show(e.data.view); return; }   // a tapped draft alert while the app was open
+    if (e.data && e.data.type==='go' && e.data.view){ goTo(e.data.view); return; }   // a tapped draft alert while the app was open
     if (e.data !== 'centric-updated' || ready) return;
     ready = true; toast('A new version is ready — it loads next time you open the app');
   });
