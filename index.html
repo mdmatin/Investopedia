@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7910,9 +7910,9 @@ function xAccGrid(names, on, cardsFirst){
 const XT_ICON = {
   salary:  [XI.trip, 'us'], freelanc: [XI.tv, 'cr'], interest: ['M18 6L6 18M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM16 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z', 'lq'],
   cashback:[ 'M3 6.5h18v11H3zM3 10.5h18M7 14.5h3', 'mf'], dividend: [XI.leaf, 'in'], gift: [XI.gift, 'gd'],
-  liquid:  ['M3 7l6 6 4-4 8 8M14 17h7v-7', 'rt'], refund: ['M9 14l-5-5 5-5M4 9h11a5 5 0 0 1 0 10h-3', 'bk'], other: [XI.more, 'ch'] };
+  liquid:  ['M3 7l6 6 4-4 8 8M14 17h7v-7', 'rt'], refund: ['M9 14l-5-5 5-5M4 9h11a5 5 0 0 1 0 10h-3', 'bk'], other: ['M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1-5.1-1.9 5.1-1.9zM18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z', 'pk'] };   // other: a sparkle
 const xtKey = t => { const s = String(t||'').toLowerCase(); return Object.keys(XT_ICON).find(k=>s.startsWith(k) || (k==='gift' && /gift|transfer/.test(s)) || (k==='liquid' && /liquid/.test(s))) || 'other'; };
-const xtTile = t => { const [d,tint] = XT_ICON[xtKey(t)]; return `<div class="tile ${tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${xtKey(t)==='other'?3:1.7}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></div>`; };
+const xtTile = t => { const [d,tint] = XT_ICON[xtKey(t)]; return `<div class="tile ${tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></div>`; };
 function xTypeGrid(types, on){
   const g = { Earnings:[], Returns:[], 'Back to you':[], Other:[] };
   types.forEach(t=>{ const k = xtKey(t); (k==='salary'||k==='freelanc' ? g.Earnings : k==='interest'||k==='dividend'||k==='cashback' ? g.Returns : k==='liquid'||k==='refund' ? g['Back to you'] : g.Other).push(t); });
@@ -8556,6 +8556,7 @@ function profileBody(){
    <h3>Money</h3><div class="grp">
     ${row('tag','#ff9500','Defaults', `<span class="vl">${chv}</span>`, 'What new entries start with', 'data-act="defaults"')}
     ${row('bell','#ff3b30','Budget alerts', sw('budgetAlerts', PREF.budgetAlerts), 'At 90% and when over budget')}
+    ${row('bell','#34c759','Draft alerts', sw('pushDrafts', !!load('inv.push')), 'A notification for each new bank text')}
     ${row('repeat','#5856d6','Recurring', `<span class="vl">${xd() ? (recList().filter(r=>r.active).length || 'None') : ''}${chv}</span>`, '', 'data-act="recurring"')}
     ${row('tax','#af52de','Tax', `<span class="vl">${taxD() ? esc(taxYear().label) : ''}${chv}</span>`, taxD() ? 'Estimate, gains and advance tax' : 'Computed on the sheet nightly', 'data-act="tax"')}
    </div>
@@ -8641,6 +8642,7 @@ function wireProfile(){
   $$('#page [data-sw]').forEach(b=>b.onclick=async ()=>{
     const k = b.dataset.sw;
     if (k==='blur'){ document.body.classList.toggle('blur'); save(LS.blur, document.body.classList.contains('blur')); }
+    else if (k==='pushDrafts'){ await pushToggle(); }
     else if (k==='shake'){ if (load('inv.shake')){ save('inv.shake', false); toast('Shake to hide is off'); } else { const ok = await shakeAsk(); if (ok){ save('inv.shake', true); shakeOn(); toast('Shake the phone to hide amounts'); } else toast('Motion access was not allowed'); } }
     else if (k==='faceid'){
       if (!lockCfg){ await enrollLock(); }
@@ -8961,7 +8963,9 @@ function start(){
   $('#setup').hidden=true; $('#app').hidden=false;
   if(D){ render(); setStatus('Updated '+ago(Date.now()-D.at),'stale'); }
   refresh(); schedule();
-  if (load('inv.start')==='spend') show('spend');     // "Open on" in the profile menu
+  if (load('inv.start')==='spend' || /[?&]go=spend/.test(location.search)) show('spend');     // "Open on" in the profile menu, or a tapped draft alert
+  if (/[?&]go=/.test(location.search)) try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  if (typeof swCfg==='function') swCfg();   // (defined further down; on first load it runs from there)
 }
 /* ============================ RIVER (theme) ============================ */
 const isRiver = () => document.documentElement.getAttribute('data-ui')==='river';
@@ -9651,6 +9655,34 @@ if(cfg) start(); else $('#setup').hidden=false;
   btn.addEventListener('mousedown', e=>e.preventDefault());
   btn.addEventListener('click', ()=>{ if (!cur) return; cur.value = ''; cur.dispatchEvent(new Event('input', {bubbles:true})); cur.dispatchEvent(new Event('change', {bubbles:true})); cur.focus(); place(); });
 })();
+/* Draft alerts (Settings › Money): Web Push from the script. Turning it on asks iPhone for
+   permission, subscribes with the script's key and sends a test alert. The service worker is
+   given the script's address so it can fetch each alert's text (see sw.js). */
+function swCfg(){
+  if (!cfg || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(r=>{ const w = r.active || navigator.serviceWorker.controller; if (w) w.postMessage({ type:'cfg', url:cfg.url, key:cfg.key }); }).catch(()=>{});
+}
+const b64uBytes = s => { const b = atob(s.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((s.length + 3) % 4)); return Uint8Array.from(b, c=>c.charCodeAt(0)); };
+swCfg();
+async function pushToggle(){
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){
+    toast(navigator.standalone === false ? 'Open the app from your Home Screen to turn on alerts' : 'This phone can’t get alerts from the app'); return; }
+  if (load('inv.push')){
+    try{ const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+      if (sub){ apiPost('pushUnsub', { endpoint: sub.endpoint }).catch(()=>{}); await sub.unsubscribe(); } }catch(e){}
+    save('inv.push', false); toast('Draft alerts are off'); return;
+  }
+  const perm = await Notification.requestPermission();   // first, while still inside the tap (iPhone asks only from a tap)
+  if (perm !== 'granted'){ toast('Alerts weren’t allowed — Settings › Notifications › Centric'); return; }
+  try{
+    const reg = await navigator.serviceWorker.ready, k = await api({ action:'pushKey' });
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64uBytes(k.data.key) });
+    await apiPost('pushSub', sub.toJSON()); swCfg(); save('inv.push', true);
+    const t = await apiPost('pushTest');
+    toast(t && t.sent ? 'Draft alerts are on — a test alert is on its way' : 'Alerts are set up, but the test didn’t go' + (t && t.errors && t.errors[0] ? ': ' + t.errors[0] : ''));
+  }catch(e){ toast('Couldn’t turn on alerts: ' + (e.message || e)); }
+}
 // Offline + instant open: a service worker keeps a copy of the app on the phone (sw.js).
 // When a new build is published it downloads in the background; the app switches to it
 // the next time it is brought back to the screen, never in the middle of something.
@@ -9659,6 +9691,7 @@ if(cfg) start(); else $('#setup').hidden=false;
   let ready = false;
   navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.addEventListener('message', e=>{
+    if (e.data && e.data.type==='go' && e.data.view){ closeTxMenu(); show(e.data.view); return; }   // a tapped draft alert while the app was open
     if (e.data !== 'centric-updated' || ready) return;
     ready = true; toast('A new version is ready — it loads next time you open the app');
   });
