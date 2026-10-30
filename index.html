@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04j';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04k';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5363,7 +5363,7 @@ async function loadExpenses(fresh){
   try{
     const j = await api(fresh ? {action:'expenses', fresh:'1'} : {action:'expenses'});
     if (seq !== xSeq || xPending){ xAgain = true; return; }
-    X = { at: Date.now(), data: j.data }; recApplyMarks(); save('inv.exp', X); paintDfab();
+    X = { at: Date.now(), data: j.data }; recApplyMarks(); save('inv.exp', X); paintDfab(); autoClearDrafts();
     if (activeView==='spend') renderSpend();
     if (activeView==='home' && D) renderHome(D.data);
     if (activeView==='trend' && D) renderTrends(D.data.daily, D.data.monthly);   // cash in accounts is live
@@ -5806,6 +5806,7 @@ async function pollDrafts(){
     if (X && X.data && bb && JSON.stringify(bb) !== JSON.stringify(X.data.bankBal || {})){ X.data.bankBal = bb; changed = true; }
     if (changed){ save('inv.exp', X);
       if (activeView==='spend' && spSec==='accounts'){ const y = window.scrollY; renderSpend(); window.scrollTo(0, y); } else paintBooks(); }
+    autoClearDrafts();
   }catch(e){ if (/unknown action/i.test(e.message||'')) draftsNoApi = true; }
   finally{ draftsBusy = false; }
 }
@@ -5834,6 +5835,23 @@ function openDraft(d){
   else Object.assign(tpl, { account:d.account||'', category:d.category||'', sub:d.sub||'', type:d.type||'', source:d.source||'', desc:d.desc||'' });
   openXSheet(null, d.kind==='transfer' ? 'transfer' : d.kind==='income' ? 'income' : 'expense', tpl);
   if (d.check) toast('From a card OTP — check the payment went through');
+}
+// a draft you'd already logged by hand (same account, same amount, within a day) clears itself
+function autoClearDrafts(){
+  const d = xd(); if (!d || xPending) return;
+  const ds = xDrafts(); if (!ds.length) return;
+  const day = s => Date.parse(String(s||'').slice(0,10) + 'T00:00:00') / 864e5;
+  const near = (a,b) => Math.abs(day(a) - day(b)) <= 1, same = (a,b) => Math.abs(Math.abs(+a||0) - Math.abs(+b||0)) < 0.01;
+  const used = new Set(), hits = [];
+  ds.forEach(dr=>{
+    const pool = dr.kind==='transfer' ? (d.transfers||[]).filter(t=>t.from===dr.from && (!dr.to || t.to===dr.to))
+      : dr.kind==='income' ? (d.incomes||[]).filter(t=>t.account===dr.account) : (d.entries||[]).filter(t=>t.account===dr.account);
+    const m = pool.find(t=>!used.has(t) && !/^new/.test(String(t.row)) && same(t.amount, dr.amount) && near(t.date, dr.date));
+    if (m){ used.add(m); hits.push(dr); }
+  });
+  hits.forEach(dr=>{ dropDraft(dr.id); apiPost('draftDelete', { id: dr.id }).catch(()=>draftGone.delete(dr.id)); });
+  if (hits.length){ if (document.querySelector('.dmenu')) { if (xDrafts().length) openDrafts(); else closeDrafts(); }
+    toast(hits.length===1 ? `Cleared the ${fINR2(Math.abs(hits[0].amount))} draft — you’d already logged it` : `Cleared ${hits.length} drafts you’d already logged`); }
 }
 function dropDraft(id){ draftGone.add(id); const d = xd(); if (d && d.drafts) d.drafts = d.drafts.filter(x=>x.id!==id); save('inv.exp', X); paintDfab(); }
 async function discardDraft(id){
