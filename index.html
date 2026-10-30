@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04q';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04r';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -8701,7 +8701,8 @@ function wireProfile(){
     const a = b.dataset.act;
     if (a==='locknow') lockNow(false);
     else if (a==='alertlog'){ (async()=>{ let sw = []; try{ const r = await (await caches.open('centric-cfg')).match('./__log'); if (r) sw = await r.json(); }catch(e){}
-      const L = [...(load('inv.alog')||[]), ...sw].sort().slice(-40); alert(L.length ? L.join('\n') : 'Nothing logged yet'); })(); }
+      let sv = []; try{ sv = (await api({ action:'pushTap' })).data.log || []; }catch(e){}
+      const L = [...(load('inv.alog')||[]), ...sw, ...sv].sort().slice(-40); alert(L.length ? L.join('\n') : 'Nothing logged yet'); })(); }
     else if (a==='refresh'){ refresh(true); loadExpenses(true); toast('Refreshing…'); }
     else if (a==='disconnect') disconnect();
     else if (a==='export') exportMoneyCsv();
@@ -9707,7 +9708,17 @@ function goNoteCheck(){
   if (!('caches' in window)) return;
   caches.open('centric-cfg').then(c=>c.match('./__go')).then(r=>r && r.json()).then(g=>{ if (g) alog('note ' + g.view + ' age ' + Math.round((Date.now() - g.at)/1000) + 's'); if (g && g.view && Date.now() - g.at < 2*60e3) goTo(g.view); }).catch(e=>alog('note error ' + e.message));
 }
-function goNoteWatch(){ [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); }
+// The tap is also reported to the script by the service worker, so the app asks there too (the phone may keep the
+// service worker's notes where the app can't read them). Each tap is used once, and only within a minute.
+function goTapCheck(){
+  if (!cfg || !load('inv.push')) return;
+  api({ action:'pushTap' }).then(j=>{ const at = (j.data && j.data.at) || 0, seen = load('inv.tapSeen') || 0;
+    if (!at || at <= seen) return; save('inv.tapSeen', at);
+    alog('server tap ' + Math.round((Date.now() - at)/1000) + 's ago');
+    if (Date.now() - at < 60e3 && !(activeView==='spend' && !pageStack.length)) goTo('spend'); }).catch(e=>alog('server check failed ' + e.message));
+}
+let gnwAt = 0;
+function goNoteWatch(){ if (Date.now() - gnwAt < 1500) return; gnwAt = Date.now(); [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); [1200, 3500, 7000].forEach(ms=>setTimeout(goTapCheck, ms)); }
 document.addEventListener('visibilitychange', ()=>{ alog('visibility ' + document.visibilityState); if (document.visibilityState==='visible') goNoteWatch(); });
 window.addEventListener('focus', goNoteWatch); window.addEventListener('pageshow', goNoteWatch);
 /* Notifications (Settings › General): Web Push from the script. Turning it on asks iPhone for
