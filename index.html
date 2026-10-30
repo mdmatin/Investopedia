@@ -2340,7 +2340,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04u';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04v';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -9735,7 +9735,15 @@ function goTapCheck(){
     if (!(activeView==='spend' && !pageStack.length)) goTo('spend'); }).catch(e=>alog('server check failed ' + e.message));
 }
 let gnwAt = 0;
-function goNoteWatch(){ if (Date.now() - gnwAt < 1500) return; gnwAt = Date.now(); [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); [1200, 3500, 7000].forEach(ms=>setTimeout(goTapCheck, ms)); }
+function goNoteWatch(){ if (Date.now() - gnwAt < 1500) return; gnwAt = Date.now(); [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); [0, 2500, 6000].forEach(ms=>setTimeout(goTapCheck, ms)); }
+// faster than asking the script: the service worker also tells the app when an alert arrives. iPhone holds that
+// message while the app is away and hands it over as it comes back, so Spend opens straight away.
+function goPushed(at){
+  if (!load('inv.push') || !hidAt || at < hidAt || at <= (load('inv.tapSeen') || 0) || Date.now() - at > 3*60e3) return;
+  save('inv.tapSeen', Date.now());   // the script's copy of this alert is now used too
+  alog('alert message ' + Math.round((Date.now() - at)/1000) + 's ago');
+  if (!(activeView==='spend' && !pageStack.length)) goTo('spend');
+}
 document.addEventListener('visibilitychange', ()=>{ alog('visibility ' + document.visibilityState); if (document.visibilityState==='visible') goNoteWatch(); });
 window.addEventListener('focus', goNoteWatch); window.addEventListener('pageshow', goNoteWatch);
 /* Notifications (Settings › General): Web Push from the script. Turning it on asks iPhone for
@@ -9779,8 +9787,9 @@ async function pushToggle(){
   navigator.serviceWorker.addEventListener('message', e=>{
     if (e.data && e.data.type==='ver'){ alog('service worker ' + e.data.ver); return; }
     if (e.data && e.data.type==='go' && e.data.view){ alog('message go'); goTo(e.data.view); return; }   // a tapped draft alert while the app was open
+    if (e.data && e.data.type==='pushed'){ const at = e.data.at; if (document.visibilityState==='visible') goPushed(at); else document.addEventListener('visibilitychange', function once(){ if (document.visibilityState!=='visible') return; document.removeEventListener('visibilitychange', once); goPushed(at); }); return; }   // an alert arrived (see goPushed)
     if (e.data !== 'centric-updated' || ready) return;
-    ready = true; toast('A new version is ready — it loads next time you open the app');
+    ready = true; toast('New update · restart app');
   });
   document.addEventListener('visibilitychange', ()=>{
     if (ready && document.visibilityState === 'visible' && !document.querySelector('.sheet.show')) location.reload();
