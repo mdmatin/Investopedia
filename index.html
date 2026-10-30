@@ -2337,7 +2337,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04d';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04e';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -4543,7 +4543,8 @@ window.addEventListener('touchend', ()=>{
 // invisible switch laid over them: your tap flips it (the tick) and the click carries on to
 // the control underneath as usual (tried on Daily/Weekly/Monthly first: ticks, still switches).
 function haptic(p){ try{ if (navigator.vibrate) navigator.vibrate(p || 8); }catch(e){} }
-const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],#assetChips .chip,.lgchips .chip,[data-acts],[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]';
+// (not on chips in a sideways-scrolling row: a switch under the finger takes the swipe and the row won't scroll)
+const HAP_SEL = '[data-mgs],[data-cstep],.pg-step [data-step],.seg button,.seg2 button,[data-per],.ranges button,[data-vbv],[data-capmore],[data-acts],[data-ccs],[data-ccm],[data-cct],.captabs [data-cap]';
 function hapify(root){
   if (navigator.vibrate) return;
   (root.querySelectorAll ? root : document).querySelectorAll(HAP_SEL).forEach(el=>{
