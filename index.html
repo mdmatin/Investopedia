@@ -1401,6 +1401,10 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .zsub{font-size:13px;color:var(--ink-2)}
 .zbk{margin:0 0 6px 14px}.zbk .hrow{padding:7px 0;font-size:14px;color:var(--ink-2);border-top:0}.zbk .hrow b{font-weight:500}
 .zmore.zadd{border-top:0;padding:4px 0 14px;text-align:left;margin-left:14px;width:auto}
+.zseg{margin:0 16px 12px}
+.zyr{padding:14px 0 16px;border-bottom:1px solid var(--hairline)}.zyr:last-child{border-bottom:0}
+.zyr-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:16px;font-weight:600;letter-spacing:-.3px}.zyr-t .k{font-size:13.5px;font-weight:400;color:var(--ink-3)}.zyr-t .up{font-size:14.5px}
+.zyr-s{font-size:13.5px;color:var(--ink-3);margin-top:3px}.zyr .cclim{margin-top:14px}.zyr .cclim .pbar{margin-top:0}
 .zmore{display:block;width:100%;padding:12px 0 4px;color:var(--blue);font-weight:600;font-size:14.5px;text-align:center;border-top:1px solid var(--hairline)}
 .zbtns{display:flex;gap:10px;margin:18px 16px 0}.zbtns button{flex:1;padding:13px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15px}
 .acctiles .card{flex:1;min-width:0;margin:0;padding:12px 14px}
@@ -2340,7 +2344,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04v';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04w';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7350,6 +7354,33 @@ function ziOpen(x){
     || { row:x.row, date:x.date, account:x.account||'', category:x.category||'Donation', sub:x.sub||'', note:x.note||'', desc:x.desc||'', amount:x.amount };
   openXSheet(e, 'expense');
 }
+// Zakat given, one year at a time: the year it's due (1 Jan) with what's been given toward it, then those payments.
+// The current year is everything given since tracking began; earlier years come from the history rows.
+function ziYearsHtml(p, n, pay){
+  const Z = n.Z, c = n.cur, by = {};
+  (Z.histPays||[]).forEach(x=>{ const y = x.date.slice(0,4); (by[y] = by[y] || []).push(x.ex || x); });
+  const past = {}; (Z.hist||[]).forEach(h=>{ past[h.date.slice(0,4)] = h; });
+  const ys = [...new Set([...Object.keys(past), ...Object.keys(by)])].filter(y=>y < n.yr).sort().reverse();
+  const yrs = [{ y:n.yr, cur:true, pays:Z.pays.slice() }].concat(ys.map(y=>({ y, h:past[y], pays:(by[y]||[]).slice().reverse() })));
+  const sel = Math.min(p.zyr || 0, yrs.length - 1), Y = yrs[sel], cnt = k => k + ' payment' + (k===1 ? '' : 's');
+  let top;
+  if (Y.cur){
+    const est = !!c.live, done = c.left <= 0.5;
+    top = `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span>${est ? `<span class="k">in ${n.days} day${n.days===1?'':'s'}</span>` : done ? '<span class="up">Paid ✓</span>' : '<span class="k">due now</span>'}</div>
+      <div class="zyr-s num money">${fINR(c.due)} · ${est ? 'estimated from today’s net worth' : 'from net worth on 1 Jan'}</div>
+      <div class="cclim"><div class="pbar"><i style="width:${(c.due > 0 ? Math.min(100, c.paid / c.due * 100) : 0).toFixed(1)}%"></i></div>
+        <div class="ln"><span><b class="num money">${fINR(c.paid)}</b> given</span><span><b class="num money">${fINR(Math.max(0, c.left))}</b> to go</span></div></div></div>`;
+  } else {
+    const given = Y.pays.reduce((t,x)=>t + (x.amount||0), 0), paid = Y.h && /paid/i.test(Y.h.note || '');
+    top = `<div class="zyr"><div class="zyr-t"><span>${Y.h ? 'Due 1 Jan ' + Y.y : 'Given in ' + Y.y}</span>${paid ? '<span class="up">Paid ✓</span>' : Y.h && Y.h.note ? `<span class="k">${esc(Y.h.note)}</span>` : ''}</div>
+      <div class="zyr-s num money">${Y.h ? fINR(Y.h.due) + (Y.pays.length ? ' · given in ' + cnt(Y.pays.length) : '') : fINR(given) + ' · ' + cnt(Y.pays.length)}</div></div>`;
+  }
+  const list = Y.pays.slice(0, p.allZ ? 999 : 8).map(x=>x.row != null || x.account != null ? pay(x)
+    : `<div class="row"><div class="l"><div class="n">${esc(x.note || 'Zakat')}</div><div class="m">${esc(fDate(x.date))}</div></div><div class="r"><div class="v num money">${fINR2(x.amount)}</div></div></div>`).join('');
+  return `${yrs.length > 1 ? `<div class="seg zseg">${yrs.map((y,i)=>`<button data-zyr="${i}" class="${i===sel?'on':''}">${y.y}</button>`).join('')}</div>` : ''}
+    <div class="card tight">${top}${list || `<div class="empty">Nothing given toward ${Y.y} yet</div>`}
+      ${Y.pays.length > 8 && !p.allZ ? `<button class="zmore" data-zall="Z">Show all ${Y.pays.length}</button>` : ''}</div>`;
+}
 // the Zakat page and the Interest page (one builder, p.kind picks which)
 function ziPageBody(p){
   const z = ziD(); if (!z) return '<div class="pg-load">Loading…</div>';
@@ -7369,13 +7400,7 @@ function ziPageBody(p){
     <div class="sechead"><h2>Snapshots</h2></div>
     <div class="card tight">${frozen.length ? frozen.map(y=>row('1 Jan ' + y.date.slice(0,4), `Net worth ${fINR(y.base)} · due ${fINR(y.due)}`, y.left > 0.5 ? fINR(y.left) + ' left' : 'Paid ✓', y.left > 0.5 ? '' : 'up')).join('')
       : row('1 Jan ' + n.yr, 'First snapshot · net worth freezes that day', 'in ' + n.days + 'd')}</div>
-    <div class="sechead"><h2>Zakat given</h2><span class="zsub">since ${esc(start)}</span></div>
-    <div class="card tight">${Z.pays.length ? Z.pays.slice(0, p.allZ ? 999 : 8).map(pay).join('') : '<div class="empty">Nothing given since ' + esc(start) + ' yet</div>'}
-      ${Z.pays.length > 8 && !p.allZ ? `<button class="zmore" data-zall="Z">Show all ${Z.pays.length}</button>` : ''}</div>
-    ${(Z.hist||[]).length ? `<div class="sechead"><h2>History</h2><span class="zsub">before ${esc(start)}</span></div>
-    <div class="card tight">${Z.hist.slice().reverse().map(y=>row('1 Jan ' + y.date.slice(0,4), 'Due ' + fINR(y.due), esc(y.note || ''), /paid/i.test(y.note) ? 'up' : '')).join('')}
-      ${(Z.histPays||[]).length ? (p.histOpen ? Z.histPays.slice().reverse().map(x=>x.ex ? pay(x.ex) : row(esc(x.note || 'Zakat'), esc(fDate(x.date)), fINR(x.amount))).join('') + `<button class="zmore" data-zhist>Hide payments</button>`
-        : `<button class="zmore" data-zhist>${Z.histPays.length} payments · ${fINR(Z.histPays.reduce((s,x)=>s+x.amount,0))}</button>`) : ''}</div>` : ''}`;
+    <div class="sechead"><h2>Zakat given</h2></div>${ziYearsHtml(p, n, pay)}`;
   } else if (p.kind==='zakat' && z.zakatError) h += `<div class="card"><div class="empty">Zakat: ${esc(z.zakatError)}</div></div>`;
   if (p.kind==='interest' && I){
     const b = I.banks || { cols:[], rows:[] }, per = b.cols.map(c=>[c, b.rows.reduce((s,r)=>s+(r.v[c]||0),0)]);
@@ -7397,6 +7422,7 @@ function wireZiPage(p){
   const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
   $$('#page [data-zall]').forEach(b=>b.onclick=()=>{ p['all'+b.dataset.zall] = true; again(); });
   $$('#page [data-zhist]').forEach(b=>b.onclick=()=>{ p.histOpen = !p.histOpen; again(); });
+  $$('#page [data-zyr]').forEach(b=>b.onclick=()=>{ p.zyr = +b.dataset.zyr; p.allZ = false; again(); });
   $$('#page [data-ziq]').forEach(b=>b.onclick=()=>pushPage({ kind:'intq', q:b.dataset.ziq }));
   $$('#page [data-zx]').forEach(b=>b.onclick=()=>{ const x = ZI_OPEN[+b.dataset.zx]; if (x) ziOpen(x); });
   $$('#page [data-zgive]').forEach(b=>b.onclick=()=>{
