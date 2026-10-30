@@ -2340,7 +2340,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04s';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04u';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5771,6 +5771,9 @@ const draftGone = new Set();
 const xDrafts = () => (((xd()||{}).drafts) || []).filter(d=>!draftGone.has(d.id));
 function paintDfab(){
   paintBadge();
+  // the Spend tab's dot (same as Accounts'): drafts waiting, or recurring entries that weren't posted
+  const sn = $('.tabs button[data-v="spend"]'), R = (xd()||{}).recErr;
+  if (sn) sn.classList.toggle('bkdot', !!xd() && (xDrafts().length > 0 || !!(R && R.items && R.items.length)));
   const b = $('#dfab'); if (!b) return;
   const n = xDrafts().length, on = activeView==='spend' && !$('#spSeg').hidden && n > 0;
   b.hidden = !on; $('#dfabN').textContent = n > 9 ? '9+' : String(n);
@@ -9718,12 +9721,18 @@ function goNoteCheck(){
 }
 // The tap is also reported to the script by the service worker, so the app asks there too (the phone may keep the
 // service worker's notes where the app can't read them). Each tap is used once, and only within a minute.
+// iPhone doesn't run the alert's tap handler when the app is already open in the background, so an alert that
+// arrived while the app was away also counts: coming back within 3 minutes of it opens Spend (once per alert).
+let hidAt = 0;
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='hidden') hidAt = Date.now(); });
 function goTapCheck(){
   if (!cfg || !load('inv.push')) return;
-  api({ action:'pushTap' }).then(j=>{ const at = (j.data && j.data.at) || 0, seen = load('inv.tapSeen') || 0;
-    if (!at || at <= seen) return; save('inv.tapSeen', at);
-    alog('server tap ' + Math.round((Date.now() - at)/1000) + 's ago');
-    if (Date.now() - at < 60e3 && !(activeView==='spend' && !pageStack.length)) goTo('spend'); }).catch(e=>alog('server check failed ' + e.message));
+  api({ action:'pushTap' }).then(j=>{ const d = j.data || {}, seen = load('inv.tapSeen') || 0, now = Date.now();
+    const tap = d.at > seen && now - d.at < 60e3, pushed = hidAt && d.pushAt > seen && d.pushAt > hidAt && now - d.pushAt < 3*60e3;
+    if (!tap && !pushed) return;
+    save('inv.tapSeen', Math.max(d.at || 0, d.pushAt || 0));
+    alog(tap ? 'server tap ' + Math.round((now - d.at)/1000) + 's ago' : 'alert came in ' + Math.round((now - d.pushAt)/1000) + 's ago while away');
+    if (!(activeView==='spend' && !pageStack.length)) goTo('spend'); }).catch(e=>alog('server check failed ' + e.message));
 }
 let gnwAt = 0;
 function goNoteWatch(){ if (Date.now() - gnwAt < 1500) return; gnwAt = Date.now(); [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); [1200, 3500, 7000].forEach(ms=>setTimeout(goTapCheck, ms)); }
