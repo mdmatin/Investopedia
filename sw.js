@@ -54,9 +54,11 @@ self.addEventListener('fetch', e => {
    with a message would need encryption the script can't do), so the text for the alert is
    fetched from the script here, using the address and key the app hands over (stored below).
    Tapping the alert opens Spend, or brings the open app there. */
+const SW_VER = '2026-11-04q';   // which copy of this file is running (the app's Alert log shows it)
 const CFG_CACHE = 'centric-cfg', CFG_URL = './__cfg';
 self.addEventListener('message', e => {
   const m = e.data || {};
+  if (m.type === 'ver' && e.source) { e.source.postMessage({ type: 'ver', ver: SW_VER }); return; }
   if (m.type === 'cfg' && m.url) e.waitUntil(caches.open(CFG_CACHE).then(c => c.put(CFG_URL, new Response(JSON.stringify({ url: m.url, key: m.key })))));
 });
 // a short log of what happened with alerts (shown in the app: Profile › About › Alert log)
