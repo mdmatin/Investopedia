@@ -1541,6 +1541,7 @@ body.paged{overflow:hidden}
 .pg-sub .arrow{font-size:.82em}
 .row .n .xo{display:inline-block;width:13px;height:13px;margin-left:6px;vertical-align:-1px;color:var(--down)}   /* someone else's money (Halim · C): a small ⊘ after the name */
 .bksays svg{width:13px;height:13px;vertical-align:-1.5px;margin-right:4px}
+.bksays .bkdis{display:block;margin:6px 0 0;padding:0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--blue);letter-spacing:-.1px}
 .pg-hero .hchart{height:160px;margin-top:18px}
 .hlg{display:flex;gap:14px;font-size:12px;color:var(--ink-2);margin-top:8px;align-items:center}
 .hlg i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
@@ -2339,7 +2340,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04r';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04s';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6834,19 +6835,25 @@ function bankCheck(name){
   if (xDrafts().some(d=>d.account===name || d.from===name || d.to===name)) return null;
   if (r.date && accMoves(name).some(m=>m.date > r.date)) return null;
   const diff = Math.round((accBalance(name) - r.bal) * 100) / 100;
-  return { ok: Math.abs(diff) < 1, diff, bal: r.bal, at: r.at };
+  return { ok: Math.abs(diff) < 1, diff, bal: r.bal, at: r.at, dis: bankDis(name, r) };
 }
+// a mismatch dismissed from the account page stays quiet until the bank's next text for that account
+const bankKey = r => (r.at || r.date || '') + '|' + r.bal;
+const bankDis = (name, r) => (load('inv.bkdis') || {})[name] === bankKey(r);
+function bankDismiss(name){ const r = ((xd()||{}).bankBal||{})[name]; if (!r) return;
+  const D = load('inv.bkdis') || {}; D[name] = bankKey(r); save('inv.bkdis', D); }
 // account page: the bank's own balance from its latest text, under the big figure
 function bankSaysHtml(a){
   const r = ((xd()||{}).bankBal||{})[a.name]; if (!r || r.bal==null || accKind(a)!=='bank') return '';
   const c = bankCheck(a.name), when = r.date ? ' · ' + esc(fDate(r.date)) : '';
   const ic = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   if (c && c.ok) return `<div class="pg-sub bksays"><span class="up">${ic(BK_OK)}Matches bank</span><span class="k">${when}</span></div>`;
-  if (c) return `<div class="pg-sub bksays num money"><span class="down">${ic(BK_WARN)}Off by ${fINR2(Math.abs(c.diff))}</span><span class="k"> · bank ${fINR2(r.bal)}${when}</span></div>`;
+  if (c && c.dis) return '';   // dismissed: nothing until the bank's next text
+  if (c) return `<div class="pg-sub bksays num money"><span class="down">${ic(BK_WARN)}Off by ${fINR2(Math.abs(c.diff))}</span><span class="k"> · bank ${fINR2(r.bal)}${when}</span><button class="bkdis" data-bkdis>Dismiss</button></div>`;
   const why = xDrafts().some(d=>d.account===a.name || d.from===a.name || d.to===a.name) ? 'drafts waiting' : 'newer entries';   // not compared yet
   return `<div class="pg-sub bksays num money"><span class="k">Bank said ${fINR2(r.bal)}${when} · ${why}</span></div>`;
 }
-const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok) : [];
+const bankOffs = () => xd() ? xAccounts().filter(a=>accKind(a)==='bank').map(a=>({ name:a.name, c:bankCheck(a.name) })).filter(x=>x.c && !x.c.ok && !x.c.dis) : [];
 // one row, styled like the Books pill: which account differs (or how many) and by how much;
 // tapping opens that account, or with several, scrolls to the Bank list
 // Recurring entries the morning run could not post (the script keeps the last run's failures until a clean run)
@@ -6990,7 +6997,7 @@ function accGroupsHtml(acc, only){
       }
       const last = accMoves(a.name)[0], bc = k==='bank' ? bankCheck(a.name) : null;
       // differs from the bank: the line under the name says by how much (a match shows nothing)
-      const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
+      const line = bc && !bc.ok && !bc.dis ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
       const tick = '';   // a match says nothing: only a difference is shown
       return `<div class="row tap${a.other ? ' ext' : ''}" data-acc="${esc(a.name)}">${accMark(a)}
         <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}${a.other ? '<svg class="xo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Not your money"><circle cx="12" cy="12" r="8.5"/><path d="M18 6L6 18"/></svg>' : ''}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? `<span class="${last.amt>0?'up':''}">${fChg(last.amt)}</span> · ${agoDay(last.date)}` : 'No activity yet'}</div>`}</div>
@@ -7412,6 +7419,7 @@ function wireAccPage(p){
     document.removeEventListener('click', off, true); if (p.accMenu){ e.stopPropagation(); e.preventDefault(); p.accMenu = false; rerender(); } }, true), 0);   // a tap outside only closes the menu
   const b = $('#page [data-setbal]'); if (b) b.onclick = ()=>{ p.accMenu = false; p.setBal = !p.setBal; rerender(); };
   const ea = $('#page [data-editacc]'); if (ea) ea.onclick = ()=>{ p.accMenu = false; pushPage({ kind:'accform', acc:p.acc }); };
+  const bd = $('#page [data-bkdis]'); if (bd) bd.onclick = ()=>{ bankDismiss(p.acc); rerender(); if (typeof paintBooks==='function') paintBooks(); };
   $$('#page [data-ccm]').forEach(b=>b.onclick=()=>{ p.ccm = b.dataset.ccm; rerender(); });
   $$('#page [data-ccs]').forEach(b=>b.onclick=()=>{ p.ccm = ymAdd(p.ccm || ymNow(), Number(b.dataset.ccs)); p.actN = 12; rerender(); });
   $$('#page [data-cct]').forEach(b=>b.onclick=()=>{ p.ccTab = b.dataset.cct; rerender(); });
