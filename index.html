@@ -1482,6 +1482,9 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 html[data-theme=dark] .ccic .hsbtn.on{background:rgba(41,151,255,.18);border-color:rgba(41,151,255,.35)}
 .ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 12px}.ccsearch input{font-size:15px}
 .ccbox .fchip{margin:4px 16px 4px}
+.sechead .ccic .hsbtn{width:34px;height:34px;padding:0;margin:0;background:var(--canvas);border-color:transparent;color:var(--ink-2)}   /* on the page background (not in a card) */
+.sechead .ccic .hsbtn.on,.casr .hsbtn.on{background:rgba(0,102,204,.12);border-color:rgba(0,102,204,.3);color:var(--blue)}
+.casr{display:flex;align-items:center;gap:8px;margin:0 16px 12px}.casr .ccsearch{background:var(--canvas)}.casr .hsbtn{flex:none;width:38px;height:38px;position:relative;background:var(--canvas);border-color:transparent}
 .ccrows{padding:0 16px}.ccrows .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
 .ccrows .more{display:block;width:calc(100% + 32px);margin:0 -16px;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0;cursor:pointer}
 .cctabs{display:flex;align-items:flex-end;gap:10px;margin:18px 16px 12px;border-bottom:1px solid var(--hairline)}   /* underline tabs, like the asset pages */
@@ -2346,7 +2349,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6831,25 +6834,17 @@ function constrBody(p){
     return `<button class="row" data-xrow="${e.row}">${xTile(e.category)}
       <div class="l"><div class="n">${esc(title)}</div><div class="m">${meta}</div></div>
       <div class="r"><div class="v num money ${e.amount<0?'up':''}">${e.amount<0?'+'+fINR2(-e.amount):fINR2(e.amount)}</div></div></button>`; };
-  // one month at a time, as on an account's Activity: ‹ month › beside the title, then Sort, search and filter
-  // in a card with that month's entries (search looks through the month)
-  if (!p.caM || !months.includes(p.caM)) p.caM = months[months.length-1] || ymNow();
-  const mi = months.indexOf(p.caM), inM = (by[p.caM] || []).slice(), k = p.caS || 'new';
-  inM.sort(k==='old' ? (a,b)=>a.date<b.date?-1:a.date>b.date?1:0 : k==='hi' ? (a,b)=>Math.abs(b.amt)-Math.abs(a.amt) : k==='lo' ? (a,b)=>Math.abs(a.amt)-Math.abs(b.amt) : (a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
-  const N = p.caN || 12, chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-  const lbl = (CC_SORT.find(x=>x[0]===k)||CC_SORT[0])[1], mon = esc(ymShort(p.caM).slice(0,3)) + (p.caM.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.caM.slice(2,4) : '');
-  const rowsHtml = inM.length ? inM.slice(0, N).map(row).join('') + (inM.length > N ? `<button class="more" data-camore>Show ${Math.min(20, inM.length-N)} more</button>` : '')
-    : `<div class="empty">${q || cf!=='all' ? 'No matches' : tot(p.caM) ? `Only the month total is on hand · ${esc(fINR2(tot(p.caM)))} spent` : 'Nothing'} in ${esc(ymLabel(p.caM).split(' ')[0])}</div>`;
+  // every month, newest first: its name and what was spent, then its entries in one card (each with its date).
+  // Search and filter sit beside the title; while either is on, only the months with matches show
+  const chips = cf!=='all' ? `<div class="fchip"><button data-cafx>${esc(CA_TYPE[cf][0])}<span aria-hidden="true">✕</span></button></div>` : '';
+  const sections = months.slice().reverse().filter(m=>by[m] || (!q && cf==='all' && tot(m))).map(m=>`<div class="cmhead" id="cm-${m}"><h3>${esc(ymLabel(m))}</h3><span class="num money">${tot(m) ? fINR2(tot(m)) + ' spent' : ''}</span></div>
+      <div class="card tight">${by[m] ? by[m].map(row).join('') : '<div class="empty">Only the month total is on hand</div>'}</div>`).join('');
   return hero
     + accGroupsHtml(xAccounts(), 'construction')   // every construction account, Halim · C too (listed only: the totals above stay your money)
-    + `<div class="sechead cchd"><h2>All activity</h2>
-      <div class="ccmon"><button data-cam="-1" aria-label="Previous month" ${mi<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${mon}</span><button data-cam="1" aria-label="Next month" ${mi>=months.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
-    <div class="card ccbox cabox"><div class="cctools">${p.caSO || q
-      ? `<div class="search ccsearch ${q ? 'has' : ''}">${searchInner(p.caQ, 'Search this month').replace('<input ', '<input data-caq ').replace('autocapitalize="characters"', 'autocapitalize="off"')}</div>`
-      : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-cas aria-label="Sort">${CC_SORT.map(([v,l])=>`<option value="${v}" ${v===k?'selected':''}>${l}</option>`).join('')}</select></label>
-         <span class="ccic"><button class="hsbtn" data-casrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${cf!=='all'?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}</button></span>`}</div>
-      ${cf!=='all' ? `<div class="fchip"><button data-cafx>${esc(CA_TYPE[cf][0])}<span aria-hidden="true">✕</span></button></div>` : ''}
-      <div class="ccrows" id="caList">${rowsHtml}</div></div>`;
+    + `<div class="sechead cchd"><h2>All activity</h2>${p.caSO || q ? '' : `<span class="ccic"><button class="hsbtn" data-casrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${cf!=='all'?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}</button></span>`}</div>`
+    + (p.caSO || q ? `<div class="casr"><div class="search ccsearch ${q ? 'has' : ''}">${searchInner(p.caQ, 'Search construction').replace('<input ', '<input data-caq ').replace('autocapitalize="characters"', 'autocapitalize="off"')}</div><button class="hsbtn ${cf!=='all'?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}</button></div>` : '')
+    + chips
+    + `<div id="caList">${sections || `<div class="card tight"><div class="empty">${q || cf!=='all' ? 'No matches' : 'Nothing yet - log a payment under the Construction category'}</div></div>`}</div>`;
 }
 function wireConstr(p){
   const d = xd() || {}, all = (d.entries||[]).concat(d.constrOld||[]);
@@ -6864,16 +6859,13 @@ function wireConstr(p){
       const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers; openXSheet((pool||[]).find(e=>String(e.row)===row), kind); }); };
   // the filter: the same small menu as an account's, with each kind's count; the pick shows as a pill (✕ clears it)
   $$('#page [data-caflt]').forEach(cf=>cf.onclick = ()=>{
-    closeTxMenu(); const r = cf.getBoundingClientRect(), n = k => { const t = p.caF, tn = p.caN; p.caF = k; p.caN = 1e6; const h = document.createElement('div'); h.innerHTML = constrBody(p); p.caF = t; p.caN = tn; return h.querySelectorAll('#caList .row').length; };
+    closeTxMenu(); const r = cf.getBoundingClientRect(), n = k => { const t = p.caF; p.caF = k; const h = document.createElement('div'); h.innerHTML = constrBody(p); p.caF = t; return h.querySelectorAll('#caList .row').length; };
     const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
     const m = document.createElement('div'); m.className = 'fmenu'; m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
     m.innerHTML = Object.entries(CA_TYPE).map(([k,[l]])=>`<button data-caf="${k}"><span>${l}</span>${(p.caF||'all')===k ? '<i>✓</i>' : `<small class="num">${n(k)}</small>`}</button>`).join('');
-    m.querySelectorAll('[data-caf]').forEach(b=>b.onclick=()=>{ p.caF = b.dataset.caf; p.caN = 12; closeTxMenu(); again(); });
+    m.querySelectorAll('[data-caf]').forEach(b=>b.onclick=()=>{ p.caF = b.dataset.caf; closeTxMenu(); again(); });
     document.body.append(bd, m); });
-  const cfx = $('#page [data-cafx]'); if (cfx) cfx.onclick = ()=>{ p.caF = 'all'; p.caN = 12; again(); };
-  $$('#page [data-cam]').forEach(b=>b.onclick=()=>{ p.caM = ymAdd(p.caM || ymNow(), Number(b.dataset.cam)); p.caN = 12; again(); });
-  const cso = $('#page [data-cas]'); if (cso) cso.onchange = ()=>{ p.caS = cso.value; p.caN = 12; again(); };
-  const cmo = $('#page [data-camore]'); if (cmo) cmo.onclick = ()=>{ p.caN = (p.caN||12) + 20; again(); };
+  const cfx = $('#page [data-cafx]'); if (cfx) cfx.onclick = ()=>{ p.caF = 'all'; again(); };
   // the search: opens in place of the icons; typing redraws only the list, so the keyboard stays up
   const cs = $('#page [data-casrch]'); if (cs) cs.onclick = ()=>{ p.caSO = true; again(); const i = $('#page [data-caq]'); if (i) i.focus(); };
   const cq = $('#page [data-caq]');
@@ -6887,9 +6879,9 @@ function wireConstr(p){
   }
   const gs = $('#page .mbscroll');
   if (gs){ gs.scrollLeft = p.gx!=null ? p.gx : gs.scrollWidth; gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true }); }
-  // a month on the graph opens that month in All activity
-  $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = p.caM = x.dataset.mbym; p.caN = 12; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
-    const h = $('#page .cabox'); if (h && h.previousElementSibling) h.previousElementSibling.scrollIntoView({ behavior:'smooth', block:'start' }); });
+  // a month on the graph jumps to that month in All activity
+  $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = x.dataset.mbym; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
+    const h = $('#cm-'+p.ym); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
 }
 /* Books: Available balance (All Investments › Available Balance) against
    Expected balance (Money › Expected Balance). The server works both out after
@@ -7101,7 +7093,7 @@ function ccTabsHtml(a, p, moves){
   const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<div class="sechead cchd"><h2>Transactions</h2>
       <div class="ccmon"><button data-ccs="-1" aria-label="Previous month" ${i<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${esc(ymShort(p.ccm).slice(0,3))}${p.ccm.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.ccm.slice(2,4) : ''}</span><button data-ccs="1" aria-label="Next month" ${i>=all.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
-    <div class="card ccbox"><div class="seg"><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button></div>
+    <div class="card ccbox"><div class="seg"><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button><button data-cct="spend" class="${tab==='spend'?'on':''}">Categories</button></div>
     ${tab==='spend' ? ccSpendHtml(a, p, moves) : ccActivityHtml(p, moves)}</div>`;
 }
 function ccSpendHtml(a, p, moves){
@@ -7201,9 +7193,11 @@ function accBody(p){
       ${card ? ccHero : `<div class="pg-big num money">${bigAmt(big)}</div>${bankSaysHtml(a)}`}
       ${p.accMenu ? `<div class="menu accmenu" role="menu"><button data-setbal role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Set actual balance</button><button data-editacc role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Edit account</button></div>` : ''}
       ${ed}
-      ${card ? '' : `<div class="spstats lcr"><div><span>In · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
-        <div><span>Out · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
-        <div><span>Net · ${esc(ymShort(ym))}</span><b class="num money ${mIn-mOut>0.004?'up':''}">${mIn-mOut>0.004?'+':mIn-mOut<-0.004?'−':''}${fINR2(Math.abs(mIn-mOut))}</b></div></div>`}
+      ${card ? '' : (()=>{ const net = mIn - mOut, sg = net>0.004 ? '+' : net<-0.004 ? '−' : '';   // short figures (₹1.2L); a tap shows the exact amount
+        const kq = (v, txt, cls, pre) => `<b class="num money tipv ${cls||''}" data-full="${esc(txt)}">${esc((pre||'') + fKL(Math.abs(v)))}</b>`;
+        return `<div class="spstats lcr"><div><span>In · ${esc(ymShort(ym))}</span>${kq(mIn, fINR2(mIn), 'up')}</div>
+        <div><span>Out · ${esc(ymShort(ym))}</span>${kq(mOut, fINR2(mOut))}</div>
+        <div><span>Net · ${esc(ymShort(ym))}</span>${kq(net, sg + fINR2(Math.abs(net)), net>0.004 ? 'up' : '', sg)}</div></div>`; })()}
     </div>
     ${card ? cashbackHtml(a, p) : ziBankHtml(a, p)}${ccTabsHtml(a, p, moves)}`;   // cards: cashback · banks: interest · then Transactions
 }
