@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04o';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04p';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -8600,6 +8600,7 @@ function profileBody(){
    <h3>About</h3><div class="grp">
     ${row('info','#8e8e93','App', `<span class="vl">${esc(BUILD)}</span>`)}
     ${scriptBuild ? row('info','#8e8e93','Script', `<span class="vl">${esc(scriptBuild)}</span>`) : ''}
+    ${row('bell','#8e8e93','Alert log', '', 'What happened on the last alert taps', 'data-act="alertlog"')}
    </div>
    <div class="grp danger"><button class="r" data-act="disconnect"><div class="lb">Disconnect sheet</div></button></div>
    <div class="ft ctr">Centric keeps your sheet URL and passcode only on this phone.</div>
@@ -8699,6 +8700,8 @@ function wireProfile(){
   $$('#page [data-act]').forEach(b=>b.onclick=()=>{
     const a = b.dataset.act;
     if (a==='locknow') lockNow(false);
+    else if (a==='alertlog'){ (async()=>{ let sw = []; try{ const r = await (await caches.open('centric-cfg')).match('./__log'); if (r) sw = await r.json(); }catch(e){}
+      const L = [...(load('inv.alog')||[]), ...sw].sort().slice(-40); alert(L.length ? L.join('\n') : 'Nothing logged yet'); })(); }
     else if (a==='refresh'){ refresh(true); loadExpenses(true); toast('Refreshing…'); }
     else if (a==='disconnect') disconnect();
     else if (a==='export') exportMoneyCsv();
@@ -9688,7 +9691,10 @@ if(cfg) start(); else $('#setup').hidden=false;
 })();
 // a tapped alert while the app was open in the background: close whatever page is on top, then the tab.
 // The service worker also leaves a note in its cache, in case its message to the app got lost.
+// Alert log (Profile › About): what the phone did with the last alert taps, from the app and its service worker
+function alog(m){ try{ const L = load('inv.alog') || []; L.push(new Date().toTimeString().slice(0,8) + ' app ' + m); save('inv.alog', L.slice(-30)); }catch(e){} }
 function goTo(view){
+  alog('goTo ' + view + ' · pages ' + pageStack.length + ' · pg ' + ((history.state && history.state.pg) || 0) + ' · view ' + activeView);
   try{ caches.open('centric-cfg').then(c=>c.delete('./__go')); }catch(e){}
   closeTxMenu(); closeDrafts();
   const n = (history.state && history.state.pg) || 0;
@@ -9699,10 +9705,10 @@ function goTo(view){
 // note isn't there yet when the app becomes visible: look for it a few times over the next few seconds
 function goNoteCheck(){
   if (!('caches' in window)) return;
-  caches.open('centric-cfg').then(c=>c.match('./__go')).then(r=>r && r.json()).then(g=>{ if (g && g.view && Date.now() - g.at < 2*60e3) goTo(g.view); }).catch(()=>{});
+  caches.open('centric-cfg').then(c=>c.match('./__go')).then(r=>r && r.json()).then(g=>{ if (g) alog('note ' + g.view + ' age ' + Math.round((Date.now() - g.at)/1000) + 's'); if (g && g.view && Date.now() - g.at < 2*60e3) goTo(g.view); }).catch(e=>alog('note error ' + e.message));
 }
 function goNoteWatch(){ [0, 300, 800, 1500, 2500, 4000].forEach(ms=>setTimeout(goNoteCheck, ms)); }
-document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') goNoteWatch(); });
+document.addEventListener('visibilitychange', ()=>{ alog('visibility ' + document.visibilityState); if (document.visibilityState==='visible') goNoteWatch(); });
 window.addEventListener('focus', goNoteWatch); window.addEventListener('pageshow', goNoteWatch);
 /* Notifications (Settings › General): Web Push from the script. Turning it on asks iPhone for
    permission, subscribes with the script's key and sends a test alert. The service worker is
@@ -9740,7 +9746,7 @@ async function pushToggle(){
   let ready = false;
   navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.addEventListener('message', e=>{
-    if (e.data && e.data.type==='go' && e.data.view){ goTo(e.data.view); return; }   // a tapped draft alert while the app was open
+    if (e.data && e.data.type==='go' && e.data.view){ alog('message go'); goTo(e.data.view); return; }   // a tapped draft alert while the app was open
     if (e.data !== 'centric-updated' || ready) return;
     ready = true; toast('A new version is ready — it loads next time you open the app');
   });
