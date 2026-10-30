@@ -697,7 +697,6 @@ html[data-theme=dark]{--pc0:#328aea;--pc1:#6c6ad8;--pc2:#6ac2e7;--pc3:#4ec26c;--
 .fbtn svg{width:20px;height:20px}
 .fbtn.on{background:rgba(0,102,204,.12);border-color:rgba(0,102,204,.3);color:var(--blue)}
 html[data-theme=dark] .fbtn.on{background:rgba(41,151,255,.18);border-color:rgba(41,151,255,.35)}
-.fbtn .dot{position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--parchment)}
 .fchip{margin:-2px 16px 12px}
 .fchip button{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;border-radius:999px;background:rgba(0,102,204,.12);color:var(--blue);font-size:13px;font-weight:600}
 html[data-theme=dark] .fchip button{background:rgba(41,151,255,.16)}
@@ -1444,13 +1443,14 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cbk .hd{display:flex;justify-content:space-between;align-items:baseline;padding:14px 24px 8px}   /* same insets as .sechead */
 .cbk .hd h2{font:600 20px/1.2 var(--font-disp);letter-spacing:-.45px;margin:0}.cbk .hd span{font-size:12.5px;color:var(--ink-2)}
 .cbk .hd .hadd{font-size:14px;color:var(--blue);letter-spacing:-.224px;padding:0}   /* same as a .sechead button */
-.cbk .st{display:flex;margin:6px 16px 0;background:var(--canvas);border-radius:14px;padding:12px 16px}
+.cbk .cbx{margin:6px 16px 0;background:var(--canvas);border-radius:14px;overflow:hidden}   /* the figures, the graph and the list in one card */
+.cbk .st{display:flex;padding:12px 16px}
 .cbk .st div{flex:1;text-align:left}.cbk .st div:nth-child(2){text-align:center}.cbk .st div:last-child:not(:first-child){text-align:right}   /* left · centre · right, no dividers */
 .cbk .st span{display:block;font-size:12px;color:var(--ink-2);font-weight:400;letter-spacing:-.05px}.cbk .st b{font-size:16px;font-weight:600;letter-spacing:-.3px;display:block;margin-top:3px}.cbk .st b.up{color:var(--up)}
-.cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:12px 20px 4px}
+.cbk .bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin:4px 16px 4px}
 .cbk .bars i{flex:1;background:var(--up);opacity:.7;border-radius:4px 4px 1px 1px}.cbk .bars i.cur{opacity:1}
-.cbk .bl{display:flex;gap:6px;margin:0 20px;font-size:10px;color:var(--ink-3)}.cbk .bl span{flex:1;text-align:center}
-.cbk .lst{margin:10px 16px 0;background:var(--canvas);border-radius:14px;overflow:hidden}
+.cbk .bl{display:flex;gap:6px;margin:0 16px 12px;font-size:10px;color:var(--ink-3)}.cbk .bl span{flex:1;text-align:center}
+.cbk .lst{border-top:.5px solid var(--hairline)}
 .cbk .lr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-size:15px}
 .cbk .lr+.lr{border-top:.5px solid var(--hairline)}.cbk .lr small{display:block;font-size:12px;color:var(--ink-2);margin-top:1px}
 .cbk .lr b{color:var(--up);font-weight:600}
@@ -1478,9 +1478,10 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .cchd{align-items:center}.cchd .ccmon{margin:-6px 0}.cchd .ccmon button{padding:0;margin:0}   /* not a .sechead link button */
 .cctools{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px}.cctools .hsort{padding:6px 0}
 .ccic{display:flex;gap:8px}.ccic .hsbtn{width:34px;height:34px;position:relative;background:var(--parchment);border-color:transparent}.ccic .hsbtn svg{width:16px;height:16px}
-.ccic .hsbtn.on{background:rgba(0,102,204,.12);color:var(--blue)}.ccic .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.ccic .hsbtn.on{background:rgba(0,102,204,.12);border-color:rgba(0,102,204,.3);color:var(--blue)}
+html[data-theme=dark] .ccic .hsbtn.on{background:rgba(41,151,255,.18);border-color:rgba(41,151,255,.35)}
 .ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 12px}.ccsearch input{font-size:15px}
-.ccbox .fchip{margin:4px 16px 4px}   /* the active filter, as on Spend › Activity */
+.ccbox .fchip{margin:4px 16px 4px}
 .ccrows{padding:0 16px}.ccrows .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
 .ccrows .more{display:block;width:calc(100% + 32px);margin:0 -16px;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0;cursor:pointer}
 .cctabs{display:flex;align-items:flex-end;gap:10px;margin:18px 16px 12px;border-bottom:1px solid var(--hairline)}   /* underline tabs, like the asset pages */
@@ -2345,7 +2346,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05b';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05c';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6011,7 +6012,7 @@ function xSearchBody(p){
       ${row('Amount', `<span class="xs-amt"><input class="rin" data-xa="min" inputmode="decimal" placeholder="Min" value="${esc(f.min)}"><i>–</i><input class="rin" data-xa="max" inputmode="decimal" placeholder="Max" value="${esc(f.max)}"></span>`)}
     </div>${on ? '<button class="xs-clr" data-xclr>Clear filters</button>' : ''}</div>` : '';
   return `<div class="srow xs-top"><div class="search" id="xsBox">${searchInner(p.pick ? p.pick.v : (p.q||''), 'Name, category or account')}</div>
-      <button class="fbtn ${on||p.fo?'on':''}" data-xfo aria-label="Filters" aria-expanded="${p.fo?'true':'false'}">${FILTER_IC}${on?'<span class="dot"></span>':''}</button></div>
+      <button class="fbtn ${on||p.fo?'on':''}" data-xfo aria-label="Filters" aria-expanded="${p.fo?'true':'false'}">${FILTER_IC}</button></div>
     ${panel}<div id="xsRes">${xsResultsHtml(p)}</div>`;
 }
 function wireXSearch(p){
@@ -6088,7 +6089,7 @@ function spListHtml(){
   return `<div class="tline num money"><div><span>Income</span><b class="up">${fINR2(inn)}</b></div><div><span>Expense</span><b>${fINR2(spent)}</b></div><div><span>Net</span><b class="${net<0?'down':''}">${fINR2(net)}</b></div></div>
     ${recDueHtml()}
     <div class="srow"><div class="search" id="xSearch"></div>
-      <button class="fbtn ${fOn?'on':''}" data-fmenu aria-label="Filter">${FILTER_IC}${fOn?'<span class="dot"></span>':''}</button></div>
+      <button class="fbtn ${fOn?'on':''}" data-fmenu aria-label="Filter">${FILTER_IC}</button></div>
     ${fOn ? `<div class="fchip"><button data-txf="all">${esc(TXF_LBL[txFilter])}<span aria-hidden="true">✕</span></button></div>` : ''}
     <div id="xList">${days || `<div class="empty">Nothing ${txFilter==='all'?'recorded':'here'} in ${esc(ymLabel(spMonth))}</div>`}</div>`;
 }
@@ -6778,6 +6779,9 @@ function wireEpf(p){
   gs.scrollLeft = si >= 0 ? Math.max(0, (si + 1) * w - gs.clientWidth + w) : gs.scrollWidth;   // the selected month near the right edge
 }
 const fDateY = d => { const [y,m,dd] = d.split('-'); return +dd + ' ' + ymShort(y + '-' + m).slice(0,3) + ' ' + y; };
+// Construction › All activity: its filter (as on an account's Activity) and what the search looks through
+const CA_TYPE = { all:['All',()=>true], spends:['Spends',x=>!!x.x || x.k==='expense'], in:['Money in',x=>x.k==='income'], tr:['Transfers',x=>x.k==='transfer'] };
+const caWords = x => { const e = x.x || x.e || {}; return [x.title, x.meta, e.note, e.desc, e.sub, e.category, e.account, e.source, e.type, e.from, e.to, String(Math.abs(e.amount||0)), fDate(x.date)].filter(Boolean).join(' ').toLowerCase(); };
 function constrBody(p){
   const f = constrFund(), list = constrEntries(), d = xd() || {};
   // your money only: logged payments from your own construction accounts (Halim · C left out);
@@ -6814,7 +6818,9 @@ function constrBody(p){
       title: e.note || (fi && ti ? `${cShort(e.from)} → ${cShort(e.to)}` : ti ? 'From ' + e.from : 'To ' + e.to),
       meta: fi && ti ? 'Between your construction accounts' : 'Transfer · ' + cShort(ti ? e.to : e.from) }); });
   acts.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
-  const onlyEx = p.caF==='exp', shownActs = onlyEx ? acts.filter(x=>x.x || x.k==='expense') : acts;   // the filter: all activity, or spending only
+  // the filter (Spends / Money in / Transfers, as on an account's Activity) and the search
+  const cf = CA_TYPE[p.caF] ? p.caF : 'all', q = String(p.caQ||'').trim().toLowerCase();
+  const shownActs = acts.filter(x=>CA_TYPE[cf][1](x) && (!q || caWords(x).includes(q)));
   const by = {}; shownActs.forEach(x=>{ (by[x.date.slice(0,7)] = by[x.date.slice(0,7)] || []).push(x); });
   const amtHtml = v => `<div class="v num money ${v>0?'up':''}">${v>0 ? '+' + fINR2(v) : v<0 ? '−' + fINR2(-v).replace('−','') : fINR2(0)}</div>`;
   const row = x => { if (!x.x) return `<button class="row" data-mv="${x.k}:${x.e.row}">${x.k==='expense' ? xTile(x.e.category) : moveTile(x.k)}
@@ -6825,14 +6831,25 @@ function constrBody(p){
     return `<button class="row" data-xrow="${e.row}">${xTile(e.category)}
       <div class="l"><div class="n">${esc(title)}</div><div class="m">${meta}</div></div>
       <div class="r"><div class="v num money ${e.amount<0?'up':''}">${e.amount<0?'+'+fINR2(-e.amount):fINR2(e.amount)}</div></div></button>`; };
-  // each month: what was spent, then all its entries in one card, newest first (each row shows its date)
-  const days = L => `<div class="card tight">${L.map(row).join('')}</div>`;
-  const sections = months.slice().reverse().filter(m=>by[m] || tot(m)).map(m=>`<div class="cmhead" id="cm-${m}"><h3>${esc(ymLabel(m))}</h3><span class="num money">${tot(m) ? fINR2(tot(m)) + ' spent' : ''}</span></div>
-      ${by[m] ? days(by[m]) : '<div class="card tight cmtot"><div class="empty">Only the month total is on hand</div></div>'}`).join('');
+  // one month at a time, as on an account's Activity: ‹ month › beside the title, then Sort, search and filter
+  // in a card with that month's entries (search looks through the month)
+  if (!p.caM || !months.includes(p.caM)) p.caM = months[months.length-1] || ymNow();
+  const mi = months.indexOf(p.caM), inM = (by[p.caM] || []).slice(), k = p.caS || 'new';
+  inM.sort(k==='old' ? (a,b)=>a.date<b.date?-1:a.date>b.date?1:0 : k==='hi' ? (a,b)=>Math.abs(b.amt)-Math.abs(a.amt) : k==='lo' ? (a,b)=>Math.abs(a.amt)-Math.abs(b.amt) : (a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  const N = p.caN || 12, chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const lbl = (CC_SORT.find(x=>x[0]===k)||CC_SORT[0])[1], mon = esc(ymShort(p.caM).slice(0,3)) + (p.caM.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.caM.slice(2,4) : '');
+  const rowsHtml = inM.length ? inM.slice(0, N).map(row).join('') + (inM.length > N ? `<button class="more" data-camore>Show ${Math.min(20, inM.length-N)} more</button>` : '')
+    : `<div class="empty">${q || cf!=='all' ? 'No matches' : tot(p.caM) ? `Only the month total is on hand · ${esc(fINR2(tot(p.caM)))} spent` : 'Nothing'} in ${esc(ymLabel(p.caM).split(' ')[0])}</div>`;
   return hero
     + accGroupsHtml(xAccounts(), 'construction')   // every construction account, Halim · C too (listed only: the totals above stay your money)
-    + `<div class="sechead cchd"><h2>${onlyEx ? 'Expenses' : 'All activity'}</h2><span class="ccic"><button class="hsbtn ${onlyEx?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}${onlyEx?'<i class="dot"></i>':''}</button></span></div>`
-    + (sections || '<div class="card tight"><div class="empty">Nothing yet - log a payment under the Construction category</div></div>');
+    + `<div class="sechead cchd"><h2>All activity</h2>
+      <div class="ccmon"><button data-cam="-1" aria-label="Previous month" ${mi<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${mon}</span><button data-cam="1" aria-label="Next month" ${mi>=months.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
+    <div class="card ccbox cabox"><div class="cctools">${p.caSO || q
+      ? `<div class="search ccsearch ${q ? 'has' : ''}">${searchInner(p.caQ, 'Search this month').replace('<input ', '<input data-caq ').replace('autocapitalize="characters"', 'autocapitalize="off"')}</div>`
+      : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-cas aria-label="Sort">${CC_SORT.map(([v,l])=>`<option value="${v}" ${v===k?'selected':''}>${l}</option>`).join('')}</select></label>
+         <span class="ccic"><button class="hsbtn" data-casrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${cf!=='all'?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}</button></span>`}</div>
+      ${cf!=='all' ? `<div class="fchip"><button data-cafx>${esc(CA_TYPE[cf][0])}<span aria-hidden="true">✕</span></button></div>` : ''}
+      <div class="ccrows" id="caList">${rowsHtml}</div></div>`;
 }
 function wireConstr(p){
   const d = xd() || {}, all = (d.entries||[]).concat(d.constrOld||[]);
@@ -6841,18 +6858,38 @@ function wireConstr(p){
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(all.find(e=>String(e.row)===r.dataset.xrow)));
   $$('#page [data-mv]').forEach(r=>r.onclick=()=>{ const [kind,row] = r.dataset.mv.split(':');
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers; openXSheet((pool||[]).find(e=>String(e.row)===row), kind); });
-  const cf = $('#page [data-caflt]'); if (cf) cf.onclick = ()=>{   // All activity / Expenses only, the same small menu as an account's filter
-    closeTxMenu(); const r = cf.getBoundingClientRect();
+  const again = ()=>{ const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; };
+  const wireRows = ()=>{ $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(all.find(e=>String(e.row)===r.dataset.xrow)));
+    $$('#page [data-mv]').forEach(r=>r.onclick=()=>{ const [kind,row] = r.dataset.mv.split(':');
+      const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers; openXSheet((pool||[]).find(e=>String(e.row)===row), kind); }); };
+  // the filter: the same small menu as an account's, with each kind's count; the pick shows as a pill (✕ clears it)
+  $$('#page [data-caflt]').forEach(cf=>cf.onclick = ()=>{
+    closeTxMenu(); const r = cf.getBoundingClientRect(), n = k => { const t = p.caF, tn = p.caN; p.caF = k; p.caN = 1e6; const h = document.createElement('div'); h.innerHTML = constrBody(p); p.caF = t; p.caN = tn; return h.querySelectorAll('#caList .row').length; };
     const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
     const m = document.createElement('div'); m.className = 'fmenu'; m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
-    m.innerHTML = [['all','All activity'],['exp','Expenses only']].map(([k,l])=>`<button data-caf="${k}"><span>${l}</span>${(p.caF||'all')===k ? '<i>✓</i>' : ''}</button>`).join('');
-    m.querySelectorAll('[data-caf]').forEach(b=>b.onclick=()=>{ p.caF = b.dataset.caf; closeTxMenu(); const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
-    document.body.append(bd, m); };
+    m.innerHTML = Object.entries(CA_TYPE).map(([k,[l]])=>`<button data-caf="${k}"><span>${l}</span>${(p.caF||'all')===k ? '<i>✓</i>' : `<small class="num">${n(k)}</small>`}</button>`).join('');
+    m.querySelectorAll('[data-caf]').forEach(b=>b.onclick=()=>{ p.caF = b.dataset.caf; p.caN = 12; closeTxMenu(); again(); });
+    document.body.append(bd, m); });
+  const cfx = $('#page [data-cafx]'); if (cfx) cfx.onclick = ()=>{ p.caF = 'all'; p.caN = 12; again(); };
+  $$('#page [data-cam]').forEach(b=>b.onclick=()=>{ p.caM = ymAdd(p.caM || ymNow(), Number(b.dataset.cam)); p.caN = 12; again(); });
+  const cso = $('#page [data-cas]'); if (cso) cso.onchange = ()=>{ p.caS = cso.value; p.caN = 12; again(); };
+  const cmo = $('#page [data-camore]'); if (cmo) cmo.onclick = ()=>{ p.caN = (p.caN||12) + 20; again(); };
+  // the search: opens in place of the icons; typing redraws only the list, so the keyboard stays up
+  const cs = $('#page [data-casrch]'); if (cs) cs.onclick = ()=>{ p.caSO = true; again(); const i = $('#page [data-caq]'); if (i) i.focus(); };
+  const cq = $('#page [data-caq]');
+  if (cq){
+    const sbox = cq.closest('.search'), redraw = ()=>{ sbox.classList.toggle('has', !!cq.value);
+      const h = document.createElement('div'); h.innerHTML = constrBody(p); const nl = h.querySelector('#caList'), box = $('#caList'); if (nl && box) box.innerHTML = nl.innerHTML; wireRows(); };
+    cq.oninput = ()=>{ p.caQ = cq.value; redraw(); };
+    cq.onkeydown = e=>{ if (e.key==='Enter') cq.blur(); };
+    sbox.querySelector('.sx').onclick = e=>{ e.preventDefault(); cq.value = ''; p.caQ = ''; redraw(); cq.focus(); };
+    cq.onblur = ()=>setTimeout(()=>{ if (!cq.value && document.activeElement!==cq && cq.isConnected){ p.caSO = false; p.caQ = ''; again(); } }, 150);   // left empty: back to the icons
+  }
   const gs = $('#page .mbscroll');
   if (gs){ gs.scrollLeft = p.gx!=null ? p.gx : gs.scrollWidth; gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true }); }
-  // a month on the graph jumps to its expenses
-  $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = x.dataset.mbym; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
-    const h = $('#cm-'+p.ym); if (h) h.scrollIntoView({ behavior:'smooth', block:'start' }); });
+  // a month on the graph opens that month in All activity
+  $$('#page [data-mbym]').forEach(x=>x.onclick=()=>{ p.ym = p.caM = x.dataset.mbym; p.caN = 12; const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y;
+    const h = $('#page .cabox'); if (h && h.previousElementSibling) h.previousElementSibling.scrollIntoView({ behavior:'smooth', block:'start' }); });
 }
 /* Books: Available balance (All Investments › Available Balance) against
    Expected balance (Money › Expected Balance). The server works both out after
@@ -7128,7 +7165,7 @@ function ccActivityHtml(p, moves){
   return `<div class="cctools">${sOpen
       ? `<div class="search ccsearch ${p.actQ ? 'has' : ''}">${searchInner(p.actQ, 'Search this month').replace('<input ', '<input data-actq ').replace('autocapitalize="characters"', 'autocapitalize="off"')}</div>`   // the Holdings search box: ✕ clears, it folds away when left empty
       : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
-         <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
+         <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}</button></span>`}</div>
     ${fOn ? `<div class="fchip"><button data-actfx>${esc((actTypes(p)[p.actF]||['All'])[0])}<span aria-hidden="true">✕</span></button></div>` : ''}
     <div class="ccrows">${ccActRows(p, moves)}</div>`;
 }
@@ -7226,11 +7263,11 @@ function cashbackHtml(a, p){
     }
   }
   return `<div class="cbk"><div class="hd"><h2>Cashback</h2>${form ? '' : `<button class="hadd" data-cbadd>${mode==='total' ? 'Update total' : '+ Add'}</button>`}</div>
-    ${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : L.reduce((x,i)=>x+i.amount,0);
+    <div class="cbx">${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : L.reduce((x,i)=>x+i.amount,0);
       return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div></div>`; })()}
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
-    ${rows ? `<div class="lst">${rows}${allM.length > 1 ? `<button class="more" data-cball>${p.cbAll ? 'Show fewer' : 'Show all ' + Math.min(12, allM.length) + ' months'}</button>` : ''}</div>` : ''}
+    ${rows ? `<div class="lst">${rows}${allM.length > 1 ? `<button class="more" data-cball>${p.cbAll ? 'Show fewer' : 'Show all ' + Math.min(12, allM.length) + ' months'}</button>` : ''}</div>` : ''}</div>
     ${form || ''}
   </div>`;
 }
@@ -7340,10 +7377,10 @@ function ziBankHtml(a, p){ p = p || {};
   const list = (pend ? `<div class="lr due"><span>${esc(qLabel(next))}<small>${next===due ? 'Due now' : 'From 25 ' + qMon(next)}</small></span><em>Pending</em></div>` : '')
     + rows.slice().reverse().slice(0, p.ziAll ? 99 : (pend ? 0 : 1)).map(r=>`<div class="lr"><span>${esc(label(r))}<small>${meta(r)}</small></span><b class="num money ${r.v[col]>0?'':'nil'}">${r.v[col]>0 ? '+' + fINR2(r.v[col]) : fINR2(0)}</b></div>`).join('');
   return `<div class="cbk zint"><div class="hd"><h2>Interest</h2>${pend ? `<button class="hadd" data-ziq="${next}">+ Add ${esc(qLabel(next).replace(/ \d+$/,''))}</button>` : ''}</div>
-    <div class="st"><div><span>All time</span><b class="num money">${fINR(all)}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div></div>
+    <div class="cbx"><div class="st"><div><span>All time</span><b class="num money">${fINR(all)}</b></div><div><span>${esc(fy)}</span><b class="num money">${fINR(fySum)}</b></div><div><span>Last quarter</span><b class="num money up">${lastQ ? fINR(lastQ.v[col]) : '—'}</b></div></div>
     <div class="bars">${sv.map((v,i)=>`<i class="${i===curI?'cur':''} ${v?'':'nil'}" style="height:${v ? Math.max(4, v/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${slots.map(q=>`<span>${qMon(q)}</span>`).join('')}</div>
-    <div class="lst">${list}${rows.length > (pend ? 0 : 1) ? `<button class="more" data-ziall>${p.ziAll ? 'Show fewer' : 'Show all ' + rows.length}</button>` : ''}</div></div>`;
+    <div class="lst">${list}${rows.length > (pend ? 0 : 1) ? `<button class="more" data-ziall>${p.ziAll ? 'Show fewer' : 'Show all ' + rows.length}</button>` : ''}</div></div></div>`;
 }
 
 // the quarter the next entry is for: the one due now, else the coming one
