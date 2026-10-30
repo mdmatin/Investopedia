@@ -1923,12 +1923,13 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 .wcard .ft{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-3)}
 .wcard svg.spk{display:block;width:100%;height:34px;margin:8px 0 6px}
 /* Overview: market strip under Net worth (as in broker apps): name ↗, level, change | ▲% */
-.mkstrip{display:flex;gap:10px;overflow-x:auto;padding:0 16px;margin:0 0 12px;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+.mkstrip{display:flex;gap:10px;overflow-x:auto;padding:0 16px 2px;margin:0 0 12px;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
 .mkstrip::-webkit-scrollbar{display:none}.mkstrip:empty{display:none}
-.mki{flex:0 0 auto;min-width:148px;scroll-snap-align:start;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 12px}
+.mki{flex:0 0 156px;min-width:0;scroll-snap-align:start;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 12px}
 .mki .n{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
 .mki .n svg{width:13px;height:13px;color:var(--ink-3)}
 .mki .v{font:600 17px/1.25 var(--font-disp);letter-spacing:-.3px;margin-top:3px;white-space:nowrap}
+.mki svg.spk{display:block;width:100%;height:36px;margin:10px 0 2px}
 .mki .c{font-size:12.5px;font-weight:500;margin-top:1px;white-space:nowrap}.mki .c .sp{color:var(--ink-3);margin:0 5px}
 .hentry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px}
 .hentry:empty{display:none}
@@ -2179,7 +2180,6 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
         <div class="kpirow lcr" id="kpis"></div>
       </div>
 
-      <div class="mkstrip" id="homeMkt"></div>
       <div class="hentry" id="homeMonth"></div>
       <div class="hwrap" id="homeWrap"></div>
       <div class="qact" id="homeQa"></div>
@@ -2189,6 +2189,9 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 
       <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
       <div class="card tight" id="wallets" hidden></div>
+
+      <div class="sechead" id="mktHead" hidden><h2>Markets</h2></div>
+      <div class="mkstrip" id="homeMkt"></div>
 
       <!-- Accounts left Overview (they live on the Accounts tab); kept hidden so the code that fills them still runs -->
       <div hidden>
@@ -2334,7 +2337,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04c';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04d';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2598,6 +2601,7 @@ function mkRank(r){
 let mkOrder = '';
 function homeMarkets(d){
   const el = $('#homeMkt'); if (!el) return; const M0 = (d && d.markets) || [];
+  $('#mktHead').hidden = !M0.length;
   if (!M0.length){ el.innerHTML = ''; mkOrder = ''; return; }
   const rk = { IN:mkRank('IN'), US:mkRank('US') };
   const M = M0.map((m,i)=>({ m, i })).sort((a,b)=>(rk[mkRegion(a.m)] - rk[mkRegion(b.m)]) || (a.i - b.i)).map(x=>x.m);
@@ -2605,7 +2609,7 @@ function homeMarkets(d){
   const f2 = v => Number(v).toLocaleString('en-IN',{ minimumFractionDigits:2, maximumFractionDigits:2 });
   const ar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>';
   el.innerHTML = M.map(m=>{ const p = m.chgPct||0, c = m.chg!=null ? m.chg : m.value * p / (1 + p), up = p >= 0;
-    return `<div class="mki"><div class="n"><span>${esc(m.name)}</span>${ar}</div><div class="v num">${m.ccy==='INR' ? '₹' : ''}${f2(m.value)}</div>
+    return `<div class="mki"><div class="n"><span>${esc(m.name)}</span>${ar}</div><div class="v num">${m.ccy==='INR' ? '₹' : ''}${f2(m.value)}</div>${mkSpark(m.spark, up)}
       <div class="c num ${up?'up':'down'}">${up?'+':'−'}${f2(Math.abs(c))}<span class="sp">|</span>${up?'▲':'▼'}${Math.abs(p*100).toFixed(2)}%</div></div>`; }).join('');
 }
 function renderHome(d){
