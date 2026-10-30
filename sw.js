@@ -49,3 +49,39 @@ self.addEventListener('fetch', e => {
     return res || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
   })());
 });
+
+/* Draft alerts. The script sends an empty push when a bank text becomes a draft (a push
+   with a message would need encryption the script can't do), so the text for the alert is
+   fetched from the script here, using the address and key the app hands over (stored below).
+   Tapping the alert opens Spend, or brings the open app there. */
+const CFG_CACHE = 'centric-cfg', CFG_URL = './__cfg';
+self.addEventListener('message', e => {
+  const m = e.data || {};
+  if (m.type === 'cfg' && m.url) e.waitUntil(caches.open(CFG_CACHE).then(c => c.put(CFG_URL, new Response(JSON.stringify({ url: m.url, key: m.key })))));
+});
+async function pushText(){
+  try {
+    const c = await caches.open(CFG_CACHE), r = await c.match(CFG_URL); if (!r) return null;
+    const cfg = await r.json(), u = new URL(cfg.url);
+    u.searchParams.set('key', cfg.key); u.searchParams.set('action', 'pushMsg');
+    const j = await (await fetch(u, { redirect: 'follow', cache: 'no-store' })).json();
+    return j && j.ok && j.data && j.data.title ? j.data : null;
+  } catch (err) { return null; }
+}
+self.addEventListener('push', e => {
+  e.waitUntil((async () => {
+    let m = null; try { m = e.data ? e.data.json() : null; } catch (err) {}
+    if (!m) m = await pushText();
+    // iPhone needs every push to show something, so there is always a fallback line
+    const title = (m && m.title) || 'New draft', body = (m && m.body) || 'A bank text is waiting in Spend.';
+    await self.registration.showNotification(title, { body, tag: 'centric-draft', icon: './icon.png', badge: './favicon-32.png', data: { go: 'spend' } });
+  })());
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of list) { try { await c.focus(); } catch (err) {} c.postMessage({ type: 'go', view: 'spend' }); return; }
+    await self.clients.openWindow('./?go=spend');
+  })());
+});
