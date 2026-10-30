@@ -54,7 +54,7 @@ self.addEventListener('fetch', e => {
    with a message would need encryption the script can't do), so the text for the alert is
    fetched from the script here, using the address and key the app hands over (stored below).
    Tapping the alert opens Spend, or brings the open app there. */
-const SW_VER = '2026-11-04q';   // which copy of this file is running (the app's Alert log shows it)
+const SW_VER = '2026-11-04r';   // which copy of this file is running (the app's Alert log shows it)
 const CFG_CACHE = 'centric-cfg', CFG_URL = './__cfg';
 self.addEventListener('message', e => {
   const m = e.data || {};
@@ -65,6 +65,15 @@ self.addEventListener('message', e => {
 async function slog(m){
   try { const c = await caches.open(CFG_CACHE), r = await c.match('./__log'), L = r ? await r.json() : [];
     L.push(new Date().toTimeString().slice(0, 8) + ' sw  ' + m); await c.put('./__log', new Response(JSON.stringify(L.slice(-30)))); } catch (err) {}
+}
+// the same lines go to the script too, so a tap is seen even if the app can't read this worker's cache
+async function srv(m){
+  try {
+    const c = await caches.open(CFG_CACHE), r = await c.match(CFG_URL); if (!r) return;
+    const cfg = await r.json(), u = new URL(cfg.url);
+    u.searchParams.set('key', cfg.key); u.searchParams.set('action', 'pushTap'); u.searchParams.set('m', m);
+    await fetch(u, { redirect: 'follow', cache: 'no-store' });
+  } catch (err) {}
 }
 async function pushText(){
   try {
@@ -80,11 +89,13 @@ self.addEventListener('push', e => {
     let m = null; try { m = e.data ? e.data.json() : null; } catch (err) {}
     if (!m) m = await pushText();
     await slog('push ' + (m ? m.title : 'no text'));
+    const sent = srv('push · ' + SW_VER + ' · ' + (m ? m.title : 'no text'));
     // iPhone needs every push to show something, so there is always a fallback line
     const title = (m && m.title) || 'New draft', body = m && m.title ? (m.body || '') : 'A bank text is waiting in Spend.';   // a one-line alert has no body
     await self.registration.showNotification(title, { body, tag: 'centric-draft', icon: './icon.png', badge: './favicon-32.png', data: { go: 'spend' } });
     // the app icon's badge: how many drafts are waiting
     try { if (self.navigator.setAppBadge && m && m.count != null) await (m.count ? self.navigator.setAppBadge(m.count) : self.navigator.clearAppBadge()); } catch (err) {}
+    await sent;
   })());
 });
 self.addEventListener('notificationclick', e => {
@@ -94,7 +105,9 @@ self.addEventListener('notificationclick', e => {
     try { await (await caches.open(CFG_CACHE)).put('./__go', new Response(JSON.stringify({ view: 'spend', at: Date.now() }))); } catch (err) {}
     await slog('tap');
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    await slog('windows ' + list.length + (list.length ? ' · ' + list.map(c => c.visibilityState + (c.focused ? '/focused' : '')).join(', ') : ''));
+    const w = 'windows ' + list.length + (list.length ? ' · ' + list.map(c => c.visibilityState + (c.focused ? '/focused' : '')).join(', ') : '');
+    await slog(w);
+    await srv('tap · ' + SW_VER + ' · ' + w);   // the app checks for this when it comes to the front
     for (const c of list) {
       try { await c.focus(); await slog('focus ok'); } catch (err) { await slog('focus failed ' + err.message); }
       c.postMessage({ type: 'go', view: 'spend' }); await slog('message sent'); return;
