@@ -1402,6 +1402,7 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .zbk{margin:0 0 6px 14px}.zbk .hrow{padding:7px 0;font-size:14px;color:var(--ink-2);border-top:0}.zbk .hrow b{font-weight:500}
 .zmore.zadd{border-top:0;padding:4px 0 14px;text-align:left;margin-left:14px;width:auto}
 .zseg{margin:0 16px 12px}
+.zseg + .card + .card{margin-top:12px}
 .zyr{padding:14px 0 16px;border-bottom:1px solid var(--hairline)}.zyr:last-child{border-bottom:0}
 .zyr-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:16px;font-weight:600;letter-spacing:-.3px}.zyr-t .k{font-size:13.5px;font-weight:400;color:var(--ink-3)}.zyr-t .up{font-size:14.5px}
 .zyr-s{font-size:13.5px;color:var(--ink-3);margin-top:3px}.zyr .cclim{margin-top:14px}.zyr .cclim .pbar{margin-top:0}
@@ -2344,7 +2345,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04w';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04x';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7355,30 +7356,43 @@ function ziOpen(x){
   openXSheet(e, 'expense');
 }
 // Zakat given, one year at a time: the year it's due (1 Jan) with what's been given toward it, then those payments.
-// The current year is everything given since tracking began; earlier years come from the history rows.
+// Payments since tracking began go to the oldest tracked year until what it had paid is covered, then the next
+// (so an October payment made after a year was settled counts toward the coming 1 Jan); the newest year takes the
+// rest. Years before tracking come from the history rows. The latest three get a tab each; older ones sit under Earlier.
 function ziYearsHtml(p, n, pay){
-  const Z = n.Z, c = n.cur, by = {};
+  const Z = n.Z, by = {}, cnt = k => k + ' payment' + (k===1 ? '' : 's');
+  const tracked = Z.years.slice().sort((a,b)=>a.date < b.date ? -1 : 1), queue = Z.pays.slice().sort((a,b)=>a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  const yrs = tracked.map((y, k)=>{ const pays = [];
+    if (k === tracked.length - 1) pays.push(...queue.splice(0));
+    else { let room = y.paid || 0; while (queue.length && room > 0.5){ const x = queue.shift(); pays.push(x); room -= x.amount || 0; } }
+    return { y:y.date.slice(0,4), t:y, pays:pays.reverse() }; }).reverse();
   (Z.histPays||[]).forEach(x=>{ const y = x.date.slice(0,4); (by[y] = by[y] || []).push(x.ex || x); });
   const past = {}; (Z.hist||[]).forEach(h=>{ past[h.date.slice(0,4)] = h; });
-  const ys = [...new Set([...Object.keys(past), ...Object.keys(by)])].filter(y=>y < n.yr).sort().reverse();
-  const yrs = [{ y:n.yr, cur:true, pays:Z.pays.slice() }].concat(ys.map(y=>({ y, h:past[y], pays:(by[y]||[]).slice().reverse() })));
-  const sel = Math.min(p.zyr || 0, yrs.length - 1), Y = yrs[sel], cnt = k => k + ' payment' + (k===1 ? '' : 's');
-  let top;
-  if (Y.cur){
-    const est = !!c.live, done = c.left <= 0.5;
-    top = `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span>${est ? `<span class="k">in ${n.days} day${n.days===1?'':'s'}</span>` : done ? '<span class="up">Paid ✓</span>' : '<span class="k">due now</span>'}</div>
-      <div class="zyr-s num money">${fINR(c.due)} · ${est ? 'estimated from today’s net worth' : 'from net worth on 1 Jan'}</div>
-      <div class="cclim"><div class="pbar"><i style="width:${(c.due > 0 ? Math.min(100, c.paid / c.due * 100) : 0).toFixed(1)}%"></i></div>
-        <div class="ln"><span><b class="num money">${fINR(c.paid)}</b> given</span><span><b class="num money">${fINR(Math.max(0, c.left))}</b> to go</span></div></div></div>`;
-  } else {
-    const given = Y.pays.reduce((t,x)=>t + (x.amount||0), 0), paid = Y.h && /paid/i.test(Y.h.note || '');
-    top = `<div class="zyr"><div class="zyr-t"><span>${Y.h ? 'Due 1 Jan ' + Y.y : 'Given in ' + Y.y}</span>${paid ? '<span class="up">Paid ✓</span>' : Y.h && Y.h.note ? `<span class="k">${esc(Y.h.note)}</span>` : ''}</div>
+  const first = tracked.length ? tracked[0].date.slice(0,4) : n.yr;
+  [...new Set([...Object.keys(past), ...Object.keys(by)])].filter(y=>y < first).sort().reverse()
+    .forEach(y=>yrs.push({ y, h:past[y], pays:(by[y]||[]).slice().reverse() }));
+  const head = Y => {
+    if (Y.t){ const t = Y.t, est = !!t.live, done = !est && t.left <= 0.5;
+      if (done) return `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span><span class="up">Paid ✓</span></div>
+        <div class="zyr-s num money">${fINR(t.due)}${Y.pays.length ? ' · given in ' + cnt(Y.pays.length) : ''}</div></div>`;
+      return `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span>${est ? `<span class="k">in ${n.days} day${n.days===1?'':'s'}</span>` : '<span class="k">due now</span>'}</div>
+        <div class="zyr-s num money">${fINR(t.due)} · ${est ? 'estimated from today’s net worth' : 'from net worth on 1 Jan'}</div>
+        <div class="cclim"><div class="pbar"><i style="width:${(t.due > 0 ? Math.min(100, (t.paid||0) / t.due * 100) : 0).toFixed(1)}%"></i></div>
+          <div class="ln"><span><b class="num money">${fINR(t.paid||0)}</b> given</span><span><b class="num money">${fINR(Math.max(0, t.left))}</b> to go</span></div></div></div>`; }
+    const given = Y.pays.reduce((s,x)=>s + (x.amount||0), 0), paid = Y.h && /paid/i.test(Y.h.note || '');
+    return `<div class="zyr"><div class="zyr-t"><span>${Y.h ? 'Due 1 Jan ' + Y.y : 'Given in ' + Y.y}</span>${paid ? '<span class="up">Paid ✓</span>' : Y.h && Y.h.note ? `<span class="k">${esc(Y.h.note)}</span>` : ''}</div>
       <div class="zyr-s num money">${Y.h ? fINR(Y.h.due) + (Y.pays.length ? ' · given in ' + cnt(Y.pays.length) : '') : fINR(given) + ' · ' + cnt(Y.pays.length)}</div></div>`;
-  }
-  const list = Y.pays.slice(0, p.allZ ? 999 : 8).map(x=>x.row != null || x.account != null ? pay(x)
+  };
+  const rows = (Y, all) => Y.pays.slice(0, all ? 999 : 8).map(x=>x.row != null || x.account != null ? pay(x)
     : `<div class="row"><div class="l"><div class="n">${esc(x.note || 'Zakat')}</div><div class="m">${esc(fDate(x.date))}</div></div><div class="r"><div class="v num money">${fINR2(x.amount)}</div></div></div>`).join('');
-  return `${yrs.length > 1 ? `<div class="seg zseg">${yrs.map((y,i)=>`<button data-zyr="${i}" class="${i===sel?'on':''}">${y.y}</button>`).join('')}</div>` : ''}
-    <div class="card tight">${top}${list || `<div class="empty">Nothing given toward ${Y.y} yet</div>`}
+  // the tab that opens first: the year still owed, else the newest
+  const curY = n.cur.date.slice(0,4), def = Math.max(0, yrs.findIndex(Y=>Y.y===curY));
+  const tabs = yrs.length > 3 ? 3 : yrs.length, sel = p.zyr == null ? def : Math.min(p.zyr, tabs < yrs.length ? 3 : yrs.length - 1);
+  const seg = yrs.length > 1 ? `<div class="seg zseg">${yrs.slice(0, tabs).map((Y,i)=>`<button data-zyr="${i}" class="${i===sel?'on':''}">${Y.y}</button>`).join('')}${yrs.length > 3 ? `<button data-zyr="3" class="${sel===3?'on':''}">Earlier</button>` : ''}</div>` : '';
+  if (sel === 3 && yrs.length > 3)   // Earlier: each older year in its own card
+    return seg + yrs.slice(3).map(Y=>`<div class="card tight">${head(Y)}${rows(Y, true) || ''}</div>`).join('');
+  const Y = yrs[sel];
+  return `${seg}<div class="card tight">${head(Y)}${rows(Y, p.allZ) || `<div class="empty">Nothing given toward ${Y.y} yet</div>`}
       ${Y.pays.length > 8 && !p.allZ ? `<button class="zmore" data-zall="Z">Show all ${Y.pays.length}</button>` : ''}</div>`;
 }
 // the Zakat page and the Interest page (one builder, p.kind picks which)
