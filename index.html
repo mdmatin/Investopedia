@@ -392,6 +392,7 @@ html[data-theme=dark] .athb.on{color:#ffd60a}
 .ft1 .big{font:800 84px/.9 var(--font-disp);letter-spacing:-4.5px;margin:12px 0 0 -3px;color:var(--ink);position:relative}
 .ft1 .big b{color:var(--blue)}
 .ft1 .tag{margin-top:14px;font:600 17px/1.3 var(--font-disp);letter-spacing:-.3px;color:var(--ink-2)}
+.ft1 .hi{color:color-mix(in srgb,var(--blue) 38%,transparent)}.ft1 .big{color:color-mix(in srgb,var(--ink) 9%,transparent)}.ft1 .big b{color:color-mix(in srgb,var(--blue) 18%,transparent)}.ft1 .tag{color:color-mix(in srgb,var(--ink-2) 45%,transparent)}.ft1 svg.c{opacity:.06!important}   /* the sign-off sits back: very faded */
 .ft1 svg.c{position:absolute;right:-46px;top:-34px;width:170px;height:170px;opacity:.14;pointer-events:none}
 .gridline{stroke:var(--hairline);stroke-width:1}
 #ah.gridline,.dline .vl{stroke:color-mix(in srgb, var(--ink-3) 55%, var(--hairline))}   /* the picker's dotted line, every chart: a little darker than the grid */
@@ -1536,6 +1537,7 @@ body.paged{overflow:hidden}
 .pg-sub .sep2{color:var(--ink-3);margin:0 6px}
 .pg-sub .grp{white-space:nowrap}
 .pg-sub .arrow{font-size:.82em}
+.row.ext .tile{opacity:.5}.row.ext .n,.row.ext .v{color:var(--ink-3)}   /* someone else's money (Halim · C): listed, greyed */
 .bksays svg{width:13px;height:13px;vertical-align:-1.5px;margin-right:4px}
 .pg-hero .hchart{height:160px;margin-top:18px}
 .hlg{display:flex;gap:14px;font-size:12px;color:var(--ink-2);margin-top:8px;align-items:center}
@@ -1896,6 +1898,38 @@ html[data-ui=dial]:not(.rpeek),html[data-ui=dial]:not(.rpeek) body{background:#c
 #dial .rv-row button.ghost{background:none;color:#24221e}
 #dial .rv-dr h4{font:700 22px "JetBrains Mono",monospace;letter-spacing:1px}
 @media (prefers-reduced-motion: reduce){ .dl-led.on i,.dl-rcpt{animation:none} .dl-knob{transition:none} }
+/* Overview: quick actions as one card of app icons */
+.qact{display:grid;grid-template-columns:repeat(4,1fr);background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-card,20px);padding:12px 6px 10px;margin:0 16px 4px}
+.qact:empty{display:none}
+.qact button{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;font:inherit;font-size:12px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.qact .app{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}   /* secondary: soft tints, the tiles' colours */
+.qact .app svg{width:19px;height:19px}
+.app.a1{background:#e7f0fd;color:#0b5fc1}.app.a2{background:#e8f5ec;color:#177245}.app.a3{background:#efe9fd;color:#5b3bc4}.app.a4{background:#fdf0e2;color:#a35a07}
+/* Assets: list / cards switch (the holding page's $ / ₹ pill) */
+.sechead .shr{display:flex;align-items:center;gap:4px}
+.vtg{display:flex;background:var(--sunken);border-radius:999px;padding:2px}
+.vtg button{width:34px;height:26px;border-radius:999px;color:var(--ink-2);background:none;display:grid;place-items:center;padding:0;margin:0}
+.vtg button svg{width:15px;height:15px}
+.vtg button.on{background:var(--canvas);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* widget cards: asset cards and market cards share one look */
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px}
+.wcard{background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:12px 12px 10px;min-width:0;text-align:left;font:inherit;color:var(--ink)}
+.wcard.tap{cursor:pointer}
+.wcard .n{font-size:12.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wcard .v{font:600 18px/1.2 var(--font-disp);letter-spacing:-.4px;margin-top:4px;white-space:nowrap}
+.wcard .hd{display:flex;align-items:center;gap:8px}.wcard .hd .tile{width:28px;height:28px;flex:0 0 28px;border-radius:8px}.wcard .hd .tile svg{width:15px;height:15px}
+.wcard .hd + .v{margin-top:10px;font-size:17px}
+.wcard .sb{height:4px;border-radius:2px;background:var(--sunken);margin:10px 0 8px;overflow:hidden}.wcard .sb i{display:block;height:100%}
+.wcard .ft{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-3)}
+.wcard svg.spk{display:block;width:100%;height:34px;margin:8px 0 6px}
+/* Overview: market strip under Net worth (as in broker apps): name ↗, level, change | ▲% */
+.mkstrip{display:flex;gap:10px;overflow-x:auto;padding:0 16px;margin:0 0 12px;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+.mkstrip::-webkit-scrollbar{display:none}.mkstrip:empty{display:none}
+.mki{flex:0 0 auto;min-width:148px;scroll-snap-align:start;background:var(--canvas);border:1px solid var(--card-edge);border-radius:var(--r-mid);padding:10px 12px}
+.mki .n{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.mki .n svg{width:13px;height:13px;color:var(--ink-3)}
+.mki .v{font:600 17px/1.25 var(--font-disp);letter-spacing:-.3px;margin-top:3px;white-space:nowrap}
+.mki .c{font-size:12.5px;font-weight:500;margin-top:1px;white-space:nowrap}.mki .c .sp{color:var(--ink-3);margin:0 5px}
 .hentry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px}
 .hentry:empty{display:none}
 .moodw{position:relative;display:inline-block;flex:0 0 auto}
@@ -2145,18 +2179,23 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
         <div class="kpirow lcr" id="kpis"></div>
       </div>
 
+      <div class="mkstrip" id="homeMkt"></div>
       <div class="hentry" id="homeMonth"></div>
       <div class="hwrap" id="homeWrap"></div>
-      <div class="sechead"><h2>Assets</h2><button id="goPlatforms">Platforms</button></div>
+      <div class="qact" id="homeQa"></div>
+      <div class="sechead"><h2>Assets</h2><div class="shr"><div class="ccy vtg" id="assetView" role="group" aria-label="Layout"></div><button id="goPlatforms" hidden>Platforms</button></div></div>
       <div class="card tight" id="assets"></div>
 
 
       <div class="sechead" id="walHead" hidden><h2>Wallets</h2></div>
       <div class="card tight" id="wallets" hidden></div>
 
+      <!-- Accounts left Overview (they live on the Accounts tab); kept hidden so the code that fills them still runs -->
+      <div hidden>
       <div class="sechead"><h2>Accounts</h2></div>
       <div class="tflt" id="accFlt" hidden></div>
       <div class="card tight" id="banks"></div>
+      </div>
 
       <div class="sechead" id="consHead" hidden><h2>Construction fund</h2></div>
       <div class="card tight" id="construction" hidden></div>
@@ -2295,7 +2334,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -2528,6 +2567,31 @@ function confetti(from){
     if (k < 1) requestAnimationFrame(f); else c.remove(); })(t0);
   haptic([12,40,12]);
 }
+const TINT_INK = { us:'#2f7de1', gd:'#d4a106', in:'#23a05a', mf:'#e0861a', cr:'#7a5ae0', lq:'#1a9bb0', ch:'#9a9aa0' };   // a little brighter than the tiles' ink, for the share bars
+// Overview quick actions: one card of app icons, each opening the usual add sheet
+function homeQuick(){
+  const q = $('#homeQa'); if (!q) return;
+  const ic = (p,c) => `<div class="app ${c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg></div>`;
+  q.innerHTML = `<button data-qa="expense">${ic('M12 5v14M5 12h14','a1')}Expense</button><button data-qa="income">${ic('M12 19V5M5 12l7-7 7 7','a2')}Income</button>`
+    + `<button data-qa="transfer">${ic('M4 9h13l-3.5-3.5M20 15H7l3.5 3.5','a3')}Transfer</button><button data-qa="trade">${ic('M4 17l5-5 4 4 7-8M15 8h5v5','a4')}Trade</button>`;
+  $$('#homeQa [data-qa]').forEach(b=>b.onclick=()=>{ const k = b.dataset.qa; k==='trade' ? openSheet(null) : openXSheet(null, k); });
+}
+// Markets: index cards from the script (d.markets: name, value, chgPct, spark - closes over the last month)
+function mkSpark(pts, up){
+  if (!pts || pts.length < 2) return '';
+  const mn = Math.min(...pts), mx = Math.max(...pts), W = 120, H = 34;
+  const P = pts.map((y,i)=>`${(i/(pts.length-1)*W).toFixed(1)},${(H-2-(y-mn)/(mx-mn||1)*(H-4)).toFixed(1)}`).join(' ');
+  return `<svg class="spk" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${P}" fill="none" stroke="var(--${up?'up':'down'})" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function homeMarkets(d){
+  const el = $('#homeMkt'); if (!el) return; const M = (d && d.markets) || [];
+  if (!M.length){ el.innerHTML = ''; return; }
+  const f2 = v => Number(v).toLocaleString('en-IN',{ minimumFractionDigits:2, maximumFractionDigits:2 });
+  const ar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+  el.innerHTML = M.map(m=>{ const p = m.chgPct||0, c = m.chg!=null ? m.chg : m.value * p / (1 + p), up = p >= 0;
+    return `<div class="mki"><div class="n"><span>${esc(m.name)}</span>${ar}</div><div class="v num">${m.ccy==='INR' ? '₹' : ''}${f2(m.value)}</div>
+      <div class="c num ${up?'up':'down'}">${up?'+':'−'}${f2(Math.abs(c))}<span class="sp">|</span>${up?'▲':'▼'}${Math.abs(p*100).toFixed(2)}%</div></div>`; }).join('');
+}
 function renderHome(d){
   const nw = d.netWorth, h = nw.head||{}, cash = liveCash();
   if (!cash && cfg && !xLoading) loadExpenses();
@@ -2553,19 +2617,34 @@ function renderHome(d){
   // assets
   const rows = (nw.assets||[]).filter(a=>!a.isTotal && a.value!=null && (a.value!==0 || (/^EPF$/i.test(a.name) && epfD())) && !/^Less:|^Charges/i.test(a.name))
     .sort((a,b)=>(b.value||0)-(a.value||0));
-  $('#assets').innerHTML = rows.map(a=>`
+  const asCards = load('inv.assetView')==='cards', aEl = $('#assets');
+  const vIc = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  $('#assetView').innerHTML = `<button data-av="list" class="${asCards?'':'on'}" aria-label="List">${vIc('M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01')}</button><button data-av="cards" class="${asCards?'on':''}" aria-label="Cards">${vIc('M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z')}</button>`;
+  $$('#assetView [data-av]').forEach(b=>b.onclick=()=>{ const y = window.scrollY; save('inv.assetView', b.dataset.av); renderHome(d); holdScroll(y); });
+  const aTap = a => /^EPF$/i.test(a.name) && epfD() ? ' tap" data-epf="1' : /^NPS$/i.test(a.name) && npsD() ? ' tap" data-nps="1' : assetCatFor(a.name, d.holdings) ? ' tap" data-acat="' + esc(assetCatFor(a.name, d.holdings)) : '';
+  const aPill = a => a.dayChange!=null ? `<span class="pill sm dpill ${cls(a.dayChange)} num money">${fChg(a.dayChange)}${a.dayChangePct!=null ? ' · ' + fPct(Math.abs(a.dayChangePct),false) : ''}</span>` : '';
+  if (asCards){
+    // cards: value, its share of the total (bar and %), today's change
+    const sum = rows.reduce((t,a)=>t+Math.max(0,a.value||0),0) || 1;
+    aEl.className = 'wgrid';
+    aEl.innerHTML = rows.map(a=>{ const sh = Math.max(0,a.value||0)/sum;
+      return `<div class="wcard${aTap(a)}"><div class="hd">${mark(a.name)}<div class="n">${esc(a.name)}</div></div><div class="v num money">₹${inr.format(Math.round(a.value))}</div>
+        <div class="sb"><i style="width:${(sh*100).toFixed(1)}%;background:${TINT_INK[iconFor(a.name)[1]] || 'var(--ink-3)'}"></i></div><div class="ft">${aPill(a)}<span class="num">${Math.round(sh*100)}%</span></div></div>`; }).join('');
+  } else { aEl.className = 'card tight';
+  aEl.innerHTML = rows.map(a=>`
     <div class="row platrow${/^EPF$/i.test(a.name) && epfD() ? ' tap" data-epf="1' : /^NPS$/i.test(a.name) && npsD() ? ' tap" data-nps="1' : ''}"${assetCatFor(a.name, d.holdings)?` data-acat="${esc(assetCatFor(a.name, d.holdings))}"`:''}>
       ${mark(a.name)}
       <div class="l"><div class="n">${esc(a.name)}</div></div>
       <div class="r"><div class="v num money">${fINR(a.value)}</div>${a.dayChange!=null
         ? `<div class="s"><span class="pill sm dpill ${cls(a.dayChange)} num money">${fChg(a.dayChange)}${a.dayChangePct!=null ? ' · ' + fPct(Math.abs(a.dayChangePct),false) : ''}</span></div>` : ''}</div>
     </div>`).join('') +
-    (tot.value!=null ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(tot.value)}</span></div>` : '');
+    (tot.value!=null ? `<div class="rowtotal num money"><span>Total</span><span>${fINR(tot.value)}</span></div>` : ''); }
 
   // an asset class opens Holdings ▸ Assets with that filter on
-  $$('#assets .row[data-acat]').forEach(r=>r.onclick=()=>openAssetCat(r.dataset.acat));
-  $$('#assets .row[data-epf]').forEach(r=>r.onclick=()=>pushPage({ kind:'epf' }));
-  $$('#assets .row[data-nps]').forEach(r=>r.onclick=()=>pushPage({ kind:'nps' }));
+  $$('#assets [data-acat]').forEach(r=>r.onclick=()=>openAssetCat(r.dataset.acat));
+  $$('#assets [data-epf]').forEach(r=>r.onclick=()=>pushPage({ kind:'epf' }));
+  $$('#assets [data-nps]').forEach(r=>r.onclick=()=>pushPage({ kind:'nps' }));
+  homeQuick(); homeMarkets(d);
 
   // recent
   // (the Recent list was removed from Overview — Activity has every order)
@@ -6673,7 +6752,7 @@ function constrBody(p){
   const sections = months.slice().reverse().filter(m=>by[m] || tot(m)).map(m=>`<div class="cmhead" id="cm-${m}"><h3>${esc(ymLabel(m))}</h3><span class="num money">${fINR2(tot(m))}</span></div>
       <div class="card tight ${by[m]?'':'cmtot'}">${by[m] ? by[m].map(row).join('') : '<div class="empty">Only the month total is on hand</div>'}</div>`).join('');
   return hero
-    + accGroupsHtml(xAccounts().filter(a=>!a.other), 'construction')   // your own construction accounts only (Halim · C is his money)
+    + accGroupsHtml(xAccounts(), 'construction')   // every construction account, Halim · C too (listed only: the totals above stay your money)
     + `<div class="sechead"><h2>Expenses</h2></div>`
     + (sections || '<div class="card tight"><div class="empty">No construction expenses yet - log one under the Construction category</div></div>');
 }
@@ -6862,7 +6941,7 @@ function accGroupsHtml(acc, only){
       // differs from the bank: the line under the name says by how much (a match shows nothing)
       const line = bc && !bc.ok ? `<div class="m bkflag off"><i>!</i><span>Off by ${fINR2(Math.abs(bc.diff))} from bank</span></div>` : '';
       const tick = '';   // a match says nothing: only a difference is shown
-      return `<div class="row tap" data-acc="${esc(a.name)}">${accMark(a)}
+      return `<div class="row tap${a.other ? ' ext' : ''}" data-acc="${esc(a.name)}">${accMark(a)}
         <div class="l"><div class="n">${esc(only ? cShort(a.name) : a.name)}${tick}</div>${line || `<div class="m">${only ? cMonthLine(a.name) : last ? `<span class="${last.amt>0?'up':''}">${fChg(last.amt)}</span> · ${agoDay(last.date)}` : 'No activity yet'}</div>`}</div>
         <div class="r"><div class="v num money ${bal<0?'down':''}">${fINR2(bal)}</div></div></div>`;
     }).join('')}${k==='construction' ? constrFundHtml('other') : ''}${k==='bank' || k==='wallet'
