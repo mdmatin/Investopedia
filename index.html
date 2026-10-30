@@ -2339,7 +2339,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-04k';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-04l';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -5829,10 +5829,12 @@ function openDrafts(){
   document.body.append(bd, m);
 }
 function closeDrafts(){ document.querySelectorAll('.dmenu').forEach(e=>e.remove()); if (!document.querySelector('.fmenu')) document.querySelectorAll('.fmenu-bd').forEach(e=>e.remove()); }
+// bank texts shout ("ROYALMARTSUPERMARKET"): what they fill in goes into the form in sentence case
+const capsOff = s => { s = String(s || ''); return s === s.toUpperCase() && /[A-Z]{3}/.test(s) ? s.charAt(0) + s.slice(1).toLowerCase() : s; };
 function openDraft(d){
-  const tpl = { amount:d.amount, date:d.date, note:d.note||'', draft:d.id };
-  if (d.kind==='transfer') Object.assign(tpl, { from:d.from||'', to:d.to||'', desc:d.desc||'' });
-  else Object.assign(tpl, { account:d.account||'', category:d.category||'', sub:d.sub||'', type:d.type||'', source:d.source||'', desc:d.desc||'' });
+  const tpl = { amount:d.amount, date:d.date, note:capsOff(d.note), draft:d.id };
+  if (d.kind==='transfer') Object.assign(tpl, { from:d.from||'', to:d.to||'', desc:capsOff(d.desc) });
+  else Object.assign(tpl, { account:d.account||'', category:d.category||'', sub:d.sub||'', type:d.type||'', source:capsOff(d.source), desc:capsOff(d.desc) });
   openXSheet(null, d.kind==='transfer' ? 'transfer' : d.kind==='income' ? 'income' : 'expense', tpl);
   if (d.check) toast('From a card OTP — check the payment went through');
 }
@@ -8219,7 +8221,10 @@ async function saveXSheet(){
     return saveMove('expense', { date, account:xAcc, category:xCat, sub:xSub, note: note || 'Refund', desc: xDescV.trim(), amount:-amount }, xEditing);
   }
   const tax = Number(numPlain(xTaxV)) || 0;
-  return saveMove('income', { date, account:xAcc, type:xType, source:xSrcV.trim(), tax, remark:note, note, desc: xDescV.trim(), amount }, xEditing);
+  // Company only for the types that ask for one (Salary, Freelancing). A name that came from a bank text
+  // (a dividend payer, say) goes to Description instead: Income's Company column only takes your employers
+  const co = xAsksCompany() ? xSrcV.trim() : '', desc = xDescV.trim() || (xAsksCompany() ? '' : capsOff(xSrcV.trim()));
+  return saveMove('income', { date, account:xAcc, type:xType, source:co, tax, remark:note, note, desc, amount }, xEditing);
 }
 // one optimistic path for all three kinds
 // Budget alerts (Profile): say so when this save takes a category past 90% or 100%
