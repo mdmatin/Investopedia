@@ -1481,8 +1481,8 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .ccic .hsbtn.on{background:rgba(0,102,204,.12);color:var(--blue)}.ccic .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--blue)}
 .ccsearch{flex:1 1 0;min-width:0;width:auto;max-width:100%;margin:0;height:38px;background:var(--parchment);border-color:transparent;padding:0 12px}.ccsearch input{font-size:15px}
 .ccbox .fchip{margin:4px 16px 4px}   /* the active filter, as on Spend › Activity */
-.ccbox.actbox{padding-bottom:4px}
-.ccrows .card.tight .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
+.ccrows{padding:0 16px}.ccrows .row:first-child{border-top:0}.ccrows .empty{padding:24px 0}
+.ccrows .more{display:block;width:calc(100% + 32px);margin:0 -16px;text-align:center;border:0;border-top:1px solid var(--hairline);background:none;color:var(--blue);font-size:14px;padding:12px 0;cursor:pointer}
 .cctabs{display:flex;align-items:flex-end;gap:10px;margin:18px 16px 12px;border-bottom:1px solid var(--hairline)}   /* underline tabs, like the asset pages */
 .cctabs .captabs{flex:1;margin:0;border-bottom:0;overflow:visible}   /* two tabs always fit: no sideways scroll on a drag */.cctabs .ccmon{margin-bottom:7px}
 .ccmon{display:flex;align-items:center;background:var(--sunken);border-radius:999px;padding:3px}
@@ -2345,7 +2345,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05a';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05b';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6814,7 +6814,8 @@ function constrBody(p){
       title: e.note || (fi && ti ? `${cShort(e.from)} → ${cShort(e.to)}` : ti ? 'From ' + e.from : 'To ' + e.to),
       meta: fi && ti ? 'Between your construction accounts' : 'Transfer · ' + cShort(ti ? e.to : e.from) }); });
   acts.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
-  const by = {}; acts.forEach(x=>{ (by[x.date.slice(0,7)] = by[x.date.slice(0,7)] || []).push(x); });
+  const onlyEx = p.caF==='exp', shownActs = onlyEx ? acts.filter(x=>x.x || x.k==='expense') : acts;   // the filter: all activity, or spending only
+  const by = {}; shownActs.forEach(x=>{ (by[x.date.slice(0,7)] = by[x.date.slice(0,7)] || []).push(x); });
   const amtHtml = v => `<div class="v num money ${v>0?'up':''}">${v>0 ? '+' + fINR2(v) : v<0 ? '−' + fINR2(-v).replace('−','') : fINR2(0)}</div>`;
   const row = x => { if (!x.x) return `<button class="row" data-mv="${x.k}:${x.e.row}">${x.k==='expense' ? xTile(x.e.category) : moveTile(x.k)}
       <div class="l"><div class="n">${esc(x.title)}</div><div class="m">${esc(fDate(x.date))} · ${esc(x.meta)}</div></div>
@@ -6830,7 +6831,7 @@ function constrBody(p){
       ${by[m] ? days(by[m]) : '<div class="card tight cmtot"><div class="empty">Only the month total is on hand</div></div>'}`).join('');
   return hero
     + accGroupsHtml(xAccounts(), 'construction')   // every construction account, Halim · C too (listed only: the totals above stay your money)
-    + `<div class="sechead"><h2>All activity</h2></div>`
+    + `<div class="sechead cchd"><h2>${onlyEx ? 'Expenses' : 'All activity'}</h2><span class="ccic"><button class="hsbtn ${onlyEx?'on':''}" data-caflt aria-label="Filter">${FILTER_IC}${onlyEx?'<i class="dot"></i>':''}</button></span></div>`
     + (sections || '<div class="card tight"><div class="empty">Nothing yet - log a payment under the Construction category</div></div>');
 }
 function wireConstr(p){
@@ -6840,6 +6841,13 @@ function wireConstr(p){
   $$('#page [data-xrow]').forEach(r=>r.onclick=()=>openXSheet(all.find(e=>String(e.row)===r.dataset.xrow)));
   $$('#page [data-mv]').forEach(r=>r.onclick=()=>{ const [kind,row] = r.dataset.mv.split(':');
     const pool = kind==='expense' ? d.entries : kind==='income' ? d.incomes : d.transfers; openXSheet((pool||[]).find(e=>String(e.row)===row), kind); });
+  const cf = $('#page [data-caflt]'); if (cf) cf.onclick = ()=>{   // All activity / Expenses only, the same small menu as an account's filter
+    closeTxMenu(); const r = cf.getBoundingClientRect();
+    const bd = document.createElement('div'); bd.className = 'fmenu-bd'; bd.onclick = closeTxMenu;
+    const m = document.createElement('div'); m.className = 'fmenu'; m.style.top = (r.bottom + 8) + 'px'; m.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+    m.innerHTML = [['all','All activity'],['exp','Expenses only']].map(([k,l])=>`<button data-caf="${k}"><span>${l}</span>${(p.caF||'all')===k ? '<i>✓</i>' : ''}</button>`).join('');
+    m.querySelectorAll('[data-caf]').forEach(b=>b.onclick=()=>{ p.caF = b.dataset.caf; closeTxMenu(); const el=$('#page'), y=el.scrollTop; renderPage(); el.scrollTop=y; });
+    document.body.append(bd, m); };
   const gs = $('#page .mbscroll');
   if (gs){ gs.scrollLeft = p.gx!=null ? p.gx : gs.scrollWidth; gs.addEventListener('scroll', ()=>{ p.gx = gs.scrollLeft; }, { passive:true }); }
   // a month on the graph jumps to its expenses
@@ -7056,8 +7064,8 @@ function ccTabsHtml(a, p, moves){
   const chev = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<div class="sechead cchd"><h2>Transactions</h2>
       <div class="ccmon"><button data-ccs="-1" aria-label="Previous month" ${i<=0?'disabled':''}>${chev('M15 5l-7 7 7 7')}</button><span>${esc(ymShort(p.ccm).slice(0,3))}${p.ccm.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + p.ccm.slice(2,4) : ''}</span><button data-ccs="1" aria-label="Next month" ${i>=all.length-1?'disabled':''}>${chev('M9 5l7 7-7 7')}</button></div></div>
-    <div class="card ccbox ${tab==='spend'?'':'actbox'}"><div class="seg"><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button></div>
-    ${tab==='spend' ? ccSpendHtml(a, p, moves) + '</div>' : ccActivityHtml(p, moves)}`;
+    <div class="card ccbox"><div class="seg"><button data-cct="act" class="${tab==='act'?'on':''}">Activity</button><button data-cct="spend" class="${tab==='spend'?'on':''}">Spending</button></div>
+    ${tab==='spend' ? ccSpendHtml(a, p, moves) : ccActivityHtml(p, moves)}</div>`;
 }
 function ccSpendHtml(a, p, moves){
   const ex = moves.filter(m=>m.kind==='expense'), ym = ymNow(), sel = p.ccm || ym;
@@ -7109,16 +7117,11 @@ function ccActPool(p, moves){
 }
 function ccActRows(p, moves){
   const pool = ccActPool(p, moves), N = p.actN || 12, shown = pool.slice(0, N), sel = p.ccm || ymNow();
-  // one card for the month (its name and what was spent above it), each entry with its date
-  const byDay = false, spent = pool.reduce((t,m)=>t + (m.kind==='expense' ? -m.amt : 0), 0);   // the month's heading: what was spent (no money in, no transfers)
-  const head = `<div class="cmhead"><h3>${esc(ymLabel(sel))}</h3><span class="num money">${spent > 0.004 ? fINR2(spent) + ' spent' : ''}</span></div>`;
-  const row = m => `<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
-      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(fDate(m.date))} · ${esc(m.meta)}</div></div>
-      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`;
-  const groups = []; if (byDay) shown.forEach(m=>{ const g = groups[groups.length-1]; if (g && g.d===m.date) g.ms.push(m); else groups.push({ d:m.date, ms:[m] }); });
-  return head + (shown.length ? (byDay ? groups.map(g=>mvDayHead(g.d, g.ms) + `<div class="card tight">${g.ms.map(row).join('')}</div>`).join('') : `<div class="card tight">${shown.map(row).join('')}</div>`)
-    : `<div class="card tight"><div class="empty">${p.actQ ? 'No matches' : 'Nothing'} in ${esc(ymLabel(sel).split(' ')[0])}</div></div>`)
-    + (pool.length > N ? `<button class="ccmore" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : '');
+  return (shown.length ? shown.map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)} · ${esc(fDate(m.date))}</div></div>
+      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')
+    : `<div class="empty">${p.actQ ? 'No matches' : 'Nothing'} in ${esc(ymLabel(sel).split(' ')[0])}</div>`)
+    + (pool.length > N ? `<button class="more" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : '');
 }
 function ccActivityHtml(p, moves){
   const lbl = (CC_SORT.find(x=>x[0]===(p.actS||'new'))||CC_SORT[0])[1], fOn = p.actF && p.actF!=='all', sOpen = p.actSO || !!p.actQ;
@@ -7127,7 +7130,7 @@ function ccActivityHtml(p, moves){
       : `<label class="hsort"><span>Sort</span><b>${esc(lbl)}</b>${chev('M6 9l6 6 6-6')}<select data-acts aria-label="Sort">${CC_SORT.map(([k,l])=>`<option value="${k}" ${k===(p.actS||'new')?'selected':''}>${l}</option>`).join('')}</select></label>
          <span class="ccic"><button class="hsbtn" data-actsrch aria-label="Search">${SRCH_ICON}</button><button class="hsbtn ${fOn?'on':''}" data-actflt aria-label="Filter">${FILTER_IC}${fOn?'<i class="dot"></i>':''}</button></span>`}</div>
     ${fOn ? `<div class="fchip"><button data-actfx>${esc((actTypes(p)[p.actF]||['All'])[0])}<span aria-hidden="true">✕</span></button></div>` : ''}
-    </div><div class="ccrows">${ccActRows(p, moves)}</div>`;   // the entries sit below the card, a card per day as on the Spend list
+    <div class="ccrows">${ccActRows(p, moves)}</div>`;
 }
 function accBody(p){
   const a = accByName(p.acc); if (!a) return '<div class="pg-load">Account not found</div>';
@@ -7163,7 +7166,7 @@ function accBody(p){
       ${ed}
       ${card ? '' : `<div class="spstats lcr"><div><span>In · ${esc(ymShort(ym))}</span><b class="num money up">${fINR2(mIn)}</b></div>
         <div><span>Out · ${esc(ymShort(ym))}</span><b class="num money">${fINR2(mOut)}</b></div>
-        <div><span>Since</span><b>${a.openDate?esc(fDate(a.openDate)):'—'}</b></div></div>`}
+        <div><span>Net · ${esc(ymShort(ym))}</span><b class="num money ${mIn-mOut>0.004?'up':''}">${mIn-mOut>0.004?'+':mIn-mOut<-0.004?'−':''}${fINR2(Math.abs(mIn-mOut))}</b></div></div>`}
     </div>
     ${card ? cashbackHtml(a, p) : ziBankHtml(a, p)}${ccTabsHtml(a, p, moves)}`;   // cards: cashback · banks: interest · then Transactions
 }
