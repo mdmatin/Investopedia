@@ -1402,6 +1402,7 @@ html[data-theme=dark] .bkpill .bk-ic.iq,html[data-theme=dark] .zqh .bk-ic.iq{bac
 .zbk{margin:0 0 6px 14px}.zbk .hrow{padding:7px 0;font-size:14px;color:var(--ink-2);border-top:0}.zbk .hrow b{font-weight:500}
 .zmore.zadd{border-top:0;padding:4px 0 14px;text-align:left;margin-left:14px;width:auto}
 .zseg{margin:0 16px 12px}
+.zpb .pbar{margin-top:14px}   /* Zakat: given so far, under the amount */
 .zseg + .card + .card{margin-top:12px}
 .zyr{padding:14px 0 16px;border-bottom:1px solid var(--hairline)}.zyr:last-child{border-bottom:0}
 .zyr-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:16px;font-weight:600;letter-spacing:-.3px}.zyr-t .k{font-size:13.5px;font-weight:400;color:var(--ink-3)}.zyr-t .up{font-size:14.5px}
@@ -2350,7 +2351,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05g';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05h';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7440,7 +7441,8 @@ function ziYearsHtml(p, n, pay){
     if (Y.t){ const t = Y.t, est = !!t.live, done = !est && t.left <= 0.5;
       if (done) return `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span><span class="up">Paid ✓</span></div>
         <div class="zyr-s num money">${fINR(t.due)}${Y.pays.length ? ' · given in ' + cnt(Y.pays.length) : ''}</div></div>`;
-      return `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span>${est ? `<span class="k">in ${n.days} day${n.days===1?'':'s'}</span>` : '<span class="k">due now</span>'}</div>
+      const dd = Math.max(0, Math.ceil((new Date(t.date+'T00:00:00') - new Date(todayISO()+'T00:00:00'))/864e5));
+      return `<div class="zyr"><div class="zyr-t"><span>Due 1 Jan ${Y.y}</span>${est ? `<span class="k">in ${dd} day${dd===1?'':'s'}</span>` : '<span class="k">due now</span>'}</div>
         <div class="zyr-s num money">${fINR(t.due)} · ${est ? 'estimated from today’s net worth' : 'from net worth on 1 Jan'}</div>
         <div class="cclim"><div class="pbar"><i style="width:${(t.due > 0 ? Math.min(100, (t.paid||0) / t.due * 100) : 0).toFixed(1)}%"></i></div>
           <div class="ln"><span><b class="num money">${fINR(t.paid||0)}</b> given</span><span><b class="num money">${fINR(Math.max(0, t.left))}</b> to go</span></div></div></div>`; }
@@ -7456,8 +7458,8 @@ function ziYearsHtml(p, n, pay){
   const seg = yrs.length > 1 ? `<div class="seg zseg">${yrs.slice(0, tabs).map((Y,i)=>`<button data-zyr="${i}" class="${i===sel?'on':''}">${Y.y}</button>`).join('')}${yrs.length > 3 ? `<button data-zyr="3" class="${sel===3?'on':''}">Earlier</button>` : ''}</div>` : '';
   if (sel === 3 && yrs.length > 3)   // Earlier: each older year in its own card
     return seg + yrs.slice(3).map(Y=>`<div class="card tight">${head(Y)}${rows(Y, true) || ''}</div>`).join('');
-  const Y = yrs[sel];
-  return `${seg}<div class="card tight">${head(Y)}${rows(Y, p.allZ) || `<div class="empty">Nothing given toward ${Y.y} yet</div>`}
+  const Y = yrs[sel], top = Y.y===curY ? '' : head(Y);   // the year in the top card has no summary here: just its payments
+  return `${seg}<div class="card tight">${top}${rows(Y, p.allZ) || `<div class="empty">Nothing given toward ${Y.y} yet</div>`}
       ${Y.pays.length > 8 && !p.allZ ? `<button class="zmore" data-zall="Z">Show all ${Y.pays.length}</button>` : ''}</div>`;
 }
 // the Zakat page and the Interest page (one builder, p.kind picks which)
@@ -7466,6 +7468,7 @@ function ziPageBody(p){
   const n = ziZakatNow(), I = z.interest, row = (t, m, v, cls) => `<div class="row"><div class="l"><div class="n">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div><div class="r"><div class="v num money ${cls||''}">${v}</div></div></div>`;
   // each payment opens its expense (tap → the edit sheet, same as in Activity)
   ZI_OPEN.length = 0;
+  const kq = (v, cls) => `<b class="num money tipv ${cls||''}" data-full="${esc(fINR2(v))}">${esc(fKL(v))}</b>`;   // short figures (₹1.2L); a tap shows the exact amount
   const pay = x => `<button class="row" data-zx="${ZI_OPEN.push(x)-1}">${xTile('Donation')}<div class="l"><div class="n">${esc(x.note || 'Donation')}</div><div class="m">${esc(fDate(x.date))}${x.account ? ' · ' + esc(x.account) : ''}</div></div><div class="r"><div class="v num money">${fINR2(x.amount)}</div></div></button>`;
   let h = '';
   if (p.kind==='zakat' && n){
@@ -7473,12 +7476,13 @@ function ziPageBody(p){
     h += `<div class="card pg-card pg-hero">
       <div class="pg-id"><span class="zico">${MOON_IC}</span><div class="grow"><div class="t">Zakat</div><div class="s">${(Z.rate*100).toFixed(1).replace(/\.0$/,'')}% of net worth · every 1 Jan</div></div></div>
       <div class="pg-big num money">${bigAmt(fINR2(n.owing ? c.left : c.due))}</div>
-      <div class="pg-sub"><span class="k">${n.owing ? `left of ${fINR(c.due)} for 1 Jan ${n.yr}` : `estimated for 1 Jan ${n.yr} · in ${n.days} day${n.days===1?'':'s'}`}</span></div>
-      <div class="spstats lcr"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span><b class="num money">${fINR(n.owing ? c.base : Z.nw)}</b></div>
-        <div><span>Paid</span><b class="num money ${c.paid>0?'up':''}">${fINR(c.paid)}</b></div><div><span>To pay</span><b class="num money">${fINR(Math.max(0, c.left))}</b></div></div></div>
-    <div class="sechead"><h2>Snapshots</h2></div>
-    <div class="card tight">${frozen.length ? frozen.map(y=>row('1 Jan ' + y.date.slice(0,4), `Net worth ${fINR(y.base)} · due ${fINR(y.due)}`, y.left > 0.5 ? fINR(y.left) + ' left' : 'Paid ✓', y.left > 0.5 ? '' : 'up')).join('')
-      : row('1 Jan ' + n.yr, 'First snapshot · net worth freezes that day', 'in ' + n.days + 'd')}</div>
+      <div class="pg-sub"><span class="k">${n.owing ? `left of ${fINR(c.due)} due 1 Jan ${n.yr}` : `estimated for 1 Jan ${n.yr} · in ${n.days} day${n.days===1?'':'s'}`}</span></div>
+      <div class="zpb"><div class="pbar"><i style="width:${(c.due > 0 ? Math.min(100, (c.paid||0) / c.due * 100) : 0).toFixed(1)}%"></i></div></div>
+      <div class="spstats lcr"><div><span>${n.owing ? 'Net worth 1 Jan' : 'Net worth now'}</span>${kq(n.owing ? c.base : Z.nw)}</div>
+        <div><span>Paid</span>${kq(c.paid, c.paid>0?'up':'')}</div><div><span>To pay</span>${kq(Math.max(0, c.left))}</div></div></div>
+    ${(()=>{ const fz = frozen.filter(y=>y!==c);   // the year still owed is the top card itself
+      return fz.length ? `<div class="sechead"><h2>Snapshots</h2></div>
+    <div class="card tight">${fz.map(y=>row('1 Jan ' + y.date.slice(0,4), `Net worth ${fINR(y.base)} · due ${fINR(y.due)}`, y.left > 0.5 ? fINR(y.left) + ' left' : 'Paid ✓', y.left > 0.5 ? '' : 'up')).join('')}</div>` : ''; })()}
     <div class="sechead"><h2>Zakat given</h2></div>${ziYearsHtml(p, n, pay)}`;
   } else if (p.kind==='zakat' && z.zakatError) h += `<div class="card"><div class="empty">Zakat: ${esc(z.zakatError)}</div></div>`;
   if (p.kind==='interest' && I){
@@ -7486,7 +7490,7 @@ function ziPageBody(p){
     h += `<div class="card pg-card pg-hero">
       <div class="pg-id"><span class="zico iq">${PCT_IC}</span><div class="grow"><div class="t">Interest</div><div class="s">${I.left < 0 ? esc(fINR(-I.left)) + ' given ahead' : 'To purify'}</div></div></div>
       <div class="pg-big num money">${bigAmt(fINR2(Math.max(0, I.left)))}</div>
-      <div class="spstats lcr"><div><span>Earned</span><b class="num money">${fINR(I.earned)}</b></div><div><span>Given</span><b class="num money up">${fINR(I.given)}</b></div></div></div>
+      <div class="spstats lcr"><div><span>Earned</span>${kq(I.earned)}</div><div><span>Given</span>${kq(I.given, 'up')}</div></div></div>
     <div class="card tight zsrc">${row('Banks', b.cols.length + ' accounts · from the quarterly entries', fINR(I.sources.banks))}
       <div class="zbk">${per.map(([c,v])=>`<div class="hrow"><span>${esc(ziLabel(c))}</span><b class="num money">${fINR(v)}</b></div>`).join('')}</div>
       <button class="zmore zadd" data-ziq="${esc(ziAddQ())}">+ Add ${esc(qLabel(ziAddQ()).replace(/ \d+$/,''))} interest</button>
