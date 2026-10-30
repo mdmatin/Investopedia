@@ -54,7 +54,7 @@ self.addEventListener('fetch', e => {
    with a message would need encryption the script can't do), so the text for the alert is
    fetched from the script here, using the address and key the app hands over (stored below).
    Tapping the alert opens Spend, or brings the open app there. */
-const SW_VER = '2026-11-04r';   // which copy of this file is running (the app's Alert log shows it)
+const SW_VER = '2026-11-04v';   // which copy of this file is running (the app's Alert log shows it)
 const CFG_CACHE = 'centric-cfg', CFG_URL = './__cfg';
 self.addEventListener('message', e => {
   const m = e.data || {};
@@ -89,7 +89,9 @@ self.addEventListener('push', e => {
     let m = null; try { m = e.data ? e.data.json() : null; } catch (err) {}
     if (!m) m = await pushText();
     await slog('push ' + (m ? m.title : 'no text'));
-    const sent = srv('push · ' + SW_VER + ' · ' + (m ? m.title : 'no text'));
+    // tell an app that's open in the background: it opens Spend as soon as it comes back (iPhone skips the tap handler then)
+    let wins = 0; try { const L = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); wins = L.length; L.forEach(c => c.postMessage({ type: 'pushed', at: Date.now() })); } catch (err) {}
+    const sent = srv('push · ' + SW_VER + ' · ' + (m ? m.title : 'no text') + ' · windows ' + wins);
     // iPhone needs every push to show something, so there is always a fallback line
     const title = (m && m.title) || 'New draft', body = m && m.title ? (m.body || '') : 'A bank text is waiting in Spend.';   // a one-line alert has no body
     await self.registration.showNotification(title, { body, tag: 'centric-draft', icon: './icon.png', badge: './favicon-32.png', data: { go: 'spend' } });
