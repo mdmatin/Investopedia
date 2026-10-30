@@ -73,8 +73,10 @@ self.addEventListener('push', e => {
     let m = null; try { m = e.data ? e.data.json() : null; } catch (err) {}
     if (!m) m = await pushText();
     // iPhone needs every push to show something, so there is always a fallback line
-    const title = (m && m.title) || 'New draft', body = (m && m.body) || 'A bank text is waiting in Spend.';
+    const title = (m && m.title) || 'New draft', body = m && m.title ? (m.body || '') : 'A bank text is waiting in Spend.';   // a one-line alert has no body
     await self.registration.showNotification(title, { body, tag: 'centric-draft', icon: './icon.png', badge: './favicon-32.png', data: { go: 'spend' } });
+    // the app icon's badge: how many drafts are waiting
+    try { if (self.navigator.setAppBadge && m && m.count != null) await (m.count ? self.navigator.setAppBadge(m.count) : self.navigator.clearAppBadge()); } catch (err) {}
   })());
 });
 self.addEventListener('notificationclick', e => {
