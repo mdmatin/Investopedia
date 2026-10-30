@@ -59,6 +59,11 @@ self.addEventListener('message', e => {
   const m = e.data || {};
   if (m.type === 'cfg' && m.url) e.waitUntil(caches.open(CFG_CACHE).then(c => c.put(CFG_URL, new Response(JSON.stringify({ url: m.url, key: m.key })))));
 });
+// a short log of what happened with alerts (shown in the app: Profile › About › Alert log)
+async function slog(m){
+  try { const c = await caches.open(CFG_CACHE), r = await c.match('./__log'), L = r ? await r.json() : [];
+    L.push(new Date().toTimeString().slice(0, 8) + ' sw  ' + m); await c.put('./__log', new Response(JSON.stringify(L.slice(-30)))); } catch (err) {}
+}
 async function pushText(){
   try {
     const c = await caches.open(CFG_CACHE), r = await c.match(CFG_URL); if (!r) return null;
@@ -72,6 +77,7 @@ self.addEventListener('push', e => {
   e.waitUntil((async () => {
     let m = null; try { m = e.data ? e.data.json() : null; } catch (err) {}
     if (!m) m = await pushText();
+    await slog('push ' + (m ? m.title : 'no text'));
     // iPhone needs every push to show something, so there is always a fallback line
     const title = (m && m.title) || 'New draft', body = m && m.title ? (m.body || '') : 'A bank text is waiting in Spend.';   // a one-line alert has no body
     await self.registration.showNotification(title, { body, tag: 'centric-draft', icon: './icon.png', badge: './favicon-32.png', data: { go: 'spend' } });
@@ -84,8 +90,13 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil((async () => {
     // a note for the app too: if the message below doesn't reach it, it reads this when it comes to the front
     try { await (await caches.open(CFG_CACHE)).put('./__go', new Response(JSON.stringify({ view: 'spend', at: Date.now() }))); } catch (err) {}
+    await slog('tap');
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of list) { try { await c.focus(); } catch (err) {} c.postMessage({ type: 'go', view: 'spend' }); return; }
-    await self.clients.openWindow('./?go=spend');
+    await slog('windows ' + list.length + (list.length ? ' · ' + list.map(c => c.visibilityState + (c.focused ? '/focused' : '')).join(', ') : ''));
+    for (const c of list) {
+      try { await c.focus(); await slog('focus ok'); } catch (err) { await slog('focus failed ' + err.message); }
+      c.postMessage({ type: 'go', view: 'spend' }); await slog('message sent'); return;
+    }
+    try { await self.clients.openWindow('./?go=spend'); await slog('opened ./?go=spend'); } catch (err) { await slog('open failed ' + err.message); }
   })());
 });
