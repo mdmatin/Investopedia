@@ -83,7 +83,7 @@ button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 button:active{transform:scale(.97)}
 .num{font-variant-numeric:tabular-nums}
-.up{color:var(--up)} .down{color:var(--down)} .muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+.up{color:var(--up)} .down{color:var(--down)} .pend,.cbk .lr b.pend,.row .v.pend{color:var(--ink-3)} .muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--blue-focus);outline-offset:2px}
 
@@ -2351,7 +2351,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05i';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05j';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -6307,7 +6307,7 @@ function accMoves(name){
   return out.sort((x,y)=>x.date<y.date?1:x.date>y.date?-1:0);
 }
 // rounded to the paisa: adding up many entries leaves float dust (−0.0000001) that read as "−₹0.00 credit"
-const accBalance = name => { const a = accByName(name); const v = Math.round(((a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+m.amt,0))*100)/100; return v || 0; };
+const accBalance = name => { const a = accByName(name), t = todayISO(); const v = Math.round(((a ? a.opening||0 : 0) + accMoves(name).reduce((s,m)=>s+(m.date<=t ? m.amt : 0),0))*100)/100; return v || 0; };   // entries dated ahead (cashback due with the next bill) count from their day
 // one icon per account, the same everywhere (lists, its page, the entry form, Net Worth rows):
 // cash accounts (Cash, Cash · C) the cash note, everything else its bank's logo (or the bank fallback)
 // credit cards get a small picture of the card itself (colours from the real card, no logos)
@@ -7082,8 +7082,8 @@ const mvDayHead = (d, ms) => dayHead(d, ms.reduce((t,m)=>t + (m.amt > 0 ? m.amt 
 const dayRows = (ms, tile) => { const by = {}; ms.forEach(m=>(by[m.date]=by[m.date]||[]).push(m));
   return Object.keys(by).sort().reverse().map(d=>`${mvDayHead(d, by[d])}
     <div class="card tight">${by[d].map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
-      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
-      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join(''); };
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${m.date > todayISO() ? 'Pending · ' : ''}${esc(m.meta)}</div></div>
+      <div class="r"><div class="v num money ${m.date > todayISO() ? 'pend' : m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join(''); };
 // Spending | Activity as two tabs, one month switcher for both
 function ccMonths(moves){ const ym = ymNow(), first = moves.length ? moves[moves.length-1].date.slice(0,7) : ym;
   const out = []; for (let m = first < ymAdd(ym,-5) ? first : ymAdd(ym,-5); m <= ym; m = ymAdd(m,1)) out.push(m); return out; }
@@ -7147,8 +7147,8 @@ function ccActPool(p, moves){
 function ccActRows(p, moves){
   const pool = ccActPool(p, moves), N = p.actN || 12, shown = pool.slice(0, N), sel = p.ccm || ymNow();
   return (shown.length ? shown.map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
-      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)} · ${esc(fDate(m.date))}</div></div>
-      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)} · ${m.date > todayISO() ? 'Pending · ' : ''}${esc(fDate(m.date))}</div></div>
+      <div class="r"><div class="v num money ${m.date > todayISO() ? 'pend' : m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')
     : `<div class="empty">${p.actQ ? 'No matches' : 'Nothing'} in ${esc(ymLabel(sel).split(' ')[0])}</div>`)
     + (pool.length > N ? `<button class="more" data-actmore>Show ${Math.min(20, pool.length-N)} more</button>` : '');
 }
@@ -7190,8 +7190,8 @@ function accBody(p){
   const by = {}; moves.forEach(m=>(by[m.date]=by[m.date]||[]).push(m));
   const list = Object.keys(by).sort().reverse().slice(0,40).map(d=>`${mvDayHead(d, by[d])}
     <div class="card tight">${by[d].map(m=>`<button class="row" data-mv="${m.kind}:${m.e.row}">${m.kind==='expense'?xTile(m.e.category):moveTile(m.kind)}
-      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${esc(m.meta)}</div></div>
-      <div class="r"><div class="v num money ${m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
+      <div class="l"><div class="n">${esc(m.title)}</div><div class="m">${m.date > todayISO() ? 'Pending · ' : ''}${esc(m.meta)}</div></div>
+      <div class="r"><div class="v num money ${m.date > todayISO() ? 'pend' : m.amt>0?'up':''}">${m.amt>0?'+':'−'}${fINR2(Math.abs(m.amt)).replace('−','')}</div></div></button>`).join('')}</div>`).join('');
   return `<div class="card pg-card pg-hero">
       <div class="pg-id">${accMark(a)}<div class="grow"><div class="t">${esc(a.name)}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div>
         <button class="chart-tg ${p.accMenu?'on':''}" data-accmenu aria-label="Edit" aria-haspopup="menu" aria-expanded="${p.accMenu?'true':'false'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
@@ -7234,14 +7234,15 @@ function cashbackHtml(a, p){
   const byM = {}; L.forEach(i=>{ const m = i.date.slice(0,7); byM[m] = (byM[m]||0) + i.amount; });
   const bill = mode==='bill', months = bill ? cbBills(a, 6).reverse() : []; if (!bill) for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
   const vals = months.map(m=>byM[m]||0), mx = Math.max(1, ...vals), lastB = months[months.length-1];   // bill cards: one bar per bill
-  const yearSum = L.filter(i=>i.date.slice(0,4)===yr).reduce((s,i)=>s+i.amount,0);
+  const T = todayISO(), got = L.filter(i=>i.date<=T);   // cashback dated on a bill still to come is earned, not received
+  const yearSum = got.filter(i=>i.date.slice(0,4)===yr).reduce((s,i)=>s+i.amount,0);
   const active = Object.keys(byM).filter(m=>m.slice(0,4)===yr).length;
   const tm = byM[ym] || 0;
   const allM = Object.keys(byM).sort().reverse(), rows = allM.slice(0, p.cbAll ? 12 : 1).map(m=>{
     const es = L.filter(i=>i.date.slice(0,7)===m), t = es.map(cbTotalOf).find(x=>x!=null);
-    if (bill){ const due = cbDue(a, m), sm = es.length>1 ? `${es.length} entries` : es[0].date!==due ? `Logged ${esc(fDate(es[0].date))}` : '';
+    if (bill){ const due = cbDue(a, m), pend = due > T, sm = pend ? `Earned so far · credits ${esc(fDate(due))}` : es.length>1 ? `${es.length} entries` : es[0].date!==due ? `Logged ${esc(fDate(es[0].date))}` : '';
       const mon = x => ymShort(x).slice(0,3), lab = `${mon(ymAdd(m,-1))}–${mon(m)} ${ordinal(+due.slice(8,10))}${m.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + m.slice(2,4) : ''}`;   // the bill's cycle: "Sep–Oct 15th"
-      return `<div class="lr"><span>${esc(lab)}${sm ? `<small>${sm}</small>` : ''}</span><b class="num money">+${fINR2(byM[m])}</b></div>`; }
+      return `<div class="lr"><span>${esc(lab)}${sm ? `<small>${sm}</small>` : ''}</span><b class="num money ${pend?'pend':''}">+${fINR2(byM[m])}</b></div>`; }
     return `<div class="lr"><span>${esc(ymLabel(m).split(' ')[0])}<small>${t!=null ? `Total ${fINR(t)}` : es.length>1 ? `${es.length} entries` : `Logged ${esc(fDate(es[0].date))}`}</small></span><b class="num money">+${fINR2(byM[m])}</b></div>`; }).join('');
   let form = '';
   if (p.cb){
@@ -7278,7 +7279,7 @@ function cashbackHtml(a, p){
     }
   }
   return `<div class="cbk"><div class="hd"><h2>Cashback</h2>${form ? '' : `<button class="hadd" data-cbadd>${mode==='total' ? 'Update total' : '+ Add'}</button>`}</div>
-    <div class="cbx">${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : L.reduce((x,i)=>x+i.amount,0);
+    <div class="cbx">${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : got.reduce((x,i)=>x+i.amount,0);
       return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div>${bill ? `<div><span>Last bill · ${esc(fDate(cbDue(a, lastB)))}</span><b class="num money ${byM[lastB]?'up':''}">${byM[lastB] ? fINR(byM[lastB]) : '—'}</b></div>` : `<div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div>`}</div>`; })()}
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
     <div class="bl">${months.map(m=>`<span>${bill ? esc(fDate(cbDue(a, m)).replace(/ \d{4}$/,'')) : esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
