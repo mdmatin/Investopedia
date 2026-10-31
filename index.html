@@ -1498,7 +1498,7 @@ html[data-theme=dark] .ccic .hsbtn.on{background:rgba(41,151,255,.18);border-col
 .cbk .addcb{display:block;width:calc(100% - 32px);margin:12px 16px 0;padding:12px;border-radius:12px;background:var(--canvas);color:var(--blue);font-weight:600;font-size:15.5px;text-align:center}
 .cbform{margin:12px 12px 0;background:var(--canvas);border-radius:14px;padding:14px}
 .cbform label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}
-.cbform .cbm{position:relative;font-size:16px}.cbform .cbm input{position:absolute;inset:0;opacity:0;width:100%}
+.cbform .cbm{position:relative;font-size:16px}.cbform .cbm input{position:absolute;inset:0;opacity:0;width:100%}.cbform .cbm select{position:absolute;inset:0;opacity:0;width:100%}
 .cbform .calc{margin-top:12px;background:var(--sunken);border-radius:12px;padding:10px 12px;font-size:14px}
 .cbform .calc div{display:flex;justify-content:space-between;padding:3px 0;color:var(--ink-2)}
 .cbform .calc div.t{color:var(--ink);font-weight:600;border-top:.5px solid var(--hairline);margin-top:4px;padding-top:8px}.cbform .calc div.t b{color:var(--up)}
@@ -2351,7 +2351,7 @@ html[data-theme=dark] .lg .lgh1{color:#ffd60a}
 /* ==========================================================================
    CONFIG
    ========================================================================== */
-const BUILD = '2026-11-05h';        // shown in the app, so we can tell which copy is live
+const BUILD = '2026-11-05i';        // shown in the app, so we can tell which copy is live
 const REFRESH_MS = 2 * 60 * 1000;   // auto refresh every 2 minutes
 const STALE_MS   = 60 * 1000;       // refresh on reopen if older than this
 const LS = { cfg:'inv.cfg', data:'inv.data', blur:'inv.blur', range:'inv.range' };
@@ -7179,7 +7179,7 @@ function accBody(p){
       <div class="r"><span>Due date</span><b>${due ? due.getDate()+' '+due.toLocaleString('en-US',{month:'short'})+" '"+String(due.getFullYear()).slice(2) : '—'}</b>${due && owed>0 ? `<small>${(()=>{ const n = Math.round((due - new Date(new Date().toDateString()))/864e5); return n<=0 ? 'today' : n===1 ? 'tomorrow' : 'in ' + n + ' days'; })()}</small>` : ''}</div></div>
     ${a.limit ? `<div class="cclim">${pbar(owed/a.limit)}<div class="ln"><span class="num money">${(owed/a.limit*100).toFixed(1)}% used</span><span class="num money">Limit ${fCompact(a.limit)}</span></div></div>` : ''}
     ${(()=>{ // the month at a glance: the last payment, what's left to use, spent this month (short figures; a tap shows the exact amount)
-      const spent = -mm.filter(m=>m.kind==='expense').reduce((t,m)=>t+m.amt,0), pay = moves.find(m=>m.amt>0 && m.kind!=='expense');
+      const spent = -mm.filter(m=>m.kind==='expense').reduce((t,m)=>t+m.amt,0), pay = moves.find(m=>m.amt>0 && m.kind==='transfer');
       const kq = (v, cls) => `<b class="num money tipv ${cls||''}" data-full="${esc(fINR2(v))}">${esc(fKL(v))}</b>`;
       return `<div class="spstats lcr ccst"><div><span>${pay ? 'Paid · ' + esc(fDate(pay.date)) : 'Last payment'}</span>${pay ? kq(pay.amt, 'up') : '<b>—</b>'}</div>
         ${a.limit ? `<div><span>Available</span>${kq(a.limit + bal)}</div>` : ''}
@@ -7211,7 +7211,11 @@ function accBody(p){
    the card app; the difference from the last total is the month's cashback, and
    each entry keeps the total in its note ("Cashback · total ₹4,980"). ---------- */
 const isCashback = t => /^cash ?back$/i.test(String(t||'').trim());
-function cbMode(name){ const m = (PREF.cbMode||{})[name]; return m || (/icici/i.test(name) ? 'total' : 'monthly'); }
+function cbMode(name){ const m = (PREF.cbMode||{})[name]; if (m) return m; const a = accByName(name);
+  return /icici/i.test(name) ? 'total' : a && a.dueDay ? 'bill' : 'monthly'; }   // a card with a due day: cashback comes with each bill
+// 'bill' cards: the bill due in a month (the due day, or that month's last day), and the bills already due, newest first
+const cbDue = (a, ym) => { const y = +ym.slice(0,4), m = +ym.slice(5,7), n = new Date(y, m, 0).getDate(); return ym + '-' + String(Math.min(+a.dueDay || n, n)).padStart(2,'0'); };
+const cbBills = (a, k) => { let ym = ymNow(); if (cbDue(a, ym) > todayISO()) ym = ymAdd(ym, -1); const out = []; for (let i=0;i<k;i++) out.push(ymAdd(ym, -i)); return out; };
 // where a card's cashback lands: the card itself (a statement credit, like SBI) or a wallet
 // (ICICI's goes to the Amazon Pay balance). Wallet entries carry the card's name in their note.
 // ICICI defaults to the Amazon Pay wallet once one exists; '__card' records an explicit "This card"
@@ -7228,13 +7232,16 @@ function cbLastTotal(name){ let since = 0; for (const i of cbList(name)){ const 
 function cashbackHtml(a, p){
   const L = cbList(a.name), mode = cbMode(a.name), ym = ymNow(), yr = ym.slice(0,4);
   const byM = {}; L.forEach(i=>{ const m = i.date.slice(0,7); byM[m] = (byM[m]||0) + i.amount; });
-  const months = []; for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
-  const vals = months.map(m=>byM[m]||0), mx = Math.max(1, ...vals);
+  const bill = mode==='bill', months = bill ? cbBills(a, 6).reverse() : []; if (!bill) for (let k=5;k>=0;k--) months.push(ymAdd(ym,-k));
+  const vals = months.map(m=>byM[m]||0), mx = Math.max(1, ...vals), lastB = months[months.length-1];   // bill cards: one bar per bill
   const yearSum = L.filter(i=>i.date.slice(0,4)===yr).reduce((s,i)=>s+i.amount,0);
   const active = Object.keys(byM).filter(m=>m.slice(0,4)===yr).length;
   const tm = byM[ym] || 0;
   const allM = Object.keys(byM).sort().reverse(), rows = allM.slice(0, p.cbAll ? 12 : 1).map(m=>{
     const es = L.filter(i=>i.date.slice(0,7)===m), t = es.map(cbTotalOf).find(x=>x!=null);
+    if (bill){ const due = cbDue(a, m), sm = es.length>1 ? `${es.length} entries` : es[0].date!==due ? `Logged ${esc(fDate(es[0].date))}` : '';
+      const mon = x => ymShort(x).slice(0,3), lab = `${mon(ymAdd(m,-1))}–${mon(m)} ${ordinal(+due.slice(8,10))}${m.slice(0,4)!==ymNow().slice(0,4) ? ' ’' + m.slice(2,4) : ''}`;   // the bill's cycle: "Sep–Oct 15th"
+      return `<div class="lr"><span>${esc(lab)}${sm ? `<small>${sm}</small>` : ''}</span><b class="num money">+${fINR2(byM[m])}</b></div>`; }
     return `<div class="lr"><span>${esc(ymLabel(m).split(' ')[0])}<small>${t!=null ? `Total ${fINR(t)}` : es.length>1 ? `${es.length} entries` : `Logged ${esc(fDate(es[0].date))}`}</small></span><b class="num money">+${fINR2(byM[m])}</b></div>`; }).join('');
   let form = '';
   if (p.cb){
@@ -7251,6 +7258,15 @@ function cashbackHtml(a, p){
              <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt!=null ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="the first time only"></div>`}
         ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
         <div class="btns"><button class="cancel" data-cbx>Cancel</button><button class="save" data-cbsave>Save${p.cbTot && delta>0 ? ' ' + fINR(delta) : ''}</button></div></div>`;
+    } else if (bill){
+      const bs = cbBills(a, 6), sel = p.cbBill && bs.includes(p.cbBill) ? p.cbBill : bs[0];
+      form = `<div class="cbform">
+        <label>Cashback on the bill due</label>
+        <div class="cbm"><b>${esc(fDate(cbDue(a, sel)))}</b><select data-cbbill aria-label="Bill">${bs.map(m=>`<option value="${m}" ${m===sel?'selected':''}>${esc(fDate(cbDue(a, m)))}${byM[m] ? ' · ' + esc(fINR(byM[m])) + ' logged' : ''}</option>`).join('')}</select></div>
+        <label style="margin-top:12px">Amount</label>
+        <div class="inwrap"><span>₹</span><input data-cbamt inputmode="decimal" value="${p.cbAmt ? esc(groupNum(String(p.cbAmt),'en-IN')) : ''}" placeholder="0"></div>
+        ${p.cbErr ? `<div class="err">${esc(p.cbErr)}</div>` : ''}
+        <div class="btns"><button class="cancel" data-cbx>Cancel</button><button class="save" data-cbsave>Save</button></div></div>`;
     } else {
       form = `<div class="cbform">
         <label>Cashback received for</label>
@@ -7263,10 +7279,10 @@ function cashbackHtml(a, p){
   }
   return `<div class="cbk"><div class="hd"><h2>Cashback</h2>${form ? '' : `<button class="hadd" data-cbadd>${mode==='total' ? 'Update total' : '+ Add'}</button>`}</div>
     <div class="cbx">${(()=>{ const lt = cbLastTotal(a.name), all = lt ? lt.total + lt.since : L.reduce((x,i)=>x+i.amount,0);
-      return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div><div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div></div>`; })()}
+      return `<div class="st"><div><span>All time</span><b class="num money">${all > 0 ? fINR(all) : '—'}</b></div><div><span>${yr} so far</span><b class="num money">${fINR(yearSum)}</b></div>${bill ? `<div><span>Last bill · ${esc(fDate(cbDue(a, lastB)))}</span><b class="num money ${byM[lastB]?'up':''}">${byM[lastB] ? fINR(byM[lastB]) : '—'}</b></div>` : `<div><span>This month</span><b class="num money ${tm?'up':''}">${tm ? fINR(tm) : '—'}</b></div>`}</div>`; })()}
     ${L.length ? `<div class="bars">${vals.map((x,i)=>`<i class="${i===5?'cur':''}" style="height:${x ? Math.max(4, x/mx*100) : 2}%"></i>`).join('')}</div>
-    <div class="bl">${months.map(m=>`<span>${esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
-    ${rows ? `<div class="lst">${rows}${allM.length > 1 ? `<button class="more" data-cball>${p.cbAll ? 'Show fewer' : 'Show all ' + Math.min(12, allM.length) + ' months'}</button>` : ''}</div>` : ''}</div>
+    <div class="bl">${months.map(m=>`<span>${bill ? esc(fDate(cbDue(a, m)).replace(/ \d{4}$/,'')) : esc(ymShort(m).slice(0,3))}</span>`).join('')}</div>` : ''}
+    ${rows ? `<div class="lst">${rows}${allM.length > 1 ? `<button class="more" data-cball>${p.cbAll ? 'Show fewer' : 'Show all ' + Math.min(12, allM.length) + (bill ? ' bills' : ' months')}</button>` : ''}</div>` : ''}</div>
     ${form || ''}
   </div>`;
 }
@@ -7293,6 +7309,7 @@ function wireCashback(p){
       b.textContent = t ? (d>=0?'+':'') + fINR2(d) : '—'; b.classList.toggle('down', !!t && d<0); };
     tot.addEventListener('input', live); tot.onchange = ()=>{ live(); if (!$('#page [data-cbdelta]')) again(); }; }
   const amt = $('#page [data-cbamt]'); if (amt){ commaInput(amt,'en-IN'); amt.oninput = ()=>{ p.cbAmt = numPlain(amt.value); }; }
+  const bb = $('#page [data-cbbill]'); if (bb) bb.onchange = ()=>{ p.cbBill = bb.value; if (amt) p.cbAmt = numPlain(amt.value); again(); };
   const my = $('#page [data-cbym]'); if (my) my.onchange = ()=>{ p.cbYm = my.value || ymNow(); if (amt) p.cbAmt = numPlain(amt.value); again(); };
   const sv = $('#page [data-cbsave]'); if (sv) sv.onclick = async ()=>{
     if (tot) p.cbTot = numPlain(tot.value); if (amt) p.cbAmt = numPlain(amt.value);
@@ -7305,6 +7322,10 @@ function wireCashback(p){
       if (last && amount<=0){ p.cbErr = amount<0 ? `That's less than the last total plus what's been logged since (${fINR(last.total + last.since)}).` : 'No new cashback since the last total.'; again(); return; }
       if (!last && !(amount>0)){ p.cbErr = 'Enter how much of it came this month.'; again(); return; }
       note = `Cashback · total ${fINR(t)}`;
+    } else if (mode==='bill'){
+      amount = Number(p.cbAmt)||0; if (!(amount>0)){ p.cbErr = 'Enter the cashback amount.'; again(); return; }
+      const bs = cbBills(a, 6), m = p.cbBill && bs.includes(p.cbBill) ? p.cbBill : bs[0];
+      date = cbDue(a, m); note = `Cashback · bill ${fDate(date)}`;   // dated on the bill's due date, when it's credited
     } else {
       amount = Number(p.cbAmt)||0; if (!(amount>0)){ p.cbErr = 'Enter the cashback amount.'; again(); return; }
       const m = p.cbYm || ymNow(); if (m < ymNow()){ const y=+m.slice(0,4), mo=+m.slice(5,7); date = m + '-' + String(new Date(y, mo, 0).getDate()).padStart(2,'0'); }
@@ -7617,7 +7638,7 @@ function accFormBody(p){
       </div>
       <p class="hint" style="margin:0 4px 14px">${card ? 'What you owed on the card on the “Since” date.' : 'The balance on the “Since” date.'} Entries before that date don't count toward the balance.</p>
       ${card ? `<div class="xlbl">Cashback is entered as</div>
-      <div class="seg afCb">${[['monthly','Amount each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${(f.cbm || cbMode(a ? a.name : f.name||''))===k?'on':''}">${l}</button>`).join('')}</div>
+      <div class="seg afCb">${[['bill','With each bill'],['monthly','Each month'],['total','Running total']].map(([k,l])=>`<button data-cbm="${k}" class="${(f.cbm || cbMode(a ? a.name : f.name||''))===k?'on':''}">${l}</button>`).join('')}</div>
       <div class="xlbl">Cashback goes to</div>
       <div class="fields"><div class="f afCbTo"><label>Into</label>${(()=>{ const ws = xAccounts().filter(w=>accKind(w)==='wallet' && !/^\s*cash\s*$/i.test(w.type) && !/^cash$/i.test(w.name)).map(w=>w.name), cur = f.cbto!=null ? f.cbto : (cbTo(a ? a.name : '')||'');
         return `<select data-cbto aria-label="Cashback goes to"><option value="" ${cur===''?'selected':''}>This card</option>${ws.map(w=>`<option value="${esc(w)}" ${w===cur?'selected':''}>${esc(w)}</option>`).join('')}</select>`; })()}</div></div>
